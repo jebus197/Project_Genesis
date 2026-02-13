@@ -622,6 +622,32 @@ When in doubt:
 - Choose earned trust over purchased influence.
 - Choose measurable risk reduction over absolute claims.
 
+## Blockchain Anchoring Record
+
+This constitution is anchored on-chain. The anchoring event creates permanent, tamper-evident proof that this document existed in its exact form at the recorded time.
+
+Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10255231 |
+| Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
+| Anchored | 2026-02-13T23:47:25Z |
+
+**Independent verification:**
+
+```bash
+shasum -a 256 TRUST_CONSTITUTION.md
+# Expected: 33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06
+```
+
+Then open the transaction on [Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) and confirm the Input Data field contains the same hash.
+
+**Important:** The hash above corresponds to the version of this constitution that was anchored. Any subsequent edits to this document will change the hash. Future versions should be re-anchored and logged in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+
 ## Documentation stop rule
 
 To prevent document sprawl:

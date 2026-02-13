@@ -410,13 +410,49 @@ Documentation stop rule:
 
 Genesis uses blockchain anchoring to create tamper-evident proof that its governance documents exist in a specific form at a specific time.
 
-Blockchain anchoring is not a smart contract. No code executes on-chain. A SHA-256 hash of the document is embedded in the data field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness — a notary stamp that cannot be forged, altered, or retroactively changed.
+Blockchain anchoring is not a smart contract. No code executes on-chain. A SHA-256 hash of the document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness — a notary stamp that cannot be forged, altered, or retroactively changed.
 
 The Genesis constitution (`TRUST_CONSTITUTION.md`) is the first document anchored.
 
-| Document | SHA-256 | Sepolia Block | Transaction |
-|---|---|---|---|
-| `TRUST_CONSTITUTION.md` | `33f2b003...` | 10255231 | [View on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
+| Document | SHA-256 | Chain | Block | Transaction |
+|---|---|---|---|---|
+| `TRUST_CONSTITUTION.md` | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` | Ethereum Sepolia (Chain ID 11155111) | 10255231 | [View on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
+
+Anchored: 2026-02-13T23:47:25Z
+
+### Independent Verification
+
+Anyone can verify the anchoring event is real. No trust in this project is required.
+
+**Step 1 — Compute the hash locally:**
+
+```bash
+shasum -a 256 TRUST_CONSTITUTION.md
+```
+
+Expected output:
+
+```
+33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06  TRUST_CONSTITUTION.md
+```
+
+**Step 2 — Confirm the hash on-chain:**
+
+Open the transaction on Etherscan:
+
+[https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb)
+
+Click **"Click to see More"**, then inspect the **Input Data** field. The hex payload decodes to the SHA-256 hash above.
+
+**Step 3 — Confirm the block timestamp:**
+
+The block number (10255231) and its timestamp on Sepolia prove the document existed in this exact form no later than the block's mining time.
+
+**What this proves:**
+
+1. The constitution existed in its exact byte-for-byte form at the anchored time.
+2. No one — including the project owner — can retroactively alter the anchored version without the hash mismatch being publicly detectable.
+3. The proof is permanent, public, and does not depend on any Genesis infrastructure.
 
 Full anchor log: [`docs/ANCHORS.md`](docs/ANCHORS.md)
 
