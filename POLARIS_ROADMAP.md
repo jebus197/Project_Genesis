@@ -1,6 +1,6 @@
 # Project Polaris Roadmap
 
-Status: Execution roadmap (v1.0)  
+Status: Execution roadmap (v1.1, human-scale projection)  
 Date: February 13, 2026  
 Owner: George Jackson
 
@@ -13,49 +13,74 @@ Execution rule:
 2. Every gate must be evidenced by reproducible artifacts.
 3. Governance and cryptographic controls are built in early, not deferred.
 
+Human-scale planning rule:
+1. Estimates are calibrated for one skilled full-time developer.
+2. Durations include build, integration, regression fixing, documentation, and review.
+3. Constitutional and cryptographic controls are treated as delivery-critical, not optional polish.
+
 ---
 
-## 2. Timeline chart (blueprint to production)
+## 2. Human-scale projection (single skilled developer)
+
+Rule-of-thumb delivery window:
+1. Optimistic: `24 months` (requires low rework and smooth audits).
+2. Realistic: `30-42 months`.
+3. Conservative: `48+ months` (if governance or security rework is heavy).
+
+Planning assumptions:
+1. One skilled developer working full-time.
+2. No large dedicated support team for QA, security, or compliance.
+3. External audit and adversarial testing are mandatory before production release.
+4. Fail-closed governance and cryptographic guarantees are non-negotiable.
+
+---
+
+## 3. Timeline chart (human-scale, blueprint to production)
 
 ```mermaid
 gantt
-  title Polaris Delivery Roadmap (v1.0)
+  title Polaris Delivery Roadmap (v1.1 Human-Scale)
   dateFormat  YYYY-MM-DD
 
   section Phase 0 - Program Setup
-  Charter freeze and operating model         :p0a, 2026-02-16, 14d
-  Architecture baseline and interfaces       :p0b, after p0a, 14d
-  Security and compliance baseline           :p0c, after p0a, 14d
+  Charter freeze and operating model         :p0a, 2026-03-01, 45d
+  Architecture baseline and interfaces       :p0b, after p0a, 45d
+  Security and compliance baseline           :p0c, after p0a, 45d
 
   section Phase 1 - Core Runtime
-  Mission and task state engine              :p1a, 2026-03-16, 28d
-  Worker and reviewer routing                :p1b, after p1a, 21d
-  Evidence schema and validation             :p1c, after p1a, 21d
+  Mission and task state engine              :p1a, after p0b, 90d
+  Worker and reviewer routing                :p1b, after p1a, 75d
+  Evidence schema and validation             :p1c, after p1a, 75d
+  Runtime integration and stabilization       :p1d, after p1b, 60d
 
   section Phase 2 - Trust and Control
-  Proof-of-work and proof-of-trust pipeline  :p2a, 2026-05-11, 28d
-  Trust update engine and dormancy logic     :p2b, after p2a, 28d
-  Fast-elevation suspension gate             :p2c, after p2b, 21d
+  Proof-of-work and proof-of-trust pipeline  :p2a, after p1d, 90d
+  Trust update engine and dormancy logic     :p2b, after p2a, 90d
+  Fast-elevation suspension gate             :p2c, after p2b, 60d
+  Trust replay and regression test campaign  :p2d, after p2c, 45d
 
   section Phase 3 - Constitutional Governance
-  Chamber orchestration engine               :p3a, 2026-07-06, 35d
-  Constrained-random assignment service      :p3b, after p3a, 21d
-  Appeals and dispute workflow               :p3c, after p3a, 28d
+  Chamber orchestration engine               :p3a, after p2d, 105d
+  Constrained-random assignment service      :p3b, after p3a, 90d
+  Appeals and dispute workflow               :p3c, after p3a, 90d
+  Governance simulation and hardening         :p3d, after p3b, 60d
 
   section Phase 4 - Cryptographic Production
-  Merkle root and anchor payload builder     :p4a, 2026-09-01, 28d
-  Threshold certificate service              :p4b, after p4a, 28d
-  On-chain anchor integration and verifier   :p4c, after p4b, 28d
+  Merkle root and anchor payload builder     :p4a, after p3d, 90d
+  Threshold certificate service              :p4b, after p4a, 90d
+  On-chain anchor integration and verifier   :p4c, after p4b, 90d
+  Crypto operations and key rotation drills  :p4d, after p4c, 60d
 
   section Phase 5 - Pilot and Hardening
-  Limited-scope pilot                         :p5a, 2026-11-25, 35d
-  Adversarial simulation campaign            :p5b, after p5a, 28d
-  External audit and release decision        :p5c, after p5b, 21d
+  Limited-scope pilot                         :p5a, after p4d, 120d
+  Adversarial simulation campaign            :p5b, after p5a, 90d
+  External audit and remediation             :p5c, after p5b, 90d
+  Release decision and staged rollout         :p5d, after p5c, 60d
 ```
 
 ---
 
-## 3. Phase plan with hard entry and exit gates
+## 4. Phase plan with hard entry and exit gates
 
 ## Phase 0 - Program setup
 
@@ -75,6 +100,7 @@ Deliverables:
 1. Program charter.
 2. Interface contract pack.
 3. Risk register v1.
+4. Human-scale estimate baseline and review cadence.
 
 ---
 
@@ -102,6 +128,7 @@ Metrics:
 1. Review bypass rate = 0.
 2. Incomplete-evidence acceptance rate = 0.
 3. Mission transition reproducibility = 100%.
+4. Critical regression backlog at phase exit = 0.
 
 ---
 
@@ -129,6 +156,7 @@ Metrics:
 1. Unauthorized trust mint attempts accepted = 0.
 2. Fast-elevation unsuspended violations = 0.
 3. Trust replay consistency from logs = 100%.
+4. Parameter replay mismatch across environments = 0.
 
 ---
 
@@ -155,6 +183,7 @@ Metrics:
 1. Chamber replay mismatch rate = 0.
 2. Constraint bypass rate = 0.
 3. Invalid constitutional activation rate = 0.
+4. Governance simulation capture escapes at configured threat model = 0.
 
 ---
 
@@ -182,6 +211,7 @@ Metrics:
 1. Anchor publication failure rate < 0.1%.
 2. Signature verification failure rate = 0 for valid records.
 3. External verification reproducibility = 100%.
+4. Key-rotation drill recovery time meets target runbook window.
 
 ---
 
@@ -209,10 +239,11 @@ Metrics:
 1. Critical control failures = 0.
 2. Severe unresolved audit findings = 0.
 3. Governance decision reproducibility = 100%.
+4. Pilot rollback safety tests pass in all targeted scenarios.
 
 ---
 
-## 4. Dependency map
+## 5. Dependency map
 
 ```mermaid
 flowchart LR
@@ -231,7 +262,7 @@ flowchart LR
 
 ---
 
-## 5. Governance and parameter review checkpoints
+## 6. Governance and parameter review checkpoints
 
 Mandatory review checkpoints:
 1. End of each phase.
@@ -251,7 +282,17 @@ No parameter changes are valid unless:
 
 ---
 
-## 6. Stop condition for roadmap expansion
+## 7. Realism notes for stakeholders
+
+To keep expectations grounded:
+1. The roadmap is intentionally paced for correctness and legitimacy, not speed theater.
+2. Governance, cryptography, and auditability add substantial engineering and verification time.
+3. A single developer can build this, but production trust requires long-cycle testing and external scrutiny.
+4. Attempting to compress this schedule materially increases capture, security, and correctness risk.
+
+---
+
+## 8. Stop condition for roadmap expansion
 
 To avoid repository bloat:
 1. This is the only roadmap document.
