@@ -78,7 +78,7 @@ Polaris treats its founding constitution as a publicly governed artifact.
 1. The canonical constitution text is hashed and anchored on a public blockchain.
 2. Every amendment is versioned, hashed, and anchored with a public change record.
 3. An amendment is valid only after verified-human ratification and anchor finalization.
-4. Ratification requires a human supermajority threshold (policy-defined; e.g., two-thirds).
+4. Ratification requires a verified-human supermajority threshold of at least two-thirds.
 5. Voting power is one-human-one-vote within the constitutional process; wealth does not increase voting weight.
 6. No government entity has unilateral constitutional override authority.
 7. A small constitutional steward group may administer process integrity, but cannot unilaterally change constitutional text.
@@ -89,10 +89,11 @@ Polaris is designed to block concentration of constitutional power.
 1. Machines can earn trust for operational work, but machine trust does not include constitutional voting rights.
 2. Only verified humans with sufficient earned trust may sponsor constitutional change proposals.
 3. Constitutional change requires verified-human supermajority ratification.
-4. Human trust is weighted significantly above machine trust in governance-critical decisions.
+4. In governance-critical mixed-trust decisions, weighting must satisfy `w_H >= 5 * w_M` (default `w_H = 1.0`, `w_M = 0.2`).
 5. High task speed or output volume alone cannot grant constitutional influence.
-6. Any major trust elevation for a single actor requires broad independent verification by trusted humans.
+6. Any trust elevation event with `DeltaT > delta_fast` (default `delta_fast = 0.02/epoch`) requires `q_h >= 5` independent high-trust human validations before effect.
 7. Steward groups can run process, but cannot become a de facto government.
+8. High trust can increase responsibility, but never grants unilateral constitutional authority.
 
 ## Mathematical Distribution Model (Default)
 Polaris governance uses a formal distributed model so constitutional control is mathematically hard to capture.
@@ -113,13 +114,16 @@ Polaris governance uses a formal distributed model so constitutional control is 
 - All three chambers must pass.
 
 4. Geographic anti-capture constraints:
-- Minimum region diversity in every chamber.
-- Maximum region share cap in every chamber.
+- Minimum region diversity in every chamber (`R_min = 8`).
+- Maximum region share cap in every chamber (`c_max = 0.15`).
 - Chamber membership must not overlap for the same decision.
+- Chamber membership is selected with constrained-random assignment from eligible participants, subject to diversity and conflict constraints.
+- Constrained-random assignment uses a pre-committed public randomness source and deterministic sampling without replacement.
 
 5. Supercomputer anti-gaming rule:
 - Task speed/volume alone cannot grant constitutional influence.
-- Any rapid trust elevation requires broad independent high-trust human validation across regions.
+- Any `DeltaT > delta_fast` trust elevation is suspended until validation thresholds are met.
+- Validation thresholds: `q_h >= 5` independent high-trust human reviewers, `r_h >= 3` regions, `o_h >= 3` organizations.
 
 6. Cryptographic finalization:
 - Signed ballots, threshold decision certificate, and on-chain hash anchoring of constitutional changes.
@@ -135,9 +139,12 @@ Polaris uses trust as a bounded civic-performance metric, not an infinite power 
 - Money, sponsorship, status, and idle holding do not raise trust.
 
 3. Cryptographic proof-of-trust minting:
-- New trust is minted only from verified contribution events.
-- Each mint event requires cryptographic proof-of-trust evidence and anchored traceability.
-- This is the intended governance analogue of proof-of-work: cryptographic proof-of-trust.
+- Proof-of-work evidence and proof-of-trust evidence are distinct.
+- Proof-of-work shows effort/output occurred.
+- Proof-of-trust requires independent verification of quality, policy compliance, and reliability over time.
+- Both evidence types are cryptographically signed and anchored.
+- New trust is minted only from proof-of-trust evidence.
+- Proof-of-work evidence alone cannot mint trust.
 
 4. Trust caps:
 - Absolute hard cap per identity.
@@ -223,10 +230,10 @@ Most core building blocks already exist:
 
 The challenge is integration discipline and governance quality. The hard part is not whether we can code it. The hard part is designing incentives, review integrity, and legitimacy so the system remains trustworthy under pressure.
 
-## Candela’s Place in Polaris
-Candela is well positioned as the governance and evidence core for Polaris.
+## Underlying Governance Engine in Polaris
+The existing operational engine is well positioned as the governance and evidence core for Polaris.
 
-In practical terms, Candela already contributes:
+In practical terms, this engine already contributes:
 
 1. Machine-checkable policy enforcement.
 2. Runtime guard modes and validation logic.
@@ -235,7 +242,7 @@ In practical terms, Candela already contributes:
 
 Polaris then extends above this core with mission orchestration, identity and trust systems, dispute processes, risk-tier routing, and governance operations.
 
-In short: Candela is the governance engine; Polaris is the institutional layer built around it.
+In short: the governance engine underpins constitutional enforcement, and Polaris is the institutional layer built around it.
 
 ## Risks (Honest View) and Mitigations
 No serious project should hide its risks. Polaris has material risks, but they are addressable.

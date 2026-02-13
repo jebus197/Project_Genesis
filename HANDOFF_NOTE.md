@@ -2,7 +2,7 @@
 
 Date: February 13, 2026
 Author: George Jackson
-Status: Working concept + MVP definition + Candela integration path + external background review
+Status: Working concept + MVP definition + governance-engine integration path + external background review
 
 ## 1) Why Polaris exists
 
@@ -12,11 +12,11 @@ Instead of agents copying human social behaviour, build a mission-first network 
 
 Short version:
 - Not an attention network
-- Not a chat feed
+- Not a conversation feed
 - A work network for public-benefit outcomes
 
 George framing:
-- "No inane chatter. Just realtime work for the benefit of all."
+- "No noise. Just realtime work for the benefit of all."
 
 ## 2) Feasibility verdict
 
@@ -179,10 +179,10 @@ Out of scope (for MVP):
 4. Human quality rating.
 5. Rework loop count.
 
-## 12) Candela relationship (important)
+## 12) Underlying governance-engine relationship (important)
 
 Conclusion from repo study:
-- Candela is already a strong governance core.
+- The existing operational engine is already a strong governance core.
 - It currently provides policy-as-code enforcement + provenance/audit proofing.
 
 Existing strengths in current baseline:
@@ -191,7 +191,7 @@ Existing strengths in current baseline:
 - Output logging + Merkle-root anchoring + verification tooling.
 - Reviewer-oriented docs and demo paths.
 
-What Candela does not yet include (key Polaris gaps):
+What the current governance engine does not yet include (key Polaris gaps):
 1. Mission system
 2. Task orchestration and dependency routing
 3. Full identity + role permission model
@@ -204,7 +204,7 @@ What Candela does not yet include (key Polaris gaps):
 10. Policy lifecycle governance (propose/review/approve/rollback)
 
 Practical architecture position:
-- Keep Candela as the "Policy + Evidence Engine".
+- Keep the underlying engine as the "Policy + Evidence Engine".
 - Build Polaris coordination/trust/governance layers around it.
 
 ## 13) Execution order recommended
@@ -213,18 +213,18 @@ Practical architecture position:
 2. Add mandatory independent review routing.
 3. Add reputation + abuse detection.
 4. Add governance console + policy change workflow.
-5. Keep Candela anchoring/proof path intact during expansion.
+5. Keep the existing anchoring/proof path intact during expansion.
 
 ## 14) Work request for future agent collaboration (after George returns Sunday)
 
 Please produce a single detailed report/spec including:
 
-1. Current true state of Candela (including all uncommitted local progress).
+1. Current true state of the underlying governance engine (including all uncommitted local progress).
 2. Delta from the last public commit.
 3. What can be reused directly for Polaris.
 4. Proposed fork strategy:
-- Option A: Candela remains core library + new Polaris app repo
-- Option B: Candela monorepo with Polaris modules
+- Option A: Existing governance engine remains core library + new Polaris app repo
+- Option B: Existing governance engine monorepo with Polaris modules
 5. First implementable Polaris milestone with acceptance criteria.
 6. Risk register (technical, governance, abuse, legal/safety).
 7. Plain-English timeline with reversible steps.
@@ -242,7 +242,7 @@ Meaning:
 If you are reading this as a successor agent:
 - Treat this file as the strategic intent snapshot from George's direct discussion.
 - Do not over-scope the first milestone.
-- Preserve Candela's governance rigor while adding multi-agent coordination incrementally.
+- Preserve governance rigor while adding multi-agent coordination incrementally.
 
 ## 16) External background review completed (Feb 13, 2026)
 
@@ -261,7 +261,7 @@ The following perspectives are valid and should be retained:
 1. "Work network" inversion (away from social/attention dynamics) is meaningful.
 2. Trust should be engineered through verification, not assumed.
 3. Separation of duties (worker/reviewer/integrator/human) is structurally sound.
-4. Candela-style policy enforcement + evidence trails is a strong governance base.
+4. Policy-engine enforcement + evidence trails is a strong governance base.
 5. Main challenge is governance quality, not coding difficulty.
 
 ## 18) Perspectives judged overstated or risky
@@ -296,7 +296,7 @@ Concrete design responses:
 
 Green:
 1. Core architecture direction
-2. Candela-as-governance-core positioning
+2. Governance-engine-as-core positioning
 3. Mission/task/review workflow concept
 
 Amber:
@@ -370,7 +370,7 @@ Core additions now encoded in publication and constitutional docs:
 6. Low-trust recovery lanes through small verified tasks.
 7. Trust grants permissions, not command authority over others.
 8. Money has no governance role in trust, proposal, or constitutional voting rights.
-9. Trust is minted only via cryptographic proof-of-trust evidence (governance analogue of proof-of-work).
+9. Trust is minted only via cryptographic proof-of-trust evidence; proof-of-work evidence alone is insufficient.
 
 ## 27) Key clarity retained
 

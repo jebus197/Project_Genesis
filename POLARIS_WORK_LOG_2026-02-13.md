@@ -39,7 +39,7 @@ Assess the attached background materials and answer:
 
 ## 6) Corrective direction captured
 
-1. Keep Candela-style policy/evidence core.
+1. Keep the policy/evidence governance core.
 2. Add anti-collusion routing and reviewer diversity.
 3. Use evidence-weighted verification, not vote-only logic.
 4. Apply risk-tier governance (fast for low-risk, strict for high-risk).

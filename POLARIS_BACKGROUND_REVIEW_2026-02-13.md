@@ -34,7 +34,7 @@ Design implications:
 2. Trust and governance are correctly treated as the main problem, not model cleverness.
 3. Separation of duties (worker/reviewer/integrator/human) is sound.
 4. Mandatory evidence and auditability are the right design center.
-5. Candela-style policy enforcement and provenance are a strong base for Polaris.
+5. Policy-engine enforcement and provenance are a strong base for Polaris.
 
 ## 4) What is over-optimistic or fragile
 
@@ -93,7 +93,7 @@ Yes, with concrete architecture choices.
 
 Green (ready to proceed):
 1. Core concept and mission framing.
-2. Candela-as-governance-core direction.
+2. Governance-engine-as-core direction.
 3. Mission/task/review architecture.
 
 Amber (needs careful design in early milestones):

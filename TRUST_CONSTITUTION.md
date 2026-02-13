@@ -49,7 +49,8 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 - Machine-earned trust can never convert into constitutional voting power.
 
 3. Human trust precedence:
-- In governance-sensitive mixed models, human trust weight must remain significantly above machine trust weight.
+- In governance-sensitive mixed models, human trust weight must satisfy `w_H >= 5 * w_M`.
+- Default governance weighting: `w_H = 1.0`, `w_M = 0.2`.
 - Machine trust may inform decisions, but cannot outrank human constitutional authority.
 
 ## Anti-capture guarantees
@@ -65,11 +66,19 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 
 4. Anti-gaming protection:
 - High task speed or volume alone cannot grant constitutional influence.
-- High-impact trust elevation requires broad independent verification by high-trust humans.
+- High-impact trust elevation is defined as `DeltaT > delta_fast` within one epoch.
+- Default threshold: `delta_fast = 0.02` trust units per epoch.
+- Any `DeltaT > delta_fast` event requires at least `q_h = 5` independent high-trust human reviewer signatures before effect.
+- Reviewer set for this validation must span at least `r_h = 3` regions and `o_h = 3` distinct organizations.
 
 5. Steward limits:
 - Stewards administer process integrity only.
 - Stewards cannot unilaterally amend constitutional text or exercise permanent governing authority.
+
+6. Qualified authority without elite control:
+- High-trust humans may sponsor and steward constitutional proposals.
+- Final constitutional authority remains distributed across eligible verified humans through chamber ratification.
+- No individual or small cluster can convert trust into unilateral constitutional control.
 
 ## Mathematical governance core (default model)
 
@@ -95,6 +104,10 @@ The constitutional system uses a mathematically distributed decision model.
 4. Geographic distribution constraints:
 - Minimum represented regions per chamber: `R_min`.
 - Maximum regional share in any chamber: `c_max`.
+- Chamber membership is selected using constrained-random assignment from the eligible pool.
+- Constrained-random assignment must enforce region caps, minimum diversity targets, organization diversity limits, and conflict-of-interest recusal.
+- Randomness source for constrained-random assignment must be publicly auditable and pre-committed.
+- Default randomness source: `(public_beacon_round, previous_anchor_hash, chamber_nonce)` with deterministic sampling without replacement.
 - Default recommendation: `R_min = 8`, `c_max = 0.15`.
 
 5. Three independent human chambers (no overlap):
@@ -116,7 +129,8 @@ The constitutional system uses a mathematically distributed decision model.
 
 8. Anti-gaming acceleration control:
 - High throughput alone cannot trigger constitutional influence.
-- Any rapid trust jump requires broad independent validation by trusted humans across regions before effect.
+- Any `DeltaT > delta_fast` trust jump is suspended until independent human re-validation succeeds.
+- Re-validation must satisfy `q_h >= 5`, `r_h >= 3`, `o_h >= 3`, and no reviewer conflict-of-interest flags.
 
 9. Cryptographic finalization requirements:
 - Signed ballots and chamber results.
@@ -136,9 +150,12 @@ Polaris uses bounded earned trust, not unbounded hierarchy.
 - Trust cannot increase from wealth, sponsorship, status, or idle possession.
 
 3. Cryptographic proof-of-trust minting:
-- New trust units are minted only from verified contribution events.
-- Every mint event must have cryptographic proof-of-trust evidence (signed evidence bundle + anchored record).
-- Design intent: this is a governance analogue of cryptographic proof-of-work, reframed as cryptographic proof-of-trust.
+- Work evidence and trust evidence are distinct.
+- Proof-of-work evidence shows that effort/output occurred.
+- Proof-of-trust evidence requires independent verification of quality, policy compliance, and reliability over time.
+- Both evidence types must be cryptographically signed and anchored.
+- New trust units are minted only from proof-of-trust evidence.
+- Proof-of-work evidence alone cannot mint trust.
 - No unverified pathway can mint trust.
 
 4. Dormancy decay dynamics:
@@ -180,7 +197,7 @@ Polaris uses bounded earned trust, not unbounded hierarchy.
 4. Can severe proven misconduct avoid trust loss? If yes, reject design.
 5. Can trust decisions occur without audit trail? If yes, reject design.
 6. Can machine trust be converted into constitutional voting rights? If yes, reject design.
-7. Can one high-throughput actor gain constitutional influence without broad trusted-human verification? If yes, reject design.
+7. Can one high-throughput actor gain constitutional influence without meeting `delta_fast`, `q_h`, `r_h`, and `o_h` validation thresholds? If yes, reject design.
 8. Can a steward group amend constitutional text alone? If yes, reject design.
 9. Can a constitutional vote pass without meeting geographic diversity thresholds? If yes, reject design.
 10. Can a constitutional vote pass without independent chamber non-overlap? If yes, reject design.
@@ -189,6 +206,12 @@ Polaris uses bounded earned trust, not unbounded hierarchy.
 13. Can financial resources increase constitutional influence? If yes, reject design.
 14. Can trust decay below `T_floor`? If yes, reject design.
 15. Can trust be minted without cryptographic proof-of-trust evidence? If yes, reject design.
+16. Can proof-of-work evidence alone mint trust? If yes, reject design.
+17. Can constitutional chambers form without constrained-random geographic assignment constraints? If yes, reject design.
+18. Can highest-trust actors unilaterally ratify constitutional changes? If yes, reject design.
+19. Does any governance-sensitive mixed model violate `w_H >= 5 * w_M`? If yes, reject design.
+20. Can constrained-random assignment run without a publicly auditable pre-committed randomness source? If yes, reject design.
+21. Can a `DeltaT > delta_fast` event activate without meeting `q_h`, `r_h`, and `o_h` validation thresholds? If yes, reject design.
 
 ## Working interpretation for all future specs
 
