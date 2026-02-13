@@ -89,7 +89,7 @@ Polaris is designed to block concentration of constitutional power.
 1. Machines can earn trust for operational work, but machine trust does not include constitutional voting rights.
 2. Only verified humans with sufficient earned trust may sponsor constitutional change proposals.
 3. Constitutional change requires verified-human supermajority ratification.
-4. In governance-critical mixed-trust decisions, weighting must satisfy `w_H >= 5 * w_M` (default `w_H = 1.0`, `w_M = 0.2`).
+4. Constitutional voting is verified-human only; machine constitutional voting weight is fixed at `0`.
 5. High task speed or output volume alone cannot grant constitutional influence.
 6. Any trust elevation event with `DeltaT > delta_fast` (default `delta_fast = 0.02/epoch`) requires `q_h >= 30*` independent high-trust human validations before effect.
 7. Steward groups can run process, but cannot become a de facto government.

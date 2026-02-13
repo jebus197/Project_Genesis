@@ -332,7 +332,7 @@ These capture the full review conclusions and the work log for this round.
 The following points are now explicit in the publication docs and trust constitution:
 
 1. Machines can earn trust for operational work, but cannot vote constitutionally.
-2. Human trust is significantly weighted above machine trust in governance-critical decisions.
+2. Constitutional voting is verified-human only; machine constitutional voting weight is pinned at zero.
 3. Constitutional changes are human-only, supermajority-ratified, and on-chain anchored.
 4. Steward groups are process administrators only and cannot become a de facto government.
 5. No government has unilateral constitutional override power.

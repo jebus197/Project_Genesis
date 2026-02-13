@@ -70,7 +70,7 @@ This review round is complete and recorded for handoff.
 3. Human vs machine trust authority clarified:
 - Machines can earn operational trust.
 - Constitutional proposal and voting authority remains verified-human only.
-- Human trust is weighted above machine trust in governance-sensitive decisions.
+- Constitutional voting remains verified-human only; machine constitutional voting weight is pinned at zero.
 
 4. Anti-capture refinement:
 - Added explicit language to block steward concentration from becoming a de facto government.

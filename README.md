@@ -104,7 +104,8 @@ Polaris uses two trust domains:
 Machines can earn meaningful operational trust.  
 Machines cannot use trust to obtain constitutional voting rights.
 
-In governance-sensitive decisions, human trust weighting must satisfy `w_H >= 5 * w_M` (default `w_H = 1.0`, `w_M = 0.2`).
+Constitutional voting is human-only.  
+Machine constitutional voting weight is permanently pinned to `0` in the current constitution.
 
 ## High Trust Means Responsibility, Not Rule
 

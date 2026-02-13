@@ -173,6 +173,7 @@ Exit gates:
 2. Constrained-random selection is deterministic and externally replayable.
 3. Region and organization constraints are enforced.
 4. Conflict-of-interest recusal blocks ineligible actors.
+5. Constitutional ballots include verified-human voters only (`w_M_const = 0`).
 
 Deliverables:
 1. Governance orchestration service.

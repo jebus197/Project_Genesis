@@ -48,10 +48,11 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 - Only verified humans can hold constitutional voting rights.
 - Machine-earned trust can never convert into constitutional voting power.
 
-3. Human trust precedence:
-- In governance-sensitive mixed models, human trust weight must satisfy `w_H >= 5 * w_M`.
-- Default governance weighting: `w_H = 1.0`, `w_M = 0.2`.
-- Machine trust may inform decisions, but cannot outrank human constitutional authority.
+3. Constitutional voting lock:
+- Machine constitutional voting weight is fixed at `w_M_const = 0`.
+- Human constitutional voting weight is fixed at `w_H_const = 1`.
+- Any constitutional voting configuration where `w_M_const > 0` is invalid and must be rejected.
+- Machine trust may inform operational routing and quality weighting only; it has no vote in constitutional ballots.
 
 ## Anti-capture guarantees
 
@@ -247,8 +248,8 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `r_h` | `3` | Regional concentration drift, geo-capture risk increase, or quarterly review | Minimum regions in fast revalidation set |
 | `o_h` | `3` | Organization concentration drift, affiliation-capture signal, or quarterly review | Minimum organizations in fast revalidation set |
 | `delta_fast` | `0.02 / epoch` | Elevated burst-gaming rate, false-positive suspension rate, or quarterly review | Trust-jump suspension threshold |
-| `w_H` | `1.0` | Any governance sensitivity recalibration review | Human governance weight |
-| `w_M` | `0.2` | Any governance sensitivity recalibration review | Machine governance weight (must keep `w_H >= 5 * w_M`) |
+| `w_H_const` | `1.0` | Constitutional amendment only | Human constitutional voting weight |
+| `w_M_const` | `0.0` | Constitutional amendment only | Machine constitutional voting weight (must remain zero) |
 | `tau_vote` | `0.70` | Participation collapse, exclusion risk, or quarterly review | Human constitutional vote eligibility |
 | `tau_prop` | `0.85` | Proposal spam or proposal starvation signal | Human constitutional proposal eligibility |
 | `nP, kP` | `41, 28` | Chamber capture simulation degradation or repeated tie-failure | Proposal chamber size/threshold |
@@ -285,7 +286,7 @@ Review protocol:
 16. Can proof-of-work evidence alone mint trust? If yes, reject design.
 17. Can constitutional chambers form without constrained-random geographic assignment constraints? If yes, reject design.
 18. Can highest-trust actors unilaterally ratify constitutional changes? If yes, reject design.
-19. Does any governance-sensitive mixed model violate `w_H >= 5 * w_M`? If yes, reject design.
+19. Does any constitutional voting path assign non-zero machine voting weight (`w_M_const > 0`)? If yes, reject design.
 20. Can constrained-random assignment run without a publicly auditable pre-committed randomness source? If yes, reject design.
 21. Can a `DeltaT > delta_fast` event activate without meeting `q_h`, `r_h`, and `o_h` validation thresholds? If yes, reject design.
 

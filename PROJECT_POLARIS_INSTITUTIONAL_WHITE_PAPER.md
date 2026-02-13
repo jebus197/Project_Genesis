@@ -77,10 +77,11 @@ Polaris separates operational trust from constitutional authority.
 - Constitutional proposal and voting rights are reserved to verified humans.
 - Machine trust cannot be converted into constitutional suffrage.
 
-3. Weighting hierarchy:
-- In governance-sensitive mixed-trust decisions, weighting must satisfy `w_H >= 5 * w_M`.
-- Default governance weighting: `w_H = 1.0`, `w_M = 0.2`.
-- Machine trust can inform governance analysis but cannot outrank human constitutional authority.
+3. Constitutional voting hierarchy:
+- Constitutional voting is verified-human only.
+- Machine constitutional voting weight is fixed at `w_M_const = 0`.
+- Human constitutional voting weight is fixed at `w_H_const = 1`.
+- Machine trust can inform operational analysis only and is excluded from constitutional ballots.
 
 ## 4. System Scope
 ### 4.1 In scope (initial program)
@@ -253,8 +254,8 @@ The following baseline is recommended for initial institutional deployment:
 - For `p = 0.40`, joint bound is approximately `1.0e-13`.
 
 5. Governance-weight and anti-gaming defaults:
-- `w_H = 1.0`
-- `w_M = 0.2`
+- `w_H_const = 1.0`
+- `w_M_const = 0.0`
 - `delta_fast = 0.02` trust units per epoch
 - `q_h = 30*`
 - `r_h = 3`
@@ -410,7 +411,7 @@ Polaris treats identity assurance as a layered, probabilistic governance functio
 3. Timing-based challenge mechanisms may be used as one signal but not as sole truth source.
 4. Identity challenge outcomes cannot override constitutional trust rules or independent verification requirements.
 5. Machine identities may earn operational trust, but do not receive constitutional voting rights.
-6. Governance-sensitive mixed-trust decisions must satisfy `w_H >= 5 * w_M` (default `w_H = 1.0`, `w_M = 0.2`).
+6. Constitutional voting is verified-human only; machine constitutional voting weight remains pinned at `0`.
 
 ### 10.2 Prohibited design patterns
 1. Trust purchase schemes.

@@ -166,6 +166,7 @@ Pass conditions:
 2. Geographic and organization distribution constraints pass.
 3. Non-overlap and conflict-of-interest rules pass.
 4. Certificate verifies and chain anchor finalizes.
+5. Machine constitutional voting weight remains `w_M_const = 0` for all ballots.
 
 ---
 
