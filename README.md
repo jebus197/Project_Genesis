@@ -166,7 +166,7 @@ Default economic rules:
 Fast trust-elevation control:
 
 1. any `DeltaT > delta_fast` event (default `delta_fast = 0.02/epoch`) is suspended,
-2. activation requires at least `q_h = 5` independent high-trust human reviews,
+2. activation requires at least `q_h = 30*` independent high-trust human reviews,
 3. those reviews must include at least `r_h = 3` regions and `o_h = 3` organizations.
 
 The design objective is clear: eliminate payoff for gaming, limit concentration, preserve opportunity to recover, and keep legitimacy tied to contribution quality.
@@ -193,6 +193,54 @@ Polaris uses cryptographic anchoring to prove:
 
 Cryptography alone does not prove correctness.  
 Correctness still depends on evidence quality, reviewer independence, and governance discipline.
+
+## Cryptographic Implementation Profile (v0.1)
+
+1. Settlement chain:
+- Constitutional anchors are committed to `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)`.
+
+2. Anchor cadence:
+- Anchors are published every governance epoch (`EPOCH = 1 hour`).
+- Anchors are also published immediately on constitutional state changes (proposal pass, ratification pass, challenge close, amendment activation).
+
+3. Anchor payload schema (canonical JSON, RFC 8785):
+- `anchor_version`
+- `epoch_id`
+- `previous_anchor_hash`
+- `mission_event_root`
+- `trust_delta_root`
+- `governance_ballot_root`
+- `review_decision_root`
+- `public_beacon_round`
+- `chamber_nonce`
+- `timestamp_utc`
+
+4. Hashing and tree rules:
+- Hash primitive: `SHA-256`.
+- Merkle tree: binary Merkle tree with deterministic leaf ordering by `(event_type, event_id, event_timestamp, actor_id)`.
+- Canonical leaf hash: `SHA256(canonical_json(event_record))`.
+
+5. Signature suite:
+- Identity and event signatures: `Ed25519`.
+- Constitutional decision certificate: threshold signature `BLS12-381`.
+- Anchor committee defaults: `n = 15`, `t = 10`.
+
+6. Randomness for constrained-random selection:
+- Randomness seed: `SHA256(public_beacon_value || previous_anchor_hash || chamber_nonce)`.
+- Sampling method: deterministic sampling without replacement from eligible pool.
+
+7. Verification requirements:
+- Any third party can recompute all published roots from released records and verify root equality.
+- Any third party can verify decision certificate signatures and chain anchor inclusion proofs.
+
+8. Privacy boundary:
+- Sensitive raw evidence remains off-chain in encrypted storage.
+- On-chain commitments contain only hashes, roots, certificates, and inclusion references.
+
+9. Key management:
+- Signing keys are HSM-backed.
+- Key rotation interval: `90 days`.
+- Emergency compromise path: immediate key revocation + replacement certificate + re-anchor.
 
 ## Why This Is Feasible Now
 
@@ -303,3 +351,5 @@ Its claim is that we can build the constitutional, operational, and mathematical
 
 If that claim holds in practice, Polaris is not just another tool.  
 It is a new trust substrate for coordinated work in the AI era.
+
+\* subject to review

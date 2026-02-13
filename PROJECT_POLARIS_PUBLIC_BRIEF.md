@@ -91,7 +91,7 @@ Polaris is designed to block concentration of constitutional power.
 3. Constitutional change requires verified-human supermajority ratification.
 4. In governance-critical mixed-trust decisions, weighting must satisfy `w_H >= 5 * w_M` (default `w_H = 1.0`, `w_M = 0.2`).
 5. High task speed or output volume alone cannot grant constitutional influence.
-6. Any trust elevation event with `DeltaT > delta_fast` (default `delta_fast = 0.02/epoch`) requires `q_h >= 5` independent high-trust human validations before effect.
+6. Any trust elevation event with `DeltaT > delta_fast` (default `delta_fast = 0.02/epoch`) requires `q_h >= 30*` independent high-trust human validations before effect.
 7. Steward groups can run process, but cannot become a de facto government.
 8. High trust can increase responsibility, but never grants unilateral constitutional authority.
 
@@ -123,7 +123,7 @@ Polaris governance uses a formal distributed model so constitutional control is 
 5. Supercomputer anti-gaming rule:
 - Task speed/volume alone cannot grant constitutional influence.
 - Any `DeltaT > delta_fast` trust elevation is suspended until validation thresholds are met.
-- Validation thresholds: `q_h >= 5` independent high-trust human reviewers, `r_h >= 3` regions, `o_h >= 3` organizations.
+- Validation thresholds: `q_h >= 30*` independent high-trust human reviewers, `r_h >= 3` regions, `o_h >= 3` organizations.
 
 6. Cryptographic finalization:
 - Signed ballots, threshold decision certificate, and on-chain hash anchoring of constitutional changes.
@@ -171,6 +171,41 @@ Polaris uses trust as a bounded civic-performance metric, not an infinite power 
 10. Cryptography role (clarified):
 - Cryptography preserves process integrity and historical evidence.
 - It does not by itself prove truth or correctness.
+
+## Cryptographic Implementation Profile (v0.1)
+To avoid ambiguity, Polaris defaults to the following concrete implementation:
+
+1. Settlement chain:
+- `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)` for constitutional anchors.
+
+2. Anchor cadence:
+- Scheduled anchor every `1 hour` governance epoch.
+- Immediate anchors for constitutional lifecycle state changes.
+
+3. Anchor payload (canonical JSON, RFC 8785):
+- `anchor_version`, `epoch_id`, `previous_anchor_hash`, `mission_event_root`, `trust_delta_root`, `governance_ballot_root`, `review_decision_root`, `public_beacon_round`, `chamber_nonce`, `timestamp_utc`.
+
+4. Core primitives:
+- Hashing: `SHA-256`.
+- Identity/event signatures: `Ed25519`.
+- Constitutional decision certificates: threshold `BLS12-381`.
+
+5. Merkle rules:
+- Binary Merkle trees with deterministic leaf ordering by `(event_type, event_id, event_timestamp, actor_id)`.
+- Leaf hash format: `SHA256(canonical_json(record))`.
+
+6. Randomized chamber selection:
+- Seed formula: `SHA256(public_beacon_value || previous_anchor_hash || chamber_nonce)`.
+- Selection algorithm: deterministic sampling without replacement from eligible pool.
+
+7. Key controls:
+- HSM-backed keys.
+- Rotation interval: `90 days`.
+- Immediate revocation and replacement anchor on compromise.
+
+8. Public verifiability:
+- Any third party can recompute published roots from released records.
+- Any third party can verify signatures and chain inclusion proofs from public data.
 
 ## System Design (Human-Readable)
 Polaris has five functional layers:
@@ -332,3 +367,5 @@ Its thesis is straightforward:
 
 Polaris is viable if it remains disciplined about this foundation.  
 Its long-term value will be determined less by how quickly it grows and more by whether it remains trustworthy as it scales.
+
+\* subject to review

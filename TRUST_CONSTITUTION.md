@@ -68,7 +68,7 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 - High task speed or volume alone cannot grant constitutional influence.
 - High-impact trust elevation is defined as `DeltaT > delta_fast` within one epoch.
 - Default threshold: `delta_fast = 0.02` trust units per epoch.
-- Any `DeltaT > delta_fast` event requires at least `q_h = 5` independent high-trust human reviewer signatures before effect.
+- Any `DeltaT > delta_fast` event requires at least `q_h = 30*` independent high-trust human reviewer signatures before effect.
 - Reviewer set for this validation must span at least `r_h = 3` regions and `o_h = 3` distinct organizations.
 
 5. Steward limits:
@@ -130,12 +130,60 @@ The constitutional system uses a mathematically distributed decision model.
 8. Anti-gaming acceleration control:
 - High throughput alone cannot trigger constitutional influence.
 - Any `DeltaT > delta_fast` trust jump is suspended until independent human re-validation succeeds.
-- Re-validation must satisfy `q_h >= 5`, `r_h >= 3`, `o_h >= 3`, and no reviewer conflict-of-interest flags.
+- Re-validation must satisfy `q_h >= 30*`, `r_h >= 3`, `o_h >= 3`, and no reviewer conflict-of-interest flags.
 
 9. Cryptographic finalization requirements:
 - Signed ballots and chamber results.
 - Threshold signature for final decision certificate.
 - On-chain anchor of amendment hash and final decision certificate hash.
+
+## Cryptographic implementation requirements (binding defaults)
+
+1. Settlement layer:
+- Constitutional anchors must be posted to `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)`.
+
+2. Anchor publication timing:
+- Anchor interval must be `EPOCH = 1 hour`.
+- Additional immediate anchors are required for constitutional lifecycle events.
+
+3. Anchor record schema (canonical JSON, RFC 8785):
+- `anchor_version`
+- `epoch_id`
+- `previous_anchor_hash`
+- `mission_event_root`
+- `trust_delta_root`
+- `governance_ballot_root`
+- `review_decision_root`
+- `public_beacon_round`
+- `chamber_nonce`
+- `timestamp_utc`
+
+4. Cryptographic primitives:
+- Hash function: `SHA-256`.
+- Identity/event signatures: `Ed25519`.
+- Constitutional decision certificate: threshold signature `BLS12-381`.
+
+5. Merkle and canonicalization rules:
+- Merkle tree type: binary Merkle tree.
+- Leaf ordering must be deterministic by `(event_type, event_id, event_timestamp, actor_id)`.
+- Leaf hash must be `SHA256(canonical_json(event_record))`.
+
+6. Constrained-random seed construction:
+- Seed must be `SHA256(public_beacon_value || previous_anchor_hash || chamber_nonce)`.
+- Chamber selection must use deterministic sampling without replacement.
+
+7. Anchor committee defaults:
+- Committee size: `n = 15`.
+- Threshold: `t = 10`.
+
+8. Key custody and rotation:
+- Signing keys must be HSM-backed.
+- Rotation interval must be `90 days`.
+- Compromise protocol must revoke compromised keys immediately and publish replacement certificate anchors.
+
+9. Verification obligations:
+- Third parties must be able to recompute published roots from released records.
+- Third parties must be able to verify certificate signatures and chain inclusion proofs from public data.
 
 ## Bounded trust economy (required model)
 
@@ -219,3 +267,5 @@ When in doubt:
 - Choose legitimacy over speed.
 - Choose evidence over volume.
 - Choose earned trust over purchased influence.
+
+\* subject to review

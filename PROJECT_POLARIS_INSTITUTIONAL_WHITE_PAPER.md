@@ -176,7 +176,7 @@ Polaris is explicitly designed to prevent consolidation of constitutional power.
 - High task throughput alone cannot produce constitutional influence.
 - High-impact trust elevation is defined as `DeltaT > delta_fast` within one epoch.
 - Default threshold: `delta_fast = 0.02` trust units per epoch.
-- Any `DeltaT > delta_fast` event requires `q_h >= 5` independent high-trust human reviewer signatures before effect.
+- Any `DeltaT > delta_fast` event requires `q_h >= 30*` independent high-trust human reviewer signatures before effect.
 - Reviewer set must span `r_h >= 3` regions and `o_h >= 3` distinct organizations.
 
 4. Steward constraint:
@@ -230,7 +230,7 @@ Polaris defines constitutional governance as a mathematically constrained human-
 7. Anti-gaming constraint:
 - Throughput alone cannot unlock constitutional influence.
 - Any `DeltaT > delta_fast` event is suspended pending independent re-validation.
-- Re-validation thresholds: `q_h >= 5`, `r_h >= 3`, `o_h >= 3`, and no conflict-of-interest flags.
+- Re-validation thresholds: `q_h >= 30*`, `r_h >= 3`, `o_h >= 3`, and no conflict-of-interest flags.
 
 ### 7.7 Default constitutional parameter profile (recommended baseline)
 The following baseline is recommended for initial institutional deployment:
@@ -256,9 +256,57 @@ The following baseline is recommended for initial institutional deployment:
 - `w_H = 1.0`
 - `w_M = 0.2`
 - `delta_fast = 0.02` trust units per epoch
-- `q_h = 5`
+- `q_h = 30*`
 - `r_h = 3`
 - `o_h = 3`
+
+### 7.9 Cryptographic implementation profile (binding defaults)
+To ensure reproducibility and prevent ambiguity, Polaris adopts explicit cryptographic implementation defaults.
+
+1. Settlement layer:
+- Constitutional anchors must be posted to `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)`.
+
+2. Anchor cadence:
+- Scheduled anchor interval: `EPOCH = 1 hour`.
+- Immediate anchor publication for constitutional lifecycle events.
+
+3. Anchor payload schema (canonical JSON, RFC 8785):
+- `anchor_version`
+- `epoch_id`
+- `previous_anchor_hash`
+- `mission_event_root`
+- `trust_delta_root`
+- `governance_ballot_root`
+- `review_decision_root`
+- `public_beacon_round`
+- `chamber_nonce`
+- `timestamp_utc`
+
+4. Cryptographic primitives:
+- Hash primitive: `SHA-256`.
+- Identity and event signatures: `Ed25519`.
+- Constitutional decision certificate signatures: threshold `BLS12-381`.
+
+5. Merkle and canonicalization rules:
+- Binary Merkle trees with deterministic leaf ordering by `(event_type, event_id, event_timestamp, actor_id)`.
+- Leaf hash: `SHA256(canonical_json(record))`.
+
+6. Constrained-random seed and sampling:
+- Seed construction: `SHA256(public_beacon_value || previous_anchor_hash || chamber_nonce)`.
+- Sampling: deterministic without replacement from eligibility-filtered pool.
+
+7. Anchor committee defaults:
+- Committee size `n = 15`.
+- Signature threshold `t = 10`.
+
+8. Key management:
+- HSM-backed signing keys.
+- Mandatory rotation interval `90 days`.
+- Immediate revocation + replacement certificate anchors on compromise.
+
+9. Verification guarantees:
+- Independent verifiers must be able to recompute published roots from released records.
+- Independent verifiers must be able to validate signature chains and inclusion proofs using public data only.
 
 ### 7.8 Bounded trust economy model
 Polaris governance assumes bounded earned trust and explicitly rejects unbounded trust concentration.
@@ -454,3 +502,5 @@ Trust can only be earned through verified behavior and verified outcomes over ti
 3. `POLARIS_WORK_LOG_2026-02-13.md`
 4. `TRUST_CONSTITUTION.md`
 5. `PROJECT_POLARIS_PUBLIC_BRIEF.md`
+
+\* subject to review
