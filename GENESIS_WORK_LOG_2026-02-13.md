@@ -1,7 +1,7 @@
-# Polaris Work Log (Feb 13, 2026)
+# Genesis Work Log (Feb 13, 2026)
 
 Author: George Jackson
-Scope: Background review and implications assessment for Project Polaris.
+Scope: Background review and implications assessment for Project Genesis.
 
 ## 1) Objective
 
@@ -27,7 +27,7 @@ Assess the attached background materials and answer:
 
 ## 4) Main findings
 
-1. Polaris concept remains feasible and strategically strong.
+1. Genesis concept remains feasible and strategically strong.
 2. Most risk concerns are valid and can be addressed through design.
 3. Several claims in the source material are overstated and should be reframed.
 
@@ -48,15 +48,15 @@ Assess the attached background materials and answer:
 ## 7) Outputs created this round
 
 1. Updated `HANDOFF_NOTE.md` with external-review findings.
-2. Created `POLARIS_BACKGROUND_REVIEW_2026-02-13.md` with full analysis.
-3. Created this file (`POLARIS_WORK_LOG_2026-02-13.md`).
+2. Created `GENESIS_BACKGROUND_REVIEW_2026-02-13.md` with full analysis.
+3. Created this file (`GENESIS_WORK_LOG_2026-02-13.md`).
 4. Updated both core docs with a non-negotiable constitutional trust rule:
 - Trust cannot be bought, sold, exchanged, delegated, rented, or gifted.
 - Trust can only be earned through verified behaviour and outcomes over time.
 
 ## 8) Status
 
-This review round is complete and recorded for handoff.
+This review round is complete and recorded for project history.
 
 ## 9) Additional refinements captured later (same date)
 
@@ -64,8 +64,8 @@ This review round is complete and recorded for handoff.
 - Proof-of-personhood/proof-of-agenthood retained as supporting anti-abuse controls.
 - Explicitly not treated as a standalone truth or correctness oracle.
 
-2. Constitutional anchoring clarification:
-- Constitution and amendments are now explicitly defined as hash-anchored public artifacts.
+2. Constitutional blockchain-commitment clarification:
+- Constitution and amendments are now explicitly defined as hash-committed public artifacts.
 
 3. Human vs machine trust authority clarified:
 - Machines can earn operational trust.
@@ -81,8 +81,8 @@ This review round is complete and recorded for handoff.
 
 6. Files updated in this refinement round:
 - `TRUST_CONSTITUTION.md`
-- `PROJECT_POLARIS_PUBLIC_BRIEF.md`
-- `PROJECT_POLARIS_INSTITUTIONAL_WHITE_PAPER.md`
+- `PROJECT_GENESIS_PUBLIC_BRIEF.md`
+- `PROJECT_GENESIS_INSTITUTIONAL_WHITE_PAPER.md`
 - `HANDOFF_NOTE.md`
 
 ## 10) Latest refinement round (bounded trust economy)
@@ -90,11 +90,11 @@ This review round is complete and recorded for handoff.
 1. Added bounded-trust constitutional model:
 - universal baseline trust for verified identities,
 - contribution-only trust growth,
-- slow dormancy decay with grace period,
-- non-zero trust floor,
+- domain-specific decay with grace period (human dormancy and machine freshness),
+- human non-zero trust floor and machine zero trust floor,
 - absolute and relative trust caps,
 - per-epoch trust growth limit.
-- low-trust recovery lane via small verified tasks.
+- low-trust recovery lane via small verified tasks (humans) and supervised re-certification (machines).
 - trust minting only through cryptographic proof-of-trust evidence.
 
 2. Added non-dominance rule:
@@ -110,6 +110,27 @@ This review round is complete and recorded for handoff.
 
 5. Files updated in this latest round:
 - `TRUST_CONSTITUTION.md`
-- `PROJECT_POLARIS_PUBLIC_BRIEF.md`
-- `PROJECT_POLARIS_INSTITUTIONAL_WHITE_PAPER.md`
+- `PROJECT_GENESIS_PUBLIC_BRIEF.md`
+- `PROJECT_GENESIS_INSTITUTIONAL_WHITE_PAPER.md`
 - `HANDOFF_NOTE.md`
+
+## 11) Outstanding implementation repairs completed (same date)
+
+Resolved items:
+1. Parameter calibration and threshold controls are now machine-readable in:
+- `config/constitutional_params.json`
+
+2. Mission class to runtime risk-tier mapping is now machine-readable in:
+- `config/runtime_policy.json`
+
+3. Constitutional/runtime invariants are now executable in:
+- `tools/check_invariants.py`
+
+4. Reproducible worked examples are now included in:
+- `examples/worked_examples/low_risk_mission.json`
+- `examples/worked_examples/high_risk_mission.json`
+- validated by `tools/verify_examples.py`
+
+Validation results recorded:
+1. `python3 tools/check_invariants.py` passed.
+2. `python3 tools/verify_examples.py` passed.

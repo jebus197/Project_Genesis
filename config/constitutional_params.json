@@ -1,0 +1,130 @@
+{
+  "version": "0.3",
+  "updated_utc": "2026-02-14T01:00:00Z",
+  "constitutional_voting": {
+    "w_H_const": 1.0,
+    "w_M_const": 0.0
+  },
+  "trust_weights": {
+    "w_Q": 0.75,
+    "w_R": 0.2,
+    "w_V": 0.05
+  },
+  "quality_gates": {
+    "Q_min_H": 0.7,
+    "Q_min_M": 0.8
+  },
+  "trust_floors": {
+    "T_floor_H_positive": true,
+    "T_floor_M": 0.0
+  },
+  "eligibility": {
+    "tau_vote": 0.70,
+    "tau_prop": 0.85
+  },
+  "fast_elevation": {
+    "delta_fast": 0.02
+  },
+  "machine_recertification": {
+    "RECERT_CORRECTNESS_MIN": 0.95,
+    "RECERT_SEVERE_ERR_MAX": 0.005,
+    "RECERT_REPRO_MIN": 0.99,
+    "RECERT_REVIEW_SIGS": 5,
+    "RECERT_PROBATION_TASKS": 100
+  },
+  "machine_decommission": {
+    "M_ZERO_DECOMMISSION_DAYS": 180,
+    "M_RECERT_FAIL_MAX": 3,
+    "M_RECERT_FAIL_WINDOW_DAYS": 180
+  },
+  "full_constitution": {
+    "chambers": {
+      "proposal": { "size": 41, "pass_threshold": 28 },
+      "ratification": { "size": 61, "pass_threshold": 41 },
+      "challenge": { "size": 101, "pass_threshold": 61 }
+    },
+    "geo": {
+      "R_min": 8,
+      "c_max": 0.15
+    },
+    "fast_elevation": {
+      "q_h": 30,
+      "r_h": 3,
+      "o_h": 3
+    }
+  },
+  "genesis": {
+    "G0_MAX_DAYS": 365,
+    "G0_EXTENSION_DAYS": 180,
+    "G1_MAX_DAYS": 730,
+    "G0_RATIFICATION_WINDOW_DAYS": 90,
+    "phase_thresholds": {
+      "G0_max_humans": 50,
+      "G1_max_humans": 500,
+      "G2_max_humans": 2000
+    },
+    "G1_chambers": {
+      "proposal": { "size": 11, "pass_threshold": 8 },
+      "ratification": { "size": 17, "pass_threshold": 12 },
+      "challenge": { "size": 25, "pass_threshold": 15 }
+    },
+    "G1_geo": {
+      "R_min": 3,
+      "c_max": 0.40
+    },
+    "G1_fast_elevation": {
+      "q_h": 7,
+      "r_h": 2,
+      "o_h": 2
+    },
+    "G2_chambers": {
+      "proposal": { "size": 21, "pass_threshold": 14 },
+      "ratification": { "size": 31, "pass_threshold": 21 },
+      "challenge": { "size": 51, "pass_threshold": 31 }
+    },
+    "G2_geo": {
+      "R_min": 5,
+      "c_max": 0.25
+    },
+    "G2_fast_elevation": {
+      "q_h": 15,
+      "r_h": 3,
+      "o_h": 3
+    }
+  },
+  "commitment_tiers": {
+    "EPOCH_HOURS": 1,
+    "C0_L1_anchor_interval_hours": 24,
+    "C1_L1_anchor_interval_hours": 6,
+    "C0_max_humans": 500,
+    "C1_max_humans": 5000
+  },
+  "commitment_committee": {
+    "n": 15,
+    "t": 10
+  },
+  "key_management": {
+    "KEY_ROTATION_DAYS": 90
+  },
+  "reviewer_heterogeneity": {
+    "H_R2_MODEL_FAMILIES": 2,
+    "H_R2_METHOD_TYPES": 2,
+    "valid_method_types": [
+      "reasoning_model",
+      "retrieval_augmented",
+      "rule_based_deterministic",
+      "human_reviewer"
+    ]
+  },
+  "normative_resolution": {
+    "NORMATIVE_AGREEMENT_THRESHOLD": 0.60,
+    "NORMATIVE_PANEL_SIZE": 3,
+    "NORMATIVE_PANEL_REGIONS": 2,
+    "NORMATIVE_PANEL_ORGS": 2,
+    "valid_domain_types": [
+      "objective",
+      "normative",
+      "mixed"
+    ]
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "mission_id": "M-HIGH-001",
+  "mission_title": "Regulated compliance risk analysis draft",
+  "mission_class": "regulated_analysis",
+  "risk_tier": "R2",
+  "domain_type": "mixed",
+  "worker_id": "agent_worker_gamma",
+  "reviewers": [
+    {
+      "id": "agent_reviewer_a1",
+      "model_family": "claude",
+      "method_type": "reasoning_model",
+      "region": "NA",
+      "organization": "OrgNorth"
+    },
+    {
+      "id": "agent_reviewer_b2",
+      "model_family": "gpt",
+      "method_type": "retrieval_augmented",
+      "region": "EU",
+      "organization": "OrgEuro"
+    },
+    {
+      "id": "agent_reviewer_c3",
+      "model_family": "gemini",
+      "method_type": "reasoning_model",
+      "region": "APAC",
+      "organization": "OrgPacific"
+    },
+    {
+      "id": "agent_reviewer_d4",
+      "model_family": "claude",
+      "method_type": "rule_based_deterministic",
+      "region": "LATAM",
+      "organization": "OrgAndes"
+    },
+    {
+      "id": "agent_reviewer_e5",
+      "model_family": "gpt",
+      "method_type": "retrieval_augmented",
+      "region": "NA",
+      "organization": "OrgNorth"
+    }
+  ],
+  "review_decisions": [
+    {
+      "reviewer_id": "agent_reviewer_a1",
+      "decision": "APPROVE",
+      "notes": "Evidence sufficient and reproducible."
+    },
+    {
+      "reviewer_id": "agent_reviewer_b2",
+      "decision": "APPROVE",
+      "notes": "Regulatory references validated."
+    },
+    {
+      "reviewer_id": "agent_reviewer_c3",
+      "decision": "APPROVE",
+      "notes": "Policy constraints satisfied."
+    },
+    {
+      "reviewer_id": "agent_reviewer_d4",
+      "decision": "APPROVE",
+      "notes": "No critical defects found."
+    },
+    {
+      "reviewer_id": "agent_reviewer_e5",
+      "decision": "REJECT",
+      "notes": "Minor clarification requested."
+    }
+  ],
+  "human_final_approval": true,
+  "evidence": [
+    {
+      "artifact_hash": "sha256:6cb7bc95185d2c2f4de5987b05f56f50468f23f6f14444d4739f95b6b2b9f4e8",
+      "signature": "ed25519:93035b2569ab2c316fb10fd7f7f2f81cfd8f7cc0f59f50c9f2d8bcf0dfdbec5e"
+    },
+    {
+      "artifact_hash": "sha256:8a5be115ac6fcbf4f9f0f5db7554f12a88828db1b25b4104f42aa90eb665e1e5",
+      "signature": "ed25519:3480e7a0161c8f39c8472d35ef1fe7b0385914cd7ba448a3b4be205212f95d34"
+    }
+  ],
+  "commitment": {
+    "commitment_version": "0.3",
+    "epoch_id": "2026-02-13T13:00Z",
+    "previous_commitment_hash": "sha256:f7e61f28d8b6724b2d6f09f9a3ab3136d543d295c77ba2dfb17cb258f2e196d1",
+    "mission_event_root": "sha256:b2c3d4e5f6071829304a5b6c7d8e9f0a1b2c3d4e5f6071829304a5b6c7d8e9f",
+    "trust_delta_root": "sha256:bc77f8decd2cc4f4f7fbb6218e11ce60f39073f6f0f3965de438906f8cf05f66",
+    "governance_ballot_root": "sha256:9686205cb65d499666390f58ca4f2f35d2dc30745c37f5cd2d5c1a66b6f8f2dc",
+    "review_decision_root": "sha256:c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5061728394a5b6c7d8e9f0a1b2",
+    "public_beacon_round": 48201537,
+    "chamber_nonce": "sha256:8e9f0a1b2c3d4e5f6071829304a5b6c7d8e9f0a1b2c3d4e5f6071829304a5b6",
+    "timestamp_utc": "2026-02-13T13:00:00Z"
+  }
+}

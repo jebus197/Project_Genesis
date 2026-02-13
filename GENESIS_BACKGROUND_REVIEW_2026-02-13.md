@@ -1,4 +1,4 @@
-# Polaris Background Review (Feb 13, 2026)
+# Genesis Background Review (Feb 13, 2026)
 
 Prepared for: George Jackson
 Author: George Jackson
@@ -7,7 +7,7 @@ Purpose: Evaluate whether the identified issues can be addressed, and whether th
 ## 1) Documents reviewed
 
 1. External background assessment exports (archived locally)
-2. Existing project handoff context in this folder (`HANDOFF_NOTE.md`)
+2. Existing project foundational context in this folder (`HANDOFF_NOTE.md`)
 
 ## 2) Direct answer to your question
 
@@ -18,7 +18,7 @@ Short answer:
 
 ## 2A) Foundational trust principle (explicit)
 
-For Polaris, this should be a constitutional rule:
+For Genesis, this should be a constitutional rule:
 1. Trust cannot be bought, sold, exchanged, delegated, rented, or gifted.
 2. Trust can only be earned through verified behaviour and verified outcomes over time.
 
@@ -34,7 +34,7 @@ Design implications:
 2. Trust and governance are correctly treated as the main problem, not model cleverness.
 3. Separation of duties (worker/reviewer/integrator/human) is sound.
 4. Mandatory evidence and auditability are the right design center.
-5. Policy-engine enforcement and provenance are a strong base for Polaris.
+5. Policy-engine enforcement and provenance are a strong base for Genesis.
 
 ## 4) What is over-optimistic or fragile
 
@@ -110,7 +110,7 @@ Red (must avoid in official spec language):
 
 Use this grounded framing:
 
-"Polaris is a workflow reliability and governance system that coordinates many agents, requires independent verification, and produces auditable outputs. It improves trust and quality under uncertainty; it does not claim perfect truth or perfect security."
+"Genesis is a workflow reliability and governance system that coordinates many agents, requires independent verification, and produces auditable outputs. It improves trust and quality under uncertainty; it does not claim perfect truth or perfect security."
 
 ## 8) Final judgment
 
@@ -120,3 +120,12 @@ The project remains viable if it prioritizes:
 1. Governance quality over hype.
 2. Evidence quality over output volume.
 3. Measured claims over absolute claims.
+
+## 9) Credible repairs now integrated
+
+The previously flagged practical gaps are now addressed with executable controls:
+1. Risk-tier policy mapping is defined in `config/runtime_policy.json`.
+2. Constitutional parameter defaults are defined in `config/constitutional_params.json`.
+3. Invariant enforcement is executable via `tools/check_invariants.py`.
+4. Worked policy examples are executable via `tools/verify_examples.py`.
+5. Threat modelling is defined as a required control baseline in `THREAT_MODEL_AND_INVARIANTS.md`.

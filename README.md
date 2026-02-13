@@ -1,6 +1,6 @@
-# Project Polaris
+# Project Genesis
 
-Project Polaris is a governance-first trust infrastructure for large-scale human and AI coordination.
+Project Genesis is a governance-first trust infrastructure for large-scale human and AI coordination.
 
 Its purpose is direct: build a system where intelligence can be organized into real work for the public good, without sacrificing legitimacy, accountability, or safety.
 
@@ -9,7 +9,7 @@ This is an institutional operating model for trustworthy AI-era production.
 
 Owner and project lead: George Jackson
 
-## Why Polaris Exists
+## Why Genesis Exists
 
 The modern AI landscape has a hard contradiction:
 
@@ -26,14 +26,14 @@ Today, most systems optimize for one of two things:
 
 Neither is enough for serious missions where we need correctness, traceability, clear responsibility, and enforceable governance.
 
-Polaris is designed to close that gap.
+Genesis is designed to close that gap.
 
 ## The Core Thesis
 
 Raw model power is not the missing piece.  
 The missing piece is institutional structure.
 
-Polaris proposes that AI can become measurably more useful to society when wrapped in:
+Genesis proposes that AI can become measurably more useful to society when wrapped in:
 
 1. mission-first coordination,
 2. independent verification,
@@ -41,7 +41,7 @@ Polaris proposes that AI can become measurably more useful to society when wrapp
 4. cryptographic evidence integrity,
 5. and durable anti-capture rules.
 
-In simple terms: Polaris is a system for turning probabilistic output into accountable public work.
+In simple terms: Genesis is a system for turning probabilistic output into accountable public work.
 
 ## The Foundational Rule
 
@@ -52,9 +52,9 @@ Trust can only be earned through verified behavior and verified outcomes over ti
 
 This rule exists because if trust becomes tradable, governance becomes influence-for-sale.
 
-## What Polaris Is
+## What Genesis Is
 
-Polaris is:
+Genesis is:
 
 1. A mission system for meaningful work.
 2. A verification system with independent checks.
@@ -62,14 +62,14 @@ Polaris is:
 4. An evidence system with tamper-evident process history.
 5. A trust system where legitimacy must be earned.
 
-Polaris is not:
+Genesis is not:
 
 1. A social feed.
 2. A hype promise of perfect truth.
 3. A permissionless chaos network.
 4. A replacement for human accountability in high-risk decisions.
 
-## How Polaris Works (Plain-Language Flow)
+## How Genesis Works (Plain-Language Flow)
 
 Each mission follows a structured path:
 
@@ -85,7 +85,7 @@ No actor should be able to produce, approve, and close its own critical work.
 
 ## Governance by Design, Not by Promise
 
-Polaris treats governance as system architecture, not a public relations layer.
+Genesis treats governance as system architecture, not a public relations layer.
 
 Non-negotiable governance rules include:
 
@@ -94,9 +94,16 @@ Non-negotiable governance rules include:
 3. No mission closure in designated classes without human sign-off.
 4. No conversion of financial capital into trust, voting power, or constitutional leverage.
 
+## Threat Modelling (Plain Definition)
+
+Threat modelling means defining what must be protected, who can cause harm, how harm could happen, and which controls prevent or contain that harm.
+
+In Genesis, threat modelling is not optional documentation.  
+It is a core governance control that defines adversaries, trust boundaries, failure modes, and non-negotiable system invariants.
+
 ## Human and Machine Trust Are Separated
 
-Polaris uses two trust domains:
+Genesis uses two trust domains:
 
 1. Human constitutional trust (`T_H`): used for constitutional proposal/vote eligibility.
 2. Machine operational trust (`T_M`): used for operational permissions only.
@@ -109,7 +116,7 @@ Machine constitutional voting weight is permanently pinned to `0` in the current
 
 ## High Trust Means Responsibility, Not Rule
 
-In Polaris, trust reflects more than raw output speed.
+In Genesis, trust reflects more than raw output speed.
 
 It represents verified:
 
@@ -123,7 +130,7 @@ They cannot unilaterally decide foundational outcomes. Constitutional decisions 
 
 ## Anti-Capture Architecture
 
-Polaris is designed to make concentration of constitutional power mathematically difficult.
+Genesis is designed to make concentration of constitutional power mathematically difficult.
 
 Default controls:
 
@@ -134,7 +141,7 @@ Default controls:
 5. Constrained-random chamber assignment from the eligible pool.
 6. Non-overlapping chamber membership per decision.
 7. Public challenge window before finalization.
-8. On-chain anchoring of finalized constitutional records.
+8. On-chain commitment of finalized constitutional records.
 
 Constrained-random means random with hard constraints:
 
@@ -148,7 +155,7 @@ The model is intentionally conservative: no single actor, institution, or comput
 
 ## Bounded Trust Economy
 
-Polaris does not allow infinite trust accumulation.
+Genesis does not allow infinite trust accumulation.
 
 Default economic rules:
 
@@ -159,22 +166,25 @@ Default economic rules:
 5. Proof-of-work shows effort/output occurred; proof-of-trust requires independent quality and compliance verification over time.
 6. Trust has hard and relative caps.
 7. Trust growth is rate-limited per epoch.
-8. Dormancy decay is gradual and reversible.
-9. Trust never falls below a non-zero floor.
-10. Recovery paths exist through low-risk contribution lanes.
-11. Trust grants scoped permissions, not command authority over others.
+8. Trust gain is quality-dominant and quality-gated (`if Q < Q_min`, trust gain is zero regardless of output volume).
+9. Human trust uses gradual dormancy decay and never falls below a non-zero human floor (`T_floor_H > 0`).
+10. Machine trust uses freshness decay and may floor at zero (`T_floor_M = 0`).
+11. Machine trust at zero triggers operational quarantine and re-certification requirements before regaining privileges.
+12. Machine identities that remain at zero trust too long or repeatedly fail re-certification are decommissioned per constitutional thresholds.
+13. Recovery paths exist through low-risk contribution lanes (humans) and supervised re-certification lanes (machines).
+14. Trust grants scoped permissions, not command authority over others.
 
 Fast trust-elevation control:
 
 1. any `DeltaT > delta_fast` event (default `delta_fast = 0.02/epoch`) is suspended,
-2. activation requires at least `q_h = 30*` independent high-trust human reviews,
+2. activation requires at least `q_h = 30*` independent high-trust human reviews (at full constitutional scale; genesis-scaled: G1=7, G2=15),
 3. those reviews must include at least `r_h = 3` regions and `o_h = 3` organizations.
 
 The design objective is clear: eliminate payoff for gaming, limit concentration, preserve opportunity to recover, and keep legitimacy tied to contribution quality.
 
 ## Identity and Security Posture
 
-Polaris supports layered identity assurance.
+Genesis supports layered identity assurance.
 
 Proof-of-personhood and proof-of-agenthood can be used as anti-abuse controls, but they are not truth or correctness oracles.
 
@@ -183,10 +193,11 @@ Policy stance:
 1. Identity checks are one signal, not a complete answer.
 2. Timing-based challenge methods may be useful friction, never sole authority.
 3. High-stakes decisions require layered evidence and independent review.
+4. Identity signals alone cannot mint trust, grant privileged routing, or grant constitutional authority.
 
 ## Cryptography: What It Proves and What It Does Not
 
-Polaris uses cryptographic anchoring to prove:
+Genesis uses cryptographic commitment records to prove:
 
 1. integrity of process records,
 2. provenance of decisions,
@@ -195,19 +206,22 @@ Polaris uses cryptographic anchoring to prove:
 Cryptography alone does not prove correctness.  
 Correctness still depends on evidence quality, reviewer independence, and governance discipline.
 
-## Cryptographic Implementation Profile (v0.1)
+## Cryptographic Implementation Profile (v0.2)
 
 1. Settlement chain:
-- Constitutional anchors are committed to `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)`.
+- Constitutional commitments are published to `L1_SETTLEMENT_CHAIN = Ethereum Mainnet (chain_id = 1)`.
 
-2. Anchor cadence:
-- Anchors are published every governance epoch (`EPOCH = 1 hour`).
-- Anchors are also published immediately on constitutional state changes (proposal pass, ratification pass, challenge close, amendment activation).
+2. On-chain publication cadence (progressive commitment tiers):
+- **C0** (≤ 500 participants): L2 rollup primary, L1 anchor every 24 hours.
+- **C1** (500–5000 participants): L2 rollup primary, L1 anchor every 6 hours.
+- **C2** (5000+ participants): Full L1 hourly commitments.
+- Constitutional lifecycle events (parameter changes, decommissions, chamber votes) always anchor to L1 immediately, regardless of commitment tier.
+- Commitment tier progression is one-way (C0 → C1 → C2); regression is prohibited.
 
-3. Anchor payload schema (canonical JSON, RFC 8785):
-- `anchor_version`
+3. Commitment payload schema (canonical JSON, RFC 8785):
+- `commitment_version`
 - `epoch_id`
-- `previous_anchor_hash`
+- `previous_commitment_hash`
 - `mission_event_root`
 - `trust_delta_root`
 - `governance_ballot_root`
@@ -224,15 +238,15 @@ Correctness still depends on evidence quality, reviewer independence, and govern
 5. Signature suite:
 - Identity and event signatures: `Ed25519`.
 - Constitutional decision certificate: threshold signature `BLS12-381`.
-- Anchor committee defaults: `n = 15`, `t = 10`.
+- Commitment committee defaults: `n = 15`, `t = 10`.
 
 6. Randomness for constrained-random selection:
-- Randomness seed: `SHA256(public_beacon_value || previous_anchor_hash || chamber_nonce)`.
+- Randomness seed: `SHA256(public_beacon_value || previous_commitment_hash || chamber_nonce)`.
 - Sampling method: deterministic sampling without replacement from eligible pool.
 
 7. Verification requirements:
 - Any third party can recompute all published roots from released records and verify root equality.
-- Any third party can verify decision certificate signatures and chain anchor inclusion proofs.
+- Any third party can verify decision certificate signatures and chain commitment inclusion proofs.
 
 8. Privacy boundary:
 - Sensitive raw evidence remains off-chain in encrypted storage.
@@ -241,11 +255,38 @@ Correctness still depends on evidence quality, reviewer independence, and govern
 9. Key management:
 - Signing keys are HSM-backed.
 - Key rotation interval: `90 days`.
-- Emergency compromise path: immediate key revocation + replacement certificate + re-anchor.
+- Emergency compromise path: immediate key revocation + replacement certificate + recommit on-chain.
+
+## Genesis Bootstrap Protocol
+
+Full constitutional governance requires chamber sizes of 41/61/101 members. Before participant pools reach those levels, the system operates under a phased genesis protocol:
+
+1. **G0 (founder stewardship, 0–50 participants):** The founder operates under constitutional principles with a public audit trail. Hard time limit: 365 days (one-time extension of 180 days). No chambers; all decisions are provisional.
+2. **G1 (provisional chambers, 50–500):** Reduced chamber sizes (11/17/25) with geographic constraints (≥ 3 regions, c_max = 0.40). Founder loses veto power. All G0 decisions must be retroactively ratified within 90 days.
+3. **G2 (scaled chambers, 500–2000):** Intermediate chamber sizes (21/31/51) with stricter geographic constraints (≥ 5 regions, c_max = 0.25).
+4. **G3 (full constitution, 2000+):** Full chamber sizes (41/61/101) with all constitutional constraints active.
+
+Phase transitions are one-way. If G0 time limits expire without reaching 50 participants, the project fails closed.
+
+## Reviewer Heterogeneity and Normative Resolution
+
+Genesis enforces anti-monoculture rules for high-risk review:
+
+1. R1 tasks require reviewers from ≥ 2 distinct model families.
+2. R2 tasks require ≥ 2 model families and ≥ 2 verification method types.
+3. Every reviewer must declare `model_family` and `method_type` metadata.
+4. Valid method types: `reasoning_model`, `retrieval_augmented`, `rule_based_deterministic`, `human_reviewer`.
+
+For subjective disputes:
+
+1. Every task is classified by `domain_type`: `objective`, `normative`, or `mixed`.
+2. Normative and mixed tasks require human adjudication when reviewer agreement falls below 60%.
+3. Normative panels require ≥ 3 humans from ≥ 2 regions and ≥ 2 organizations.
+4. Machine consensus alone cannot close a normative dispute.
 
 ## Why This Is Feasible Now
 
-Polaris does not depend on speculative breakthroughs.
+Genesis does not depend on speculative breakthroughs.
 
 Most core building blocks already exist:
 
@@ -261,7 +302,7 @@ The hard problem is integrating them under a constitution that remains credible 
 
 ## Phased Implementation Strategy
 
-Polaris should be built in disciplined phases.
+Genesis should be built in disciplined phases.
 
 Phase 1: Foundation
 
@@ -286,7 +327,7 @@ Progress should be gated by measurable quality thresholds, not narrative momentu
 
 ## How Success Is Measured
 
-Polaris should be judged by outcomes.
+Genesis should be judged by outcomes.
 
 Core indicators:
 
@@ -298,11 +339,11 @@ Core indicators:
 6. abuse attempts detected versus escaped,
 7. sustained human confidence in outputs.
 
-If these improve over time, Polaris is working.
+If these improve over time, Genesis is working.
 
 ## Risks and How They Are Addressed
 
-Polaris assumes serious risks and addresses them directly:
+Genesis assumes serious risks and addresses them directly:
 
 1. Collusion risk: randomized assignment, quorum review, adversarial audits.
 2. Correlated error risk: model/method diversity, evidence-weighted adjudication.
@@ -312,7 +353,7 @@ Polaris assumes serious risks and addresses them directly:
 6. Overclaim risk: strict communication standards against absolute guarantees.
 
 No serious system should claim to be “bulletproof.”  
-Polaris aims for measurable risk reduction and institutional robustness.
+Genesis aims for measurable risk reduction and institutional robustness.
 
 ## Underlying Governance Engine
 
@@ -320,25 +361,42 @@ Within this program, the existing operational engine is treated as an underlying
 
 1. policy enforcement,
 2. runtime guard behavior,
-3. evidence and anchoring pathways,
+3. evidence and on-chain commitment pathways,
 4. reviewer-facing verification workflows.
 
-Polaris extends that engine with mission orchestration, trust lifecycle governance, anti-capture constitutional operations, and institutional-scale coordination.
+Genesis extends that engine with mission orchestration, trust lifecycle governance, anti-capture constitutional operations, and institutional-scale coordination.
 
 ## Project Documents
 
 Front-facing documents:
 
 1. [Trust Constitution](TRUST_CONSTITUTION.md)
-2. [Public Brief](PROJECT_POLARIS_PUBLIC_BRIEF.md)
-3. [Institutional White Paper (Draft)](PROJECT_POLARIS_INSTITUTIONAL_WHITE_PAPER.md)
+2. [Public Brief](PROJECT_GENESIS_PUBLIC_BRIEF.md)
+3. [Institutional White Paper (Draft)](PROJECT_GENESIS_INSTITUTIONAL_WHITE_PAPER.md)
 4. Canonical parameter defaults and review triggers are maintained only in `TRUST_CONSTITUTION.md` ("Parameter review matrix").
 
 Program and process documents:
 
-1. [Handoff Note](HANDOFF_NOTE.md)
-2. [Background Review](POLARIS_BACKGROUND_REVIEW_2026-02-13.md)
-3. [Work Log](POLARIS_WORK_LOG_2026-02-13.md)
+1. [Foundational Note](HANDOFF_NOTE.md)
+2. [Background Review](GENESIS_BACKGROUND_REVIEW_2026-02-13.md)
+3. [Work Log](GENESIS_WORK_LOG_2026-02-13.md)
+4. [Threat Model and Invariants](THREAT_MODEL_AND_INVARIANTS.md)
+5. [Contribution Governance](CONTRIBUTING.md)
+
+Executable governance artifacts:
+
+1. `config/constitutional_params.json` (machine-readable constitutional parameter mirror)
+2. `config/runtime_policy.json` (mission-class-to-tier mapping and review topology)
+3. `examples/worked_examples/` (low-risk and high-risk reproducible mission bundles)
+4. `tools/check_invariants.py` (constitutional and runtime invariant checks)
+5. `tools/verify_examples.py` (worked-example policy validation)
+
+Validation commands:
+
+```bash
+python3 tools/check_invariants.py
+python3 tools/verify_examples.py
+```
 
 Archival note:
 
@@ -348,14 +406,28 @@ Documentation stop rule:
 1. No new parameter documents.
 2. Parameter changes update the canonical constitution matrix in place.
 
+## Blockchain Anchoring
+
+Genesis uses blockchain anchoring to create tamper-evident proof that its governance documents exist in a specific form at a specific time.
+
+Blockchain anchoring is not a smart contract. No code executes on-chain. A SHA-256 hash of the document is embedded in the data field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness — a notary stamp that cannot be forged, altered, or retroactively changed.
+
+The Genesis constitution (`TRUST_CONSTITUTION.md`) is the first document anchored.
+
+| Document | SHA-256 | Sepolia Block | Transaction |
+|---|---|---|---|
+| `TRUST_CONSTITUTION.md` | `33f2b003...` | 10255231 | [View on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
+
+Full anchor log: [`docs/ANCHORS.md`](docs/ANCHORS.md)
+
 ## Closing Position
 
-Project Polaris is ambitious by design.
+Project Genesis is ambitious by design.
 
 Its claim is not that intelligence will magically self-govern.  
 Its claim is that we can build the constitutional, operational, and mathematical infrastructure required to govern intelligence responsibly at scale.
 
-If that claim holds in practice, Polaris is not just another tool.  
+If that claim holds in practice, Genesis is not just another tool.  
 It is a new trust substrate for coordinated work in the AI era.
 
 \* subject to review

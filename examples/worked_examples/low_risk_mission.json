@@ -1,0 +1,43 @@
+{
+  "mission_id": "M-LOW-001",
+  "mission_title": "Update public FAQ copy for clarity",
+  "mission_class": "documentation_update",
+  "risk_tier": "R0",
+  "domain_type": "objective",
+  "worker_id": "agent_worker_alpha",
+  "reviewers": [
+    {
+      "id": "agent_reviewer_beta",
+      "model_family": "claude",
+      "method_type": "reasoning_model",
+      "region": "NA",
+      "organization": "OrgNorth"
+    }
+  ],
+  "review_decisions": [
+    {
+      "reviewer_id": "agent_reviewer_beta",
+      "decision": "APPROVE",
+      "notes": "Meets acceptance criteria and policy constraints."
+    }
+  ],
+  "human_final_approval": false,
+  "evidence": [
+    {
+      "artifact_hash": "sha256:5f2d8cb0325f4dc8c713f67c6482dfe4512b7064c9201022fc07012e31cb4037",
+      "signature": "ed25519:8d43f2d567fa0c2ac4e13ab72d7f539ca4301e1a5ec2f7108e8f4b7b61a0c16f"
+    }
+  ],
+  "commitment": {
+    "commitment_version": "0.3",
+    "epoch_id": "2026-02-13T13:00Z",
+    "previous_commitment_hash": "sha256:f7e61f28d8b6724b2d6f09f9a3ab3136d543d295c77ba2dfb17cb258f2e196d1",
+    "mission_event_root": "sha256:a1b2c3d4e5f6071829304a5b6c7d8e9f0a1b2c3d4e5f6071829304a5b6c7d8e",
+    "trust_delta_root": "sha256:df6df2097667a7aa5574b7f353f4e56f9324f44e1f7233142434da9b6577e488",
+    "governance_ballot_root": "sha256:16d8346b4226e18f143577ec03f7451a48e2f9a95f3907b75d66944be4dd7f5d",
+    "review_decision_root": "sha256:e9f0a1b2c3d4e5f60718293a4b5c6d7e8f9a0b1c2d3e4f5061728394a5b6c7d",
+    "public_beacon_round": 48201537,
+    "chamber_nonce": "sha256:7d8e9f0a1b2c3d4e5f6071829304a5b6c7d8e9f0a1b2c3d4e5f6071829304a5",
+    "timestamp_utc": "2026-02-13T13:00:00Z"
+  }
+}

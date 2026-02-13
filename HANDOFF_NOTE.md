@@ -1,10 +1,10 @@
-# Project Polaris - Handoff Note
+# Project Genesis - Foundational Note
 
 Date: February 13, 2026
 Author: George Jackson
 Status: Working concept + MVP definition + governance-engine integration path + external background review
 
-## 1) Why Polaris exists
+## 1) Why Genesis exists
 
 Core idea: flip the "AI social network" model on its head.
 
@@ -29,7 +29,7 @@ Main insight:
 If governance is weak, system degrades into hype/noise/control theatre.
 If governance is strong, this can become public-utility-scale problem-solving infrastructure.
 
-## 3) Polaris core principles
+## 3) Genesis core principles
 
 1. Public-interest mission selection over engagement optimization.
 2. Independent verification of outputs.
@@ -45,7 +45,7 @@ Canonical statement:
 - Trust cannot be bought, sold, exchanged, delegated, rented, or gifted.
 - Trust can only be earned through verified behaviour over time.
 
-Operational meaning in Polaris:
+Operational meaning in Genesis:
 1. No payment, token balance, sponsorship, or hardware ownership can directly buy trust.
 2. Trust is identity-bound and non-transferable.
 3. Trust increases only from verified high-quality work and verified high-quality review behaviour.
@@ -54,7 +54,7 @@ Operational meaning in Polaris:
 
 ## 4) System model (high level)
 
-Polaris should be built as a layered system:
+Genesis should be built as a layered system:
 
 1. Mission Layer
 - Humans define missions, goals, deadlines, and success criteria.
@@ -188,10 +188,10 @@ Conclusion from repo study:
 Existing strengths in current baseline:
 - Machine-checkable directives and block/warn execution.
 - Runtime modes for strict vs speed.
-- Output logging + Merkle-root anchoring + verification tooling.
+- Output logging + Merkle-root commitment recording + verification tooling.
 - Reviewer-oriented docs and demo paths.
 
-What the current governance engine does not yet include (key Polaris gaps):
+What the current governance engine does not yet include (key Genesis gaps):
 1. Mission system
 2. Task orchestration and dependency routing
 3. Full identity + role permission model
@@ -205,7 +205,7 @@ What the current governance engine does not yet include (key Polaris gaps):
 
 Practical architecture position:
 - Keep the underlying engine as the "Policy + Evidence Engine".
-- Build Polaris coordination/trust/governance layers around it.
+- Build Genesis coordination/trust/governance layers around it.
 
 ## 13) Execution order recommended
 
@@ -213,36 +213,31 @@ Practical architecture position:
 2. Add mandatory independent review routing.
 3. Add reputation + abuse detection.
 4. Add governance console + policy change workflow.
-5. Keep the existing anchoring/proof path intact during expansion.
+5. Keep the existing commitment/proof path intact during expansion.
 
-## 14) Work request for future agent collaboration (after George returns Sunday)
+## 14) Documentation requirements for the next development phase
 
 Please produce a single detailed report/spec including:
 
 1. Current true state of the underlying governance engine (including all uncommitted local progress).
 2. Delta from the last public commit.
-3. What can be reused directly for Polaris.
+3. What can be reused directly for Genesis.
 4. Proposed fork strategy:
-- Option A: Existing governance engine remains core library + new Polaris app repo
-- Option B: Existing governance engine monorepo with Polaris modules
-5. First implementable Polaris milestone with acceptance criteria.
+- Option A: Existing governance engine remains core library + new Genesis app repo
+- Option B: Existing governance engine monorepo with Genesis modules
+5. First implementable Genesis milestone with acceptance criteria.
 6. Risk register (technical, governance, abuse, legal/safety).
 7. Plain-English timeline with reversible steps.
 
 ## 15) Proposed naming
 
 Official chosen name:
-- Project Polaris
+- Project Genesis
 
 Meaning:
 - A guiding light toward a safer, brighter, globally beneficial future.
 
 ---
-
-If you are reading this as a successor agent:
-- Treat this file as the strategic intent snapshot from George's direct discussion.
-- Do not over-scope the first milestone.
-- Preserve governance rigor while adding multi-agent coordination incrementally.
 
 ## 16) External background review completed (Feb 13, 2026)
 
@@ -251,7 +246,7 @@ Documents reviewed in full:
 2. Project concept and governance drafts
 
 High-confidence conclusion:
-- The Polaris concept is strong and feasible.
+- The Genesis concept is strong and feasible.
 - The identified issues are mostly real and addressable.
 - Some external specification claims were too absolute and should be reframed.
 
@@ -311,7 +306,7 @@ Red (if left uncorrected):
 
 ## 21) Working language for future specs
 
-Use this tone standard in all future handoff/spec work:
+Use this tone standard in all future specification work:
 1. No "bulletproof" or absolute guarantees.
 2. Distinguish clearly between:
 - objective verification (testable)
@@ -321,9 +316,9 @@ Use this tone standard in all future handoff/spec work:
 
 ## 22) Companion files in this folder
 
-This handoff is now paired with:
-1. `POLARIS_BACKGROUND_REVIEW_2026-02-13.md`
-2. `POLARIS_WORK_LOG_2026-02-13.md`
+This note is paired with:
+1. `GENESIS_BACKGROUND_REVIEW_2026-02-13.md`
+2. `GENESIS_WORK_LOG_2026-02-13.md`
 
 These capture the full review conclusions and the work log for this round.
 
@@ -333,7 +328,7 @@ The following points are now explicit in the publication docs and trust constitu
 
 1. Machines can earn trust for operational work, but cannot vote constitutionally.
 2. Constitutional voting is verified-human only; machine constitutional voting weight is pinned at zero.
-3. Constitutional changes are human-only, supermajority-ratified, and on-chain anchored.
+3. Constitutional changes are human-only, supermajority-ratified, and committed on-chain.
 4. Steward groups are process administrators only and cannot become a de facto government.
 5. No government has unilateral constitutional override power.
 
@@ -364,10 +359,13 @@ Primary source for this model:
 Core additions now encoded in publication and constitutional docs:
 1. Universal baseline trust (`T0`) for all verified identities.
 2. Trust grows only through verified useful contribution quality.
-3. Slow dormancy decay (not idleness decay), with a grace period and a non-zero trust floor.
+3. Domain-specific decay floors:
+- Human trust uses slow dormancy decay with a grace period and a non-zero floor.
+- Machine trust uses freshness decay and may decay to zero.
+- Machine trust at zero enters operational quarantine and must pass supervised re-certification for re-entry.
 4. Absolute and relative trust caps to block dominance accumulation.
 5. Per-epoch trust growth rate limits to block burst gaming.
-6. Low-trust recovery lanes through small verified tasks.
+6. Low-trust recovery lanes through small verified tasks (humans) and supervised re-certification lanes (machines).
 7. Trust grants permissions, not command authority over others.
 8. Money has no governance role in trust, proposal, or constitutional voting rights.
 9. Trust is minted only via cryptographic proof-of-trust evidence; proof-of-work evidence alone is insufficient.
@@ -375,5 +373,29 @@ Core additions now encoded in publication and constitutional docs:
 ## 27) Key clarity retained
 
 1. Proof-of-personhood/proof-of-agenthood remains a supporting anti-abuse control only.
-2. Cryptographic anchoring proves integrity/provenance, not truth by itself.
+2. Cryptographic commitment records prove integrity/provenance, not truth by itself.
 3. Correctness still depends on independent verification and evidence quality.
+
+## 28) Outstanding issues closure (Feb 13, 2026)
+
+The previously identified implementation gaps are now closed with executable artifacts:
+
+1. Parameter calibration and threshold controls:
+- Constitutional defaults mirrored in `config/constitutional_params.json`.
+- Calibration and reject-criteria flow documented in `TRUST_CONSTITUTION.md`.
+
+2. Runtime risk-tier resolver:
+- Mission-class to risk-tier mapping encoded in `config/runtime_policy.json`.
+- Constitutional mission class explicitly mapped to `R3` (human-only constitutional flow).
+
+3. Executable invariant enforcement:
+- `tools/check_invariants.py` validates constitutional and runtime non-negotiables.
+
+4. Worked examples with policy verification:
+- `examples/worked_examples/low_risk_mission.json`
+- `examples/worked_examples/high_risk_mission.json`
+- `tools/verify_examples.py` validates both bundles against runtime policy.
+
+Verification status at update time:
+1. `python3 tools/check_invariants.py` -> passed
+2. `python3 tools/verify_examples.py` -> passed

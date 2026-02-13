@@ -1,0 +1,85 @@
+{
+  "version": "0.2",
+  "updated_utc": "2026-02-13T23:00:00Z",
+  "risk_tiers": {
+    "R0": {
+      "reviewers_required": 1,
+      "approvals_required": 1,
+      "human_final_gate": false,
+      "min_regions": 0,
+      "min_organizations": 0,
+      "constitutional_flow": false,
+      "min_model_families": 1,
+      "min_method_types": 1
+    },
+    "R1": {
+      "reviewers_required": 2,
+      "approvals_required": 2,
+      "human_final_gate": false,
+      "min_regions": 1,
+      "min_organizations": 1,
+      "constitutional_flow": false,
+      "min_model_families": 2,
+      "min_method_types": 1
+    },
+    "R2": {
+      "reviewers_required": 5,
+      "approvals_required": 4,
+      "human_final_gate": true,
+      "min_regions": 3,
+      "min_organizations": 3,
+      "constitutional_flow": false,
+      "min_model_families": 2,
+      "min_method_types": 2
+    },
+    "R3": {
+      "reviewers_required": 0,
+      "approvals_required": 0,
+      "human_final_gate": true,
+      "min_regions": 8,
+      "min_organizations": 8,
+      "constitutional_flow": true,
+      "min_model_families": 0,
+      "min_method_types": 0,
+      "chambers": {
+        "proposal": {
+          "size": 41,
+          "pass_threshold": 28
+        },
+        "ratification": {
+          "size": 61,
+          "pass_threshold": 41
+        },
+        "challenge": {
+          "size": 101,
+          "pass_threshold": 61
+        }
+      }
+    }
+  },
+  "mission_class_to_tier": {
+    "documentation_update": "R0",
+    "internal_operations_change": "R1",
+    "regulated_analysis": "R2",
+    "constitutional_change": "R3"
+  },
+  "valid_domain_types": ["objective", "normative", "mixed"],
+  "normative_resolution": {
+    "normative_requires_human_adjudication": true,
+    "agreement_threshold": 0.60,
+    "panel_size": 3,
+    "panel_min_regions": 2,
+    "panel_min_organizations": 2
+  },
+  "identity_signals": {
+    "signals": [
+      "proof_of_personhood",
+      "proof_of_agenthood",
+      "timing_profile",
+      "hardware_attestation"
+    ],
+    "can_mint_trust": false,
+    "can_grant_privileged_routing": false,
+    "can_grant_constitutional_authority": false
+  }
+}
