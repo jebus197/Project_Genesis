@@ -37,7 +37,7 @@ Genesis wraps AI capability in a governance framework that provides:
 1. **Mission-first coordination** — work is organised around defined goals with clear scope, risk levels, and success criteria, not around engagement metrics or throughput.
 2. **Independent verification** — no one gets to mark their own homework. Critical work is checked by independent reviewers who are deliberately chosen to be diverse in method and perspective.
 3. **Constitutional governance** — the rules of the system are written down, publicly available, and enforced by code. Changing them requires broad agreement from verified humans across multiple independent groups.
-4. **Tamper-evident records** — every significant action produces cryptographic evidence that cannot be altered after the fact. The process history is permanent and auditable.
+4. **Tamper-evident records** — every significant action produces a permanent record that cannot be altered after the fact. The process history is auditable by anyone.
 5. **Earned trust, not purchased influence** — reputation in the system comes only from doing good work over time. It cannot be bought, inherited, or transferred.
 
 ## The Foundational Rule
@@ -93,15 +93,23 @@ Genesis is built to resist takeover — by individuals, organisations, AI system
 - No single region, organisation, or actor can dominate any chamber.
 - Financial capital has no role in trust, voting, or governance. You cannot buy your way in.
 - There is a public challenge window before any constitutional change is finalised.
-- All finalised constitutional decisions are cryptographically committed to a public blockchain, making them permanently auditable.
+- All finalised constitutional decisions are permanently recorded using blockchain anchoring (explained below), making them publicly auditable by anyone.
 
 ## Blockchain Anchoring
 
-Genesis uses a technique called **blockchain anchoring** to create tamper-evident proof that important documents exist in a specific form at a specific time.
+### The idea
 
-This is not a smart contract. No code runs on the blockchain. Instead, a digital fingerprint (a SHA-256 hash) of the document is recorded in a standard Ethereum transaction. The blockchain acts as an independent, public, permanent witness — like a notary stamp that cannot be forged or altered.
+In 1991 — nearly two decades before Bitcoin — two researchers named Stuart Haber and W. Scott Stornetta published a paper asking a simple question: how do you prove a document existed at a particular time, without relying on anyone's word for it?
 
-The Genesis constitution was the first document anchored.
+Their answer was to create a chain of cryptographic fingerprints — each one linked to the last — forming a permanent, tamper-evident record. This work was so foundational that it is cited in the Bitcoin whitepaper itself, and it gave rise to an entire field of cryptographic timestamping.
+
+**Blockchain anchoring** applies this idea using a public blockchain. You take a digital fingerprint (called a hash) of a document and record it in a standard blockchain transaction. No code runs on the blockchain. No smart contract is involved. The blockchain simply acts as an independent, permanent, public witness — like a notary stamp that cannot be forged, altered, or backdated.
+
+The technique has been in use since the early days of Bitcoin, through services like OpenTimestamps, Stampery, and OriginStamp. Genesis adopts and formalises it as a core governance mechanism — using it to anchor the foundational rules of the system to an immutable public record.
+
+### The Genesis constitution: a worked example
+
+The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works.
 
 | Document | SHA-256 Hash | Chain | Block | Transaction |
 |---|---|---|---|---|

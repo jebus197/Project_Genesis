@@ -331,7 +331,34 @@ No Genesis infrastructure is required for verification. The proofs are self-cont
 
 ## Blockchain Anchoring
 
+### Historical foundations
+
+The idea of using cryptography to prove a document existed at a particular time predates blockchain technology by nearly two decades.
+
+In 1991, Stuart Haber and W. Scott Stornetta published *"How to Time-Stamp a Digital Document"*, proposing a system in which documents are hashed and the hashes linked into a chain — each entry referencing the previous one — creating a tamper-evident chronological record. Their follow-up work introduced Merkle trees to batch multiple timestamps efficiently. These two papers are among the most cited references in Satoshi Nakamoto's 2008 Bitcoin whitepaper, which extended the concept by replacing a trusted timestamping authority with a decentralised proof-of-work consensus mechanism.
+
+From 1995 onward, a company called Surety put these ideas into practice, publishing hash chains in the *New York Times* classified section — making it the longest-running cryptographic timestamp chain in history.
+
+Once Bitcoin launched in 2009, the blockchain itself became a natural public timestamping medium. Bitcoin's `OP_RETURN` opcode (available since Bitcoin Core 0.9.0, March 2014) formalised the practice of embedding arbitrary data — including document hashes — into transactions. Services emerged to make this accessible:
+
+- **OpenTimestamps** — an open protocol that uses Bitcoin as a timestamp notary, batching many hashes into a single daily transaction via Merkle aggregation.
+- **Stampery** — published a formal Blockchain Timestamping Architecture (BTA) in 2014.
+- **OriginStamp** — a multi-chain timestamping service anchoring to Bitcoin, Ethereum, and others simultaneously.
+
+The existing field uses various terms — "blockchain timestamping", "data anchoring", "cryptographic stamping" — but the underlying technique is the same: embed a hash in a public blockchain transaction, and the blockchain serves as a permanent, independent witness to the document's existence at that point in time.
+
+### What blockchain anchoring is
+
 Blockchain anchoring is the practice of embedding a cryptographic hash of a document into a standard blockchain transaction, creating permanent, public, tamper-evident proof that the document existed in a specific form at a specific time.
+
+The process is deliberately simple:
+
+1. Compute the SHA-256 hash of the document.
+2. Send a standard Ethereum transaction where the `data` field contains that hash.
+3. The transaction is mined into a block with a timestamp.
+4. The hash is now permanently recorded on a public, immutable ledger.
+
+No code executes on-chain. No smart contract is deployed. The blockchain is a passive witness — a notary, not an actor.
 
 ### How it differs from smart contracts
 
@@ -347,18 +374,48 @@ This distinction matters because the two are frequently confused:
 
 Genesis uses anchoring, not smart contracts. The blockchain is a witness, not an actor.
 
+### How Genesis uses anchoring
+
+Genesis adopts and formalises blockchain anchoring as a core governance primitive. The first document anchored — the Genesis constitution (`TRUST_CONSTITUTION.md`) — serves as both a governance act and a concrete demonstration of the technique.
+
+**What was anchored:**
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10255231 |
+| Transaction | [`031617e3...`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
+| Anchored | 2026-02-13T23:47:25Z |
+
+**What this proves:**
+
+1. The constitution existed in its exact byte-for-byte form at the recorded time.
+2. No party — including the project owner — can alter the anchored version without the mismatch being publicly detectable.
+3. The proof is permanent, does not expire, and does not depend on any Genesis infrastructure.
+
+This anchoring event is formally recognised as the first trust-minting event in Genesis history (see [`docs/GENESIS_EVENTS.md`](GENESIS_EVENTS.md)).
+
 ### Verification process
 
-1. Compute the SHA-256 hash of the document locally.
-2. Look up the transaction on a block explorer (e.g., Etherscan).
-3. Compare the hash in the transaction's input data field to the locally computed hash.
-4. If they match, the document is verified as unchanged since the anchor time.
+Any third party can verify an anchoring event independently. No trust in Genesis is required — only a hash function and a block explorer.
 
-The verification requires no Genesis software, no API calls, and no trust in any party. It depends only on the hash function (SHA-256, a public standard) and the blockchain (a public ledger).
+1. Compute the SHA-256 hash of the document locally: `shasum -a 256 TRUST_CONSTITUTION.md`
+2. Look up the transaction on Etherscan (or any Ethereum block explorer).
+3. Inspect the transaction's Input Data field — it contains the hash.
+4. If the locally computed hash matches the on-chain hash, the document is verified as unchanged since the anchor time.
+5. The block timestamp proves when the anchor was recorded.
 
-### Historical context
+The verification depends only on SHA-256 (a public standard) and the Ethereum blockchain (a public ledger). No API calls, no Genesis software, no trust in any party.
 
-The technique of embedding hashes in blockchain transactions for document timestamping has roots in Haber and Stornetta's 1991 work on digital timestamping, predating Bitcoin itself. Operational services (OpenTimestamps, Stampery, OriginStamp) have existed since the early Bitcoin era. Genesis adopts and formalises this technique as a core governance primitive for constitutional AI coordination.
+### Why anchoring matters for governance
+
+Traditional institutions prove the integrity of their founding documents through physical custody, legal witnesses, and institutional reputation. All of these depend on trusting the institution itself — the very thing that may need to be verified.
+
+Blockchain anchoring breaks this circularity. The proof is mathematical, the witness is a public network with no relationship to Genesis, and verification can be performed by anyone with a computer. This means Genesis can credibly commit to its own rules in a way that does not require anyone to take its word for it.
+
+For a project whose foundational principle is that trust must be earned rather than assumed, this is not just a technical feature — it is the first act of practising what it preaches.
 
 ---
 
