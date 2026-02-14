@@ -631,13 +631,20 @@ class GenesisService:
         Fail-closed: if no epoch is open, returns an error rather than
         silently dropping the audit event.
 
-        Ordering: durable append runs BEFORE epoch hash insertion so that
-        a failed append never leaves a phantom hash in the epoch collector.
+        Three-step ordering ensures no phantom records in either store:
+        1. Pre-check epoch availability (fail fast — nothing written yet).
+        2. Durable append (if it fails, epoch stays clean).
+        3. Epoch hash insertion (guaranteed to succeed — already validated).
         """
+        # 1. Pre-check: verify epoch is open before writing anything
+        epoch = self._epoch_service.current_epoch
+        if epoch is None or epoch.closed:
+            return "Audit-trail failure (no epoch open): No open epoch — call open_epoch() first."
+
         event_data = f"{mission.mission_id}:{action}:{datetime.now(timezone.utc).isoformat()}"
         event_hash = "sha256:" + hashlib.sha256(event_data.encode()).hexdigest()
 
-        # 1. Durable append first — if this fails, epoch stays clean
+        # 2. Durable append — if this fails, epoch stays clean
         if self._event_log is not None:
             try:
                 event = EventRecord.create(
@@ -654,11 +661,8 @@ class GenesisService:
             except (ValueError, OSError) as e:
                 return f"Event log failure: {e}"
 
-        # 2. Epoch hash insertion — only reached if durable append succeeded
-        try:
-            self._epoch_service.record_mission_event(event_hash)
-        except RuntimeError as e:
-            return f"Audit-trail failure (no epoch open): {e}"
+        # 3. Epoch hash insertion — epoch was validated open in step 1
+        self._epoch_service.record_mission_event(event_hash)
 
         return None
 
@@ -667,13 +671,20 @@ class GenesisService:
 
         Fail-closed: if no epoch is open, returns an error.
 
-        Ordering: durable append runs BEFORE epoch hash insertion so that
-        a failed append never leaves a phantom hash in the epoch collector.
+        Three-step ordering ensures no phantom records in either store:
+        1. Pre-check epoch availability (fail fast — nothing written yet).
+        2. Durable append (if it fails, epoch stays clean).
+        3. Epoch hash insertion (guaranteed to succeed — already validated).
         """
+        # 1. Pre-check: verify epoch is open before writing anything
+        epoch = self._epoch_service.current_epoch
+        if epoch is None or epoch.closed:
+            return "Audit-trail failure (no epoch open): No open epoch — call open_epoch() first."
+
         event_data = f"{actor_id}:{delta.abs_delta}:{datetime.now(timezone.utc).isoformat()}"
         event_hash = "sha256:" + hashlib.sha256(event_data.encode()).hexdigest()
 
-        # 1. Durable append first — if this fails, epoch stays clean
+        # 2. Durable append — if this fails, epoch stays clean
         if self._event_log is not None:
             try:
                 event = EventRecord.create(
@@ -690,11 +701,8 @@ class GenesisService:
             except (ValueError, OSError) as e:
                 return f"Event log failure: {e}"
 
-        # 2. Epoch hash insertion — only reached if durable append succeeded
-        try:
-            self._epoch_service.record_trust_delta(event_hash)
-        except RuntimeError as e:
-            return f"Audit-trail failure (no epoch open): {e}"
+        # 3. Epoch hash insertion — epoch was validated open in step 1
+        self._epoch_service.record_trust_delta(event_hash)
 
         return None
 

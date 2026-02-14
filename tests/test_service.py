@@ -590,6 +590,73 @@ class TestNoPhantomEpochEvents:
         )
 
 
+class TestNoPhantomDurableEntries:
+    """Regression: no-epoch failure must not leave phantom durable log entries."""
+
+    def test_mission_no_epoch_no_phantom_durable_entry(self, resolver: PolicyResolver, tmp_path: Path) -> None:
+        """If no epoch is open, durable log must stay empty.
+
+        Previously the durable append ran before epoch validation, so a failed
+        epoch check left an orphan event record in events.jsonl for a mission
+        that rolled back.
+        """
+        event_log = EventLog(storage_path=tmp_path / "events.jsonl")
+        svc = GenesisService(resolver, event_log=event_log)
+        # Deliberately do NOT open an epoch
+
+        result = svc.create_mission(
+            mission_id="M-NOLOG", title="Should not log",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            domain_type=DomainType.OBJECTIVE,
+        )
+        assert not result.success
+        assert "epoch" in result.errors[0].lower() or "audit" in result.errors[0].lower()
+
+        # Mission must not exist (caller rollback)
+        assert svc.get_mission("M-NOLOG") is None
+
+        # Durable log must have ZERO entries — no phantom
+        assert event_log.count == 0, (
+            f"Phantom durable entry: expected 0 events, got {event_log.count}"
+        )
+
+    def test_trust_no_epoch_no_phantom_durable_entry(self, resolver: PolicyResolver, tmp_path: Path) -> None:
+        """If no epoch is open, durable log must stay empty after trust update failure."""
+        event_log = EventLog(storage_path=tmp_path / "events.jsonl")
+        svc = GenesisService(resolver, event_log=event_log)
+        # Deliberately do NOT open an epoch
+
+        # register_actor doesn't use _record_trust_event, but it DOES use
+        # _record_mission_event-style audit — actually register_actor doesn't
+        # record events at all, so it succeeds even without an epoch.
+        # But we need an actor to update trust on. Let's open epoch briefly
+        # to register, then close and verify no phantom on update_trust.
+        svc.open_epoch("temp-register")
+        svc.register_actor(
+            actor_id="worker_nolog", actor_kind=ActorKind.HUMAN,
+            region="NA", organization="Org1",
+        )
+        svc.close_epoch(beacon_round=1)
+        events_after_register = event_log.count
+
+        # Now no epoch is open — update_trust should fail cleanly
+        result = svc.update_trust(
+            actor_id="worker_nolog", quality=0.8, reliability=0.7,
+            volume=0.3, reason="phantom test", effort=0.2,
+        )
+        assert not result.success
+        assert "epoch" in result.errors[0].lower() or "audit" in result.errors[0].lower()
+
+        # Trust score must be unchanged (rollback)
+        trust = svc.get_trust("worker_nolog")
+        assert trust.score == 0.10  # initial
+
+        # Durable log must NOT have grown — no phantom entry
+        assert event_log.count == events_after_register, (
+            f"Phantom durable entry: log grew from {events_after_register} to {event_log.count}"
+        )
+
+
 class TestStatus:
     def test_status_structure(self, service: GenesisService) -> None:
         status = service.status()
