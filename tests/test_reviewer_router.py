@@ -93,6 +93,37 @@ class TestR2Heterogeneity:
         assert errors == []
 
 
+class TestReviewerUniqueness:
+    def test_duplicate_reviewer_ids_rejected(self, router: ReviewerRouter) -> None:
+        """Same reviewer ID submitted twice should be flagged."""
+        mission = Mission(
+            mission_id="M-DUP",
+            mission_title="Duplicate reviewer test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        reviewers = [_rev("same_id"), _rev("same_id")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("duplicate" in e.lower() for e in errors)
+
+    def test_duplicate_ids_cannot_satisfy_count(self, router: ReviewerRouter) -> None:
+        """Three entries with one unique ID cannot satisfy a 'needs 1' constraint."""
+        mission = Mission(
+            mission_id="M-DUP2",
+            mission_title="Duplicate count test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        # R0 needs 1 reviewer — but submitting the same ID should still flag duplicates
+        reviewers = [_rev("rev_1"), _rev("rev_1"), _rev("rev_1")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("duplicate" in e.lower() for e in errors)
+
+
 class TestSelfReview:
     def test_worker_blocked_as_reviewer(self, router: ReviewerRouter) -> None:
         mission = Mission(

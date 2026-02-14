@@ -89,17 +89,40 @@ class GovernanceBallot:
     passed: Optional[bool] = None
 
     def tally(self) -> dict[ChamberKind, tuple[int, int]]:
-        """Return (yes_count, no_count) per chamber."""
+        """Return (yes_count, no_count) per chamber.
+
+        Deduplicates by voter_id within each chamber: if the same voter
+        casts multiple votes in the same chamber, only the first is counted.
+        """
         result: dict[ChamberKind, tuple[int, int]] = {}
         for kind in ChamberKind:
-            chamber_votes = [v for v in self.votes if v.chamber == kind]
-            yes = sum(1 for v in chamber_votes if v.vote)
-            no = sum(1 for v in chamber_votes if not v.vote)
+            seen_voters: set[str] = set()
+            yes = 0
+            no = 0
+            for v in self.votes:
+                if v.chamber != kind:
+                    continue
+                if v.voter_id in seen_voters:
+                    continue  # One vote per voter per chamber
+                seen_voters.add(v.voter_id)
+                if v.vote:
+                    yes += 1
+                else:
+                    no += 1
             result[kind] = (yes, no)
         return result
 
     def evaluate(self) -> bool:
-        """Evaluate whether the ballot passes all three chambers."""
+        """Evaluate whether the ballot passes all three chambers.
+
+        Constitutional requirement: all three chambers must be present.
+        A ballot with fewer than three chambers always fails.
+        """
+        # All three chambers must be defined
+        for kind in ChamberKind:
+            if kind not in self.chambers:
+                return False
+
         tally = self.tally()
         for kind, chamber in self.chambers.items():
             yes_count, _ = tally.get(kind, (0, 0))

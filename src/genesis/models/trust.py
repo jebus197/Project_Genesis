@@ -73,9 +73,21 @@ class TrustRecord:
     last_active_utc: Optional[datetime] = None
 
     def is_eligible_to_vote(self, tau_vote: float) -> bool:
-        """Check if actor meets voting eligibility threshold."""
+        """Check if actor meets voting eligibility threshold.
+
+        Constitutional rule: only humans hold constitutional authority.
+        Machines cannot vote regardless of trust score.
+        """
+        if self.actor_kind != ActorKind.HUMAN:
+            return False
         return self.score >= tau_vote and not self.quarantined and not self.decommissioned
 
     def is_eligible_to_propose(self, tau_prop: float) -> bool:
-        """Check if actor meets proposal eligibility threshold (stricter)."""
+        """Check if actor meets proposal eligibility threshold (stricter).
+
+        Constitutional rule: only humans hold constitutional authority.
+        Machines cannot propose regardless of trust score.
+        """
+        if self.actor_kind != ActorKind.HUMAN:
+            return False
         return self.score >= tau_prop and not self.quarantined and not self.decommissioned

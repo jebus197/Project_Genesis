@@ -51,6 +51,29 @@ class TestTrustComputation:
         assert abs(score - expected) < 1e-9
 
 
+class TestScoreClamping:
+    """Trust scores must always be in [0, 1]."""
+
+    def test_score_clamped_at_one(self, engine: TrustEngine) -> None:
+        """Inputs > 1.0 must not produce a score > 1.0."""
+        score = engine.compute_score(quality=2.0, reliability=2.0, volume=2.0)
+        assert score <= 1.0
+
+    def test_score_clamped_at_zero(self, engine: TrustEngine) -> None:
+        """Negative inputs must not produce a score < 0.0."""
+        score = engine.compute_score(quality=-1.0, reliability=-1.0, volume=-1.0)
+        assert score >= 0.0
+
+    def test_apply_update_clamped(self, engine: TrustEngine) -> None:
+        """Full update path with extreme inputs stays in [0, 1]."""
+        record = _human_record(score=0.5)
+        new_record, delta = engine.apply_update(
+            record, quality=5.0, reliability=5.0, volume=5.0,
+            reason="extreme inputs",
+        )
+        assert 0.0 <= new_record.score <= 1.0
+
+
 class TestQualityGate:
     def test_no_gain_below_quality_gate(self, engine: TrustEngine) -> None:
         """If quality < Q_min, trust cannot increase."""
@@ -134,6 +157,41 @@ class TestQuarantineAndDecommission:
             reason="trying to escape decommission",
         )
         assert new_record.score <= record.score
+
+
+class TestConstitutionalAuthority:
+    """Machines cannot vote or propose — only humans hold constitutional authority."""
+
+    def test_machine_cannot_vote(self) -> None:
+        """A machine with high trust must still be ineligible to vote."""
+        record = _machine_record(score=0.99)
+        assert record.is_eligible_to_vote(tau_vote=0.3) is False
+
+    def test_machine_cannot_propose(self) -> None:
+        """A machine with high trust must still be ineligible to propose."""
+        record = _machine_record(score=0.99)
+        assert record.is_eligible_to_propose(tau_prop=0.3) is False
+
+    def test_human_can_vote_above_threshold(self) -> None:
+        """A human above the voting threshold can vote."""
+        record = _human_record(score=0.8)
+        assert record.is_eligible_to_vote(tau_vote=0.5) is True
+
+    def test_human_can_propose_above_threshold(self) -> None:
+        """A human above the proposal threshold can propose."""
+        record = _human_record(score=0.8)
+        assert record.is_eligible_to_propose(tau_prop=0.5) is True
+
+    def test_human_below_threshold_cannot_vote(self) -> None:
+        """A human below the voting threshold cannot vote."""
+        record = _human_record(score=0.2)
+        assert record.is_eligible_to_vote(tau_vote=0.5) is False
+
+    def test_quarantined_human_cannot_vote(self) -> None:
+        """A quarantined human cannot vote even with sufficient trust."""
+        record = _human_record(score=0.8)
+        record.quarantined = True
+        assert record.is_eligible_to_vote(tau_vote=0.5) is False
 
 
 class TestRecertification:

@@ -48,19 +48,27 @@ class ReviewerRouter:
             # R3: constitutional flow — reviewers handled by governance module
             return errors
 
-        # Self-review block
+        # Unique reviewer IDs — duplicates cannot satisfy count constraints
         reviewer_ids = {r.id for r in proposed_reviewers}
+        if len(reviewer_ids) < len(proposed_reviewers):
+            errors.append(
+                f"{mission.mission_id}: duplicate reviewer IDs detected — "
+                f"{len(proposed_reviewers)} entries but only "
+                f"{len(reviewer_ids)} unique"
+            )
+
+        # Self-review block
         if mission.worker_id and mission.worker_id in reviewer_ids:
             errors.append(
                 f"{mission.mission_id}: worker {mission.worker_id} "
                 f"cannot be a reviewer (self-review blocked)"
             )
 
-        # Reviewer count
-        if len(proposed_reviewers) < policy.reviewers_required:
+        # Reviewer count — use unique IDs, not list length
+        if len(reviewer_ids) < policy.reviewers_required:
             errors.append(
                 f"{mission.mission_id}: needs {policy.reviewers_required} "
-                f"reviewers, got {len(proposed_reviewers)}"
+                f"reviewers, got {len(reviewer_ids)}"
             )
 
         # Method type validation

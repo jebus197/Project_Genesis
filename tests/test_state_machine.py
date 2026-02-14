@@ -110,6 +110,38 @@ class TestReviewComplete:
         assert any("approval" in e.lower() for e in errors)
 
 
+class TestApprovalDeduplication:
+    def test_duplicate_approvals_not_counted(self, sm: MissionStateMachine) -> None:
+        """Same reviewer approving twice should count as one approval."""
+        mission = _make_r0_mission()
+        mission.review_decisions = [
+            ReviewDecision(reviewer_id="reviewer_1", decision=ReviewDecisionVerdict.APPROVE),
+            ReviewDecision(reviewer_id="reviewer_1", decision=ReviewDecisionVerdict.APPROVE),
+        ]
+        mission.state = MissionState.IN_REVIEW
+        # R0 requires 1 approval; reviewer_1 counts once despite two records
+        errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
+        assert errors == []
+
+    def test_duplicate_approvals_cannot_meet_higher_quorum(self, sm: MissionStateMachine) -> None:
+        """Duplicate approvals from one reviewer cannot satisfy a quorum > 1."""
+        mission = _make_r0_mission()
+        mission.mission_class = MissionClass.INTERNAL_OPERATIONS_CHANGE
+        mission.risk_tier = RiskTier.R1
+        mission.reviewers = [
+            _make_reviewer("rev_a", family="claude"),
+            _make_reviewer("rev_b", family="gpt"),
+        ]
+        # Same reviewer approves twice — should only count as 1
+        mission.review_decisions = [
+            ReviewDecision(reviewer_id="rev_a", decision=ReviewDecisionVerdict.APPROVE),
+            ReviewDecision(reviewer_id="rev_a", decision=ReviewDecisionVerdict.APPROVE),
+        ]
+        mission.state = MissionState.IN_REVIEW
+        errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
+        assert any("approval" in e.lower() for e in errors)
+
+
 class TestHumanGate:
     def test_r2_requires_human_gate(self, sm: MissionStateMachine) -> None:
         mission = _make_r0_mission()

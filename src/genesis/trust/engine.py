@@ -32,9 +32,10 @@ class TrustEngine:
         reliability: float,
         volume: float,
     ) -> float:
-        """Compute raw trust score from components."""
+        """Compute raw trust score from components, clamped to [0, 1]."""
         w_q, w_r, w_v = self._resolver.trust_weights()
-        return w_q * quality + w_r * reliability + w_v * volume
+        raw = w_q * quality + w_r * reliability + w_v * volume
+        return max(0.0, min(1.0, raw))
 
     def apply_update(
         self,
