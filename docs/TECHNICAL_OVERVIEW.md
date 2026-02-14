@@ -31,20 +31,21 @@ Genesis maintains two separate trust domains because humans and machines play fu
 
 Human trust determines both operational permissions (which tasks you can take on, which reviews you can conduct) and constitutional authority (whether you can propose or vote on governance changes).
 
-The trust score is a weighted sum of three components:
+The trust score is a weighted sum of four components:
 
 ```
-T_H = w_Q · Q_H  +  w_R · R_H  +  w_V · V_H
+T_H = w_Q · Q_H  +  w_R · R_H  +  w_V · V_H  +  w_E · E_H
 ```
 
 Where:
 - `Q_H` = quality score — derived from review outcomes on work you've produced.
 - `R_H` = review reliability — how consistent and accurate your reviews are, measured against subsequent outcomes.
 - `V_H` = verification record — your track record of providing valid evidence and following process requirements.
+- `E_H` = effort score — measures reasoning effort proportional to mission complexity tier.
 
-Default weights: `w_Q = 0.50`, `w_R = 0.30`, `w_V = 0.20`.
+Default weights: `w_Q = 0.70`, `w_R = 0.20`, `w_V = 0.05`, `w_E = 0.05`.
 
-These weights mean quality dominates. An actor who produces high volumes of mediocre work will not accumulate meaningful trust, because `Q` stays low regardless of volume. This is deliberate — it makes throughput gaming ineffective.
+These weights mean quality dominates. An actor who produces high volumes of mediocre work will not accumulate meaningful trust, because `Q` stays low regardless of volume. The effort component (`E`) adds a further cost dimension: each risk tier has a minimum effort threshold that increases monotonically (R0: 0.10, R1: 0.30, R2: 0.50, R3: 0.70). This makes gaming more expensive — an attacker cannot simply stamp "approve" on high-risk work without investing proportional reasoning effort. Crucially, effort alone cannot mint trust: the quality gate still applies, so effort without quality produces zero gain.
 
 ### Machine trust (`T_M`)
 
@@ -480,7 +481,7 @@ Key design principles:
 3. **Auditable transitions**: every state change in the mission lifecycle is an explicit, logged event.
 4. **Self-review impossible**: the reviewer router structurally prevents any actor from reviewing their own work.
 
-All constitutional invariants are tested automatically. The test suite (109 tests) covers every critical rule described in this document.
+All constitutional invariants are tested automatically. The test suite (120 tests) covers every critical rule described in this document.
 
 ```bash
 python3 -m pytest tests/ -v

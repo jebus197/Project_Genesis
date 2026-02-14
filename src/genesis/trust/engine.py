@@ -1,17 +1,20 @@
 """Trust update engine — computes trust scores and enforces all trust invariants.
 
 Trust model:
-  T = w_Q * Q + w_R * R + w_V * V
+  T = w_Q * Q + w_R * R + w_V * V + w_E * E
 
 Invariants enforced:
-- w_Q + w_R + w_V = 1.0
+- w_Q + w_R + w_V + w_E = 1.0
 - w_Q >= 0.70 (quality dominates)
 - w_V <= 0.10 (volume never dominates)
+- w_E <= 0.10 (effort complements, never dominates)
 - Human floor > 0 (humans always retain minimum trust)
 - Machine floor = 0 (machines can decay to zero)
 - Quality gate: Q must meet Q_min before trust gain is allowed
+- Effort proportionality: low effort on high-complexity missions is a signal
 - Fast elevation: |delta| > delta_fast triggers automatic suspension
 - Proof-of-work alone cannot mint trust (must have proof-of-trust via review)
+- Proof-of-effort alone cannot mint trust (must combine with quality)
 """
 
 from __future__ import annotations
@@ -31,10 +34,11 @@ class TrustEngine:
         quality: float,
         reliability: float,
         volume: float,
+        effort: float = 0.0,
     ) -> float:
         """Compute raw trust score from components, clamped to [0, 1]."""
-        w_q, w_r, w_v = self._resolver.trust_weights()
-        raw = w_q * quality + w_r * reliability + w_v * volume
+        w_q, w_r, w_v, w_e = self._resolver.trust_weights()
+        raw = w_q * quality + w_r * reliability + w_v * volume + w_e * effort
         return max(0.0, min(1.0, raw))
 
     def apply_update(
@@ -45,6 +49,7 @@ class TrustEngine:
         volume: float,
         reason: str,
         mission_id: str | None = None,
+        effort: float = 0.0,
     ) -> tuple[TrustRecord, TrustDelta]:
         """Apply a trust update and return the new record + delta.
 
@@ -60,8 +65,8 @@ class TrustEngine:
         floor = self._resolver.trust_floor(is_machine)
         delta_fast = self._resolver.delta_fast()
 
-        # Compute new raw score
-        new_raw = self.compute_score(quality, reliability, volume)
+        # Compute new raw score (includes effort component)
+        new_raw = self.compute_score(quality, reliability, volume, effort)
 
         # Quality gate: if Q < Q_min, no trust gain allowed
         if quality < q_min and new_raw > record.score:
@@ -98,6 +103,7 @@ class TrustEngine:
             quality=quality,
             reliability=reliability,
             volume=volume,
+            effort=effort,
             quarantined=record.quarantined,
             recertification_failures=record.recertification_failures,
             last_recertification_utc=record.last_recertification_utc,

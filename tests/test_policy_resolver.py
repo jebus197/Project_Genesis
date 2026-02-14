@@ -56,16 +56,21 @@ class TestTierPolicy:
 
 class TestTrustWeights:
     def test_weights_sum_to_one(self, resolver: PolicyResolver) -> None:
-        w_q, w_r, w_v = resolver.trust_weights()
-        assert abs((w_q + w_r + w_v) - 1.0) < 1e-9
+        w_q, w_r, w_v, w_e = resolver.trust_weights()
+        assert abs((w_q + w_r + w_v + w_e) - 1.0) < 1e-9
 
     def test_quality_dominates(self, resolver: PolicyResolver) -> None:
-        w_q, _, _ = resolver.trust_weights()
+        w_q, _, _, _ = resolver.trust_weights()
         assert w_q >= 0.70
 
     def test_volume_bounded(self, resolver: PolicyResolver) -> None:
-        _, _, w_v = resolver.trust_weights()
+        _, _, w_v, _ = resolver.trust_weights()
         assert w_v <= 0.10
+
+    def test_effort_bounded(self, resolver: PolicyResolver) -> None:
+        _, _, _, w_e = resolver.trust_weights()
+        assert w_e <= 0.10
+        assert w_e >= 0.0
 
 
 class TestConstitutionalVoting:
@@ -125,6 +130,36 @@ class TestGeoConstraints:
         assert g3_rmin > g2_rmin
         assert g2_cmax < g1_cmax
         assert g3_cmax < g2_cmax
+
+
+class TestEffortThresholds:
+    def test_all_tiers_present(self, resolver: PolicyResolver) -> None:
+        et = resolver.effort_thresholds()
+        for tier in ("R0", "R1", "R2", "R3"):
+            assert tier in et["E_min_per_tier"]
+
+    def test_monotonically_increasing(self, resolver: PolicyResolver) -> None:
+        et = resolver.effort_thresholds()
+        e_min = et["E_min_per_tier"]
+        assert e_min["R0"] <= e_min["R1"] <= e_min["R2"] <= e_min["R3"]
+
+    def test_values_in_unit_interval(self, resolver: PolicyResolver) -> None:
+        et = resolver.effort_thresholds()
+        for tier, val in et["E_min_per_tier"].items():
+            assert 0.0 <= val <= 1.0, f"E_min_per_tier[{tier}] out of range"
+
+    def test_suspicious_low_non_negative(self, resolver: PolicyResolver) -> None:
+        et = resolver.effort_thresholds()
+        assert et["E_suspicious_low"] >= 0.0
+
+    def test_max_credit_capped(self, resolver: PolicyResolver) -> None:
+        et = resolver.effort_thresholds()
+        assert et["E_max_credit"] <= 1.0
+
+    def test_suspicious_low_below_r0_minimum(self, resolver: PolicyResolver) -> None:
+        """E_suspicious_low should be strictly below the lowest tier minimum."""
+        et = resolver.effort_thresholds()
+        assert et["E_suspicious_low"] < et["E_min_per_tier"]["R0"]
 
 
 class TestCommitmentTiers:

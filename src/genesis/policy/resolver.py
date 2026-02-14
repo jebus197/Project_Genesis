@@ -94,10 +94,10 @@ class PolicyResolver:
     # Trust weights and gates
     # ------------------------------------------------------------------
 
-    def trust_weights(self) -> tuple[float, float, float]:
-        """Return (w_Q, w_R, w_V) trust component weights."""
+    def trust_weights(self) -> tuple[float, float, float, float]:
+        """Return (w_Q, w_R, w_V, w_E) trust component weights."""
         tw = self._params["trust_weights"]
-        return tw["w_Q"], tw["w_R"], tw["w_V"]
+        return tw["w_Q"], tw["w_R"], tw["w_V"], tw["w_E"]
 
     def quality_gate(self, is_machine: bool) -> float:
         """Return the minimum quality score gate."""
@@ -121,6 +121,16 @@ class PolicyResolver:
         """Return (tau_vote, tau_prop) eligibility thresholds."""
         el = self._params["eligibility"]
         return el["tau_vote"], el["tau_prop"]
+
+    def effort_thresholds(self) -> dict[str, Any]:
+        """Return effort-proportionality thresholds.
+
+        Keys:
+        - E_min_per_tier: dict mapping tier string to minimum effort score
+        - E_suspicious_low: effort below this on any mission is a signal
+        - E_max_credit: maximum effort credit (caps at 1.0)
+        """
+        return dict(self._params["effort_thresholds"])
 
     # ------------------------------------------------------------------
     # Constitutional voting weights

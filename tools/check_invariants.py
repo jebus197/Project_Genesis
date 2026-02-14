@@ -54,12 +54,39 @@ def check() -> int:
     w_q = weights["w_Q"]
     w_r = weights["w_R"]
     w_v = weights["w_V"]
-    if not math.isclose(w_q + w_r + w_v, 1.0, rel_tol=0.0, abs_tol=1e-9):
-        errors.append("w_Q + w_R + w_V must equal 1.0")
+    w_e = weights["w_E"]
+    if not math.isclose(w_q + w_r + w_v + w_e, 1.0, rel_tol=0.0, abs_tol=1e-9):
+        errors.append("w_Q + w_R + w_V + w_E must equal 1.0")
     if w_q < 0.70:
         errors.append(f"w_Q must be >= 0.70, got {w_q}")
     if w_v > 0.10:
         errors.append(f"w_V must be <= 0.10, got {w_v}")
+    if w_e > 0.10:
+        errors.append(f"w_E must be <= 0.10, got {w_e}")
+    if w_e < 0.0:
+        errors.append(f"w_E must be >= 0.0, got {w_e}")
+
+    # --- Effort threshold invariants ---
+    effort = params["effort_thresholds"]
+    e_min = effort["E_min_per_tier"]
+    for tier_id in ("R0", "R1", "R2", "R3"):
+        if tier_id not in e_min:
+            errors.append(f"E_min_per_tier missing tier: {tier_id}")
+        elif not (0.0 <= e_min[tier_id] <= 1.0):
+            errors.append(f"E_min_per_tier[{tier_id}] must be in [0, 1]")
+    # Higher tiers must require more effort
+    tier_order = ["R0", "R1", "R2", "R3"]
+    for i in range(len(tier_order) - 1):
+        t_low, t_high = tier_order[i], tier_order[i + 1]
+        if t_low in e_min and t_high in e_min:
+            if e_min[t_high] < e_min[t_low]:
+                errors.append(
+                    f"E_min_per_tier[{t_high}] must be >= E_min_per_tier[{t_low}]"
+                )
+    if effort["E_suspicious_low"] < 0:
+        errors.append("E_suspicious_low must be >= 0")
+    if effort["E_max_credit"] > 1.0:
+        errors.append("E_max_credit must be <= 1.0")
 
     # --- Quality gate invariants ---
     qmin_h = params["quality_gates"]["Q_min_H"]

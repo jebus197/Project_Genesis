@@ -45,10 +45,45 @@ def _machine_record(score: float = 0.5) -> TrustRecord:
 
 class TestTrustComputation:
     def test_weighted_sum(self, engine: TrustEngine) -> None:
-        score = engine.compute_score(quality=0.8, reliability=0.7, volume=0.3)
-        # w_Q=0.75, w_R=0.2, w_V=0.05
-        expected = 0.75 * 0.8 + 0.2 * 0.7 + 0.05 * 0.3
+        score = engine.compute_score(quality=0.8, reliability=0.7, volume=0.3, effort=0.6)
+        # w_Q=0.70, w_R=0.20, w_V=0.05, w_E=0.05
+        expected = 0.70 * 0.8 + 0.20 * 0.7 + 0.05 * 0.3 + 0.05 * 0.6
         assert abs(score - expected) < 1e-9
+
+    def test_weighted_sum_zero_effort(self, engine: TrustEngine) -> None:
+        """With zero effort, only Q/R/V contribute."""
+        score = engine.compute_score(quality=0.8, reliability=0.7, volume=0.3, effort=0.0)
+        expected = 0.70 * 0.8 + 0.20 * 0.7 + 0.05 * 0.3 + 0.05 * 0.0
+        assert abs(score - expected) < 1e-9
+
+    def test_effort_increases_score(self, engine: TrustEngine) -> None:
+        """Higher effort should produce higher trust score."""
+        low = engine.compute_score(quality=0.8, reliability=0.7, volume=0.3, effort=0.0)
+        high = engine.compute_score(quality=0.8, reliability=0.7, volume=0.3, effort=1.0)
+        assert high > low
+
+
+class TestEffortCannotBypassQualityGate:
+    """Proof-of-effort alone cannot mint trust — quality gate still applies."""
+
+    def test_high_effort_low_quality_no_gain(self, engine: TrustEngine) -> None:
+        """Maximum effort with below-gate quality must not increase trust."""
+        record = _human_record(score=0.5)
+        new_record, delta = engine.apply_update(
+            record, quality=0.3, reliability=0.9, volume=0.9,
+            reason="high effort but low quality", effort=1.0,
+        )
+        # Q_min_H = 0.7, quality=0.3 < 0.7, so no gain even with max effort
+        assert new_record.score <= record.score
+
+    def test_effort_with_quality_allows_gain(self, engine: TrustEngine) -> None:
+        """Effort combined with above-gate quality should allow trust gain."""
+        record = _human_record(score=0.3)
+        new_record, delta = engine.apply_update(
+            record, quality=0.9, reliability=0.8, volume=0.4,
+            reason="quality work with effort", effort=0.8,
+        )
+        assert new_record.score >= record.score
 
 
 class TestScoreClamping:

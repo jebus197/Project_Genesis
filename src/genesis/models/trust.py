@@ -2,7 +2,8 @@
 
 Trust in Genesis is:
 - Non-purchasable, non-transferable, identity-bound.
-- Computed as T = w_Q * Q + w_R * R + w_V * V (constitutional_params.json).
+- Computed as T = w_Q * Q + w_R * R + w_V * V + w_E * E (constitutional_params.json).
+- E (effort) measures reasoning effort proportional to mission complexity.
 - Human floor is always positive; machine floor is zero.
 - Fast elevation (delta > delta_fast) triggers automatic suspension.
 """
@@ -54,7 +55,8 @@ class TrustRecord:
     - Humans: score >= T_floor_H (positive floor).
     - Machines: score >= T_floor_M (0.0 — can decay to zero).
     - Quality score Q must meet Q_min_H or Q_min_M before trust gain.
-    - score = w_Q * quality + w_R * reliability + w_V * volume (bounded).
+    - score = w_Q * quality + w_R * reliability + w_V * volume + w_E * effort.
+    - Effort (E) measures reasoning effort proportional to mission complexity tier.
     """
     actor_id: str
     actor_kind: ActorKind
@@ -62,6 +64,7 @@ class TrustRecord:
     quality: float = 0.0
     reliability: float = 0.0
     volume: float = 0.0
+    effort: float = 0.0
 
     # Machine-specific lifecycle fields
     quarantined: bool = False

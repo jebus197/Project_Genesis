@@ -114,12 +114,17 @@ The constitutional system uses a mathematically distributed decision model.
 - Machine update: `T_M_next = clip(T_M_now + gain_M - penalty_M - freshness_decay_M, 0, T_cap_M)`.
 - Human floor requirement: `T_floor_H > 0`.
 - Machine floor requirement: `T_floor_M = 0`.
-- `score_H = w_Q * Q_H + w_R * R_H + w_V * V_H`.
-- `score_M = w_Q * Q_M + w_R * R_M + w_V * V_M`.
+- `score_H = w_Q * Q_H + w_R * R_H + w_V * V_H + w_E * E_H`.
+- `score_M = w_Q * Q_M + w_R * R_M + w_V * V_M + w_E * E_M`.
+- `E` (effort) measures reasoning effort proportional to mission complexity tier.
+- Effort thresholds per tier: `E_min_per_tier[R0] <= E_min_per_tier[R1] <= E_min_per_tier[R2] <= E_min_per_tier[R3]` (monotonically increasing).
+- Effort below `E_suspicious_low` on any mission is a red flag for minimal-effort gaming.
+- Effort credit is capped at `E_max_credit` (cannot exceed 1.0).
+- Proof-of-effort alone cannot mint trust; quality gate still applies.
 - Quality gate: if `Q_H < Q_min_H` then `gain_H = 0`; if `Q_M < Q_min_M` then `gain_M = 0`.
 - `gain_H = min(alpha_H * score_H, u_max_H)` and `gain_M = min(alpha_M * score_M, u_max_M)`.
 - `gain_H` and `gain_M` are minted only through cryptographic proof-of-trust records.
-- Weight constraints: `w_Q + w_R + w_V = 1`, with `w_Q >= 0.70` and `w_V <= 0.10`.
+- Weight constraints: `w_Q + w_R + w_V + w_E = 1`, with `w_Q >= 0.70`, `w_V <= 0.10`, and `w_E <= 0.10`.
 - `penalty_H = beta_H * severe_fail + gamma_H * minor_fail`.
 - `penalty_M = beta_M * severe_fail + gamma_M * minor_fail`.
 - Freshness decay input for machines must include verification age and environment drift terms.
@@ -307,7 +312,10 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `freshness_decay_M` | `lambda_age * staleness + lambda_drift * env_drift` | Any stale-model incident, drift incident, or quarterly review | Machine slow-burn decay function |
 | `delta_max_H` | `policy-set` | Trust-volatility review or quarterly review | Human per-epoch growth limiter |
 | `delta_max_M` | `policy-set` | Trust-volatility review or quarterly review | Machine per-epoch growth limiter |
-| `w_Q, w_R, w_V` | `0.75, 0.20, 0.05` | Evidence-quality drift, volume gaming signal, or quarterly review | Trust gain weights (`w_Q + w_R + w_V = 1`, `w_Q >= 0.70`, `w_V <= 0.10`) |
+| `w_Q, w_R, w_V, w_E` | `0.70, 0.20, 0.05, 0.05` | Evidence-quality drift, volume gaming signal, effort gaming signal, or quarterly review | Trust gain weights (`w_Q + w_R + w_V + w_E = 1`, `w_Q >= 0.70`, `w_V <= 0.10`, `w_E <= 0.10`) |
+| `E_min_per_tier` | `R0:0.10, R1:0.30, R2:0.50, R3:0.70` | Effort gaming signal, tier-proportionality drift, or quarterly review | Minimum effort score per risk tier (monotonically increasing) |
+| `E_suspicious_low` | `0.05` | Minimal-effort gaming signal or quarterly review | Effort below this on any mission flags for review |
+| `E_max_credit` | `1.0` | Effort inflation signal or quarterly review | Maximum effort credit (cannot exceed 1.0) |
 | `Q_min_H` | `0.70` | Human-review quality regression or quarterly review | Human minimum quality gate for trust gain |
 | `Q_min_M` | `0.80` | Machine-review quality regression or quarterly review | Machine minimum quality gate for trust gain |
 | `RECERT_CORRECTNESS_MIN` | `0.95` | Re-cert false-pass signal or quarterly review | Machine re-cert minimum correctness |
@@ -592,6 +600,9 @@ For R2 normative disputes:
 14. Can human trust decay below `T_floor_H`? If yes, reject design.
 15. Can trust be minted without cryptographic proof-of-trust evidence? If yes, reject design.
 16. Can proof-of-work evidence alone mint trust? If yes, reject design.
+16a. Can proof-of-effort alone (without meeting quality gate) mint trust? If yes, reject design.
+16b. Can an actor earn effort credit exceeding `E_max_credit`? If yes, reject design.
+16c. Can effort thresholds decrease as risk tier increases? If yes, reject design.
 17. Can constitutional chambers form without constrained-random geographic assignment constraints? If yes, reject design.
 18. Can highest-trust actors unilaterally ratify constitutional changes? If yes, reject design.
 19. Does any constitutional voting path assign non-zero machine voting weight (`w_M_const > 0`)? If yes, reject design.

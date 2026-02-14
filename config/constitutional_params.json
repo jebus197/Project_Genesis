@@ -6,9 +6,10 @@
     "w_M_const": 0.0
   },
   "trust_weights": {
-    "w_Q": 0.75,
-    "w_R": 0.2,
-    "w_V": 0.05
+    "w_Q": 0.70,
+    "w_R": 0.20,
+    "w_V": 0.05,
+    "w_E": 0.05
   },
   "quality_gates": {
     "Q_min_H": 0.7,
@@ -21,6 +22,16 @@
   "eligibility": {
     "tau_vote": 0.70,
     "tau_prop": 0.85
+  },
+  "effort_thresholds": {
+    "E_min_per_tier": {
+      "R0": 0.10,
+      "R1": 0.30,
+      "R2": 0.50,
+      "R3": 0.70
+    },
+    "E_suspicious_low": 0.05,
+    "E_max_credit": 1.0
   },
   "fast_elevation": {
     "delta_fast": 0.02
