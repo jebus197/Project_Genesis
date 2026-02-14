@@ -88,53 +88,65 @@ class GovernanceBallot:
     resolved_utc: Optional[datetime] = None
     passed: Optional[bool] = None
 
-    def _assign_voters_to_chambers(self) -> dict[ChamberKind, list[ChamberVote]]:
-        """Assign each voter to exactly one chamber (first appearance wins).
+    def check_chamber_overlap(self) -> set[str]:
+        """Return voter IDs that appear in more than one chamber.
 
         Constitutional rule: three *independent* chambers with no overlap.
-        A voter who appears in multiple chambers is counted only in the
-        first chamber encountered (ordered: proposal → ratification → challenge).
+        Any cross-chamber voter is a structural violation.
         """
-        global_seen: set[str] = set()
-        result: dict[ChamberKind, list[ChamberVote]] = {k: [] for k in ChamberKind}
-        for kind in ChamberKind:  # deterministic order
-            seen_in_chamber: set[str] = set()
-            for v in self.votes:
-                if v.chamber != kind:
-                    continue
-                if v.voter_id in global_seen:
-                    continue  # Already counted in another chamber
-                if v.voter_id in seen_in_chamber:
-                    continue  # Duplicate within this chamber
-                seen_in_chamber.add(v.voter_id)
-                global_seen.add(v.voter_id)
-                result[kind].append(v)
-        return result
+        chamber_voters: dict[ChamberKind, set[str]] = {k: set() for k in ChamberKind}
+        for v in self.votes:
+            chamber_voters[v.chamber].add(v.voter_id)
+        all_voters: list[str] = []
+        for voters in chamber_voters.values():
+            all_voters.extend(voters)
+        seen: set[str] = set()
+        overlap: set[str] = set()
+        for vid in all_voters:
+            if vid in seen:
+                overlap.add(vid)
+            seen.add(vid)
+        return overlap
 
     def tally(self) -> dict[ChamberKind, tuple[int, int]]:
         """Return (yes_count, no_count) per chamber.
 
-        Deduplicates by voter_id within each chamber and enforces
-        non-overlap across chambers (one voter, one chamber only).
+        Deduplicates by voter_id within each chamber.
         """
-        assigned = self._assign_voters_to_chambers()
         result: dict[ChamberKind, tuple[int, int]] = {}
         for kind in ChamberKind:
-            yes = sum(1 for v in assigned[kind] if v.vote)
-            no = sum(1 for v in assigned[kind] if not v.vote)
+            seen_voters: set[str] = set()
+            yes = 0
+            no = 0
+            for v in self.votes:
+                if v.chamber != kind:
+                    continue
+                if v.voter_id in seen_voters:
+                    continue  # One vote per voter per chamber
+                seen_voters.add(v.voter_id)
+                if v.vote:
+                    yes += 1
+                else:
+                    no += 1
             result[kind] = (yes, no)
         return result
 
     def evaluate(self) -> bool:
         """Evaluate whether the ballot passes all three chambers.
 
-        Constitutional requirement: all three chambers must be present.
-        A ballot with fewer than three chambers always fails.
+        Fail-closed on structural violations:
+        1. All three chambers must be present.
+        2. No voter may appear in more than one chamber.
+        3. Each chamber must independently reach its pass_threshold.
         """
         # All three chambers must be defined
         for kind in ChamberKind:
             if kind not in self.chambers:
                 return False
+
+        # Fail-closed: any cross-chamber overlap invalidates the ballot
+        if self.check_chamber_overlap():
+            return False
 
         tally = self.tally()
         for kind, chamber in self.chambers.items():

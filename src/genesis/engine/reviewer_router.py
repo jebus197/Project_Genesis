@@ -48,15 +48,19 @@ class ReviewerRouter:
             # R3: constitutional flow — reviewers handled by governance module
             return errors
 
-        # Reject blank/empty reviewer IDs
+        # Canonicalise and validate reviewer IDs: strip whitespace,
+        # reject blank/empty, then check uniqueness on canonical forms.
+        canonical_ids: list[str] = []
         for idx, rev in enumerate(proposed_reviewers):
-            if not rev.id or not rev.id.strip():
+            canonical = rev.id.strip() if rev.id else ""
+            if not canonical:
                 errors.append(
                     f"{mission.mission_id}: reviewer[{idx}] has blank or empty ID"
                 )
+            canonical_ids.append(canonical)
 
         # Unique reviewer IDs — duplicates cannot satisfy count constraints
-        reviewer_ids = {r.id for r in proposed_reviewers}
+        reviewer_ids = set(canonical_ids)
         if len(reviewer_ids) < len(proposed_reviewers):
             errors.append(
                 f"{mission.mission_id}: duplicate reviewer IDs detected — "

@@ -162,6 +162,18 @@ class TestUnassignedReviewerBlocked:
         errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
         assert errors == []
 
+    def test_unassigned_decision_explicitly_rejected(self, sm: MissionStateMachine) -> None:
+        """Even if quorum is met by assigned reviewers, an unassigned decision must cause an error."""
+        mission = _make_r0_mission()
+        # reviewer_1 is assigned and approves (quorum met), but an extra fake decision exists
+        mission.review_decisions = [
+            ReviewDecision(reviewer_id="reviewer_1", decision=ReviewDecisionVerdict.APPROVE),
+            ReviewDecision(reviewer_id="ghost_reviewer", decision=ReviewDecisionVerdict.APPROVE),
+        ]
+        mission.state = MissionState.IN_REVIEW
+        errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
+        assert any("unassigned" in e.lower() for e in errors)
+
 
 class TestHumanGate:
     def test_r2_requires_human_gate(self, sm: MissionStateMachine) -> None:

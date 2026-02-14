@@ -124,9 +124,17 @@ class MissionStateMachine:
         if policy.constitutional_flow:
             return errors  # Constitutional flow has its own validation
 
-        # Check approval count — only count approvals from assigned reviewers,
-        # deduplicated by reviewer_id.  Unassigned or fake IDs are ignored.
+        # Fail-closed: reject if any review decision comes from an
+        # unassigned reviewer.  Malformed decision logs must not pass.
         assigned_ids = {r.id for r in mission.reviewers}
+        for d in mission.review_decisions:
+            if d.reviewer_id not in assigned_ids:
+                errors.append(
+                    f"{mission.mission_id}: review decision from "
+                    f"unassigned reviewer '{d.reviewer_id}'"
+                )
+
+        # Check approval count — deduplicated by reviewer_id, assigned only.
         seen_reviewers: set[str] = set()
         approvals = 0
         for d in mission.review_decisions:

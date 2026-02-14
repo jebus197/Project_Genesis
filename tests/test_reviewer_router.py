@@ -154,6 +154,36 @@ class TestBlankReviewerID:
         assert any("blank" in e.lower() or "empty" in e.lower() for e in errors)
 
 
+class TestIDCanonicalisation:
+    def test_trailing_whitespace_detected_as_duplicate(self, router: ReviewerRouter) -> None:
+        """'alice' and 'alice ' must be treated as the same ID."""
+        mission = Mission(
+            mission_id="M-CANON",
+            mission_title="Canonicalisation test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        reviewers = [_rev("alice"), _rev("alice ")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("duplicate" in e.lower() for e in errors)
+
+    def test_leading_whitespace_detected_as_duplicate(self, router: ReviewerRouter) -> None:
+        """' bob' and 'bob' must be treated as the same ID."""
+        mission = Mission(
+            mission_id="M-CANON2",
+            mission_title="Leading whitespace test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        reviewers = [_rev(" bob"), _rev("bob")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("duplicate" in e.lower() for e in errors)
+
+
 class TestSelfReview:
     def test_worker_blocked_as_reviewer(self, router: ReviewerRouter) -> None:
         mission = Mission(

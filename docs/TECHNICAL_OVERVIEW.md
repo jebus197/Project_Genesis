@@ -480,7 +480,7 @@ Key design principles:
 3. **Auditable transitions**: every state change in the mission lifecycle is an explicit, logged event.
 4. **Self-review impossible**: the reviewer router structurally prevents any actor from reviewing their own work.
 
-All constitutional invariants are tested automatically. The test suite (104 tests) covers every critical rule described in this document.
+All constitutional invariants are tested automatically. The test suite (109 tests) covers every critical rule described in this document.
 
 ```bash
 python3 -m pytest tests/ -v
