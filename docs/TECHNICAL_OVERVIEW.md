@@ -470,8 +470,10 @@ src/genesis/
 ├── engine/          Mission state machine, evidence validation, reviewer routing
 ├── trust/           Trust scoring, decay, quality gates, fast-elevation control
 ├── governance/      Genesis phase controller (G0→G1→G2→G3 progression)
-├── crypto/          Merkle trees, commitment builder, blockchain anchoring
-└── review/          Review workflow orchestration (planned)
+├── crypto/          Merkle trees, commitment builder, blockchain anchoring, epoch service
+├── review/          Actor roster, constrained-random reviewer selector
+├── service.py       Unified service facade (orchestrates all subsystems)
+└── cli.py           Command-line interface
 ```
 
 Key design principles:
@@ -481,7 +483,7 @@ Key design principles:
 3. **Auditable transitions**: every state change in the mission lifecycle is an explicit, logged event.
 4. **Self-review impossible**: the reviewer router structurally prevents any actor from reviewing their own work.
 
-All constitutional invariants are tested automatically. The test suite (149 tests) covers every critical rule described in this document.
+All constitutional invariants are tested automatically. The test suite (196 tests) covers every critical rule described in this document.
 
 ```bash
 python3 -m pytest tests/ -v
