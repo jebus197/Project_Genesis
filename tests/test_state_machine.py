@@ -142,6 +142,27 @@ class TestApprovalDeduplication:
         assert any("approval" in e.lower() for e in errors)
 
 
+class TestUnassignedReviewerBlocked:
+    def test_unassigned_reviewer_approval_ignored(self, sm: MissionStateMachine) -> None:
+        """An approval from a reviewer not in mission.reviewers must not count."""
+        mission = _make_r0_mission()
+        mission.reviewers = [_make_reviewer("legit_reviewer")]
+        mission.review_decisions = [
+            ReviewDecision(reviewer_id="attacker_not_assigned", decision=ReviewDecisionVerdict.APPROVE),
+        ]
+        mission.state = MissionState.IN_REVIEW
+        errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
+        assert any("approval" in e.lower() for e in errors)
+
+    def test_assigned_reviewer_approval_still_works(self, sm: MissionStateMachine) -> None:
+        """An approval from an assigned reviewer must still count."""
+        mission = _make_r0_mission()
+        # reviewer_1 is assigned (from _make_r0_mission) and approves
+        mission.state = MissionState.IN_REVIEW
+        errors = sm.transition(mission, MissionState.REVIEW_COMPLETE)
+        assert errors == []
+
+
 class TestHumanGate:
     def test_r2_requires_human_gate(self, sm: MissionStateMachine) -> None:
         mission = _make_r0_mission()

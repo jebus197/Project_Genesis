@@ -48,6 +48,13 @@ class ReviewerRouter:
             # R3: constitutional flow — reviewers handled by governance module
             return errors
 
+        # Reject blank/empty reviewer IDs
+        for idx, rev in enumerate(proposed_reviewers):
+            if not rev.id or not rev.id.strip():
+                errors.append(
+                    f"{mission.mission_id}: reviewer[{idx}] has blank or empty ID"
+                )
+
         # Unique reviewer IDs — duplicates cannot satisfy count constraints
         reviewer_ids = {r.id for r in proposed_reviewers}
         if len(reviewer_ids) < len(proposed_reviewers):

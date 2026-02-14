@@ -112,3 +112,55 @@ class TestVoteDeduplication:
         yes, no = ballot.tally()[ChamberKind.PROPOSAL]
         assert yes == 2  # v1 (once) + v2
         assert no == 1   # v3
+
+
+class TestChamberNonOverlap:
+    """One voter can only participate in one chamber (constitutional independence)."""
+
+    def test_cross_chamber_voter_counted_once(self) -> None:
+        """A voter voting in all three chambers should only count in one."""
+        votes = [
+            # "overlap_voter" votes yes in all three chambers
+            _vote("overlap_voter", ChamberKind.PROPOSAL),
+            _vote("overlap_voter", ChamberKind.RATIFICATION),
+            _vote("overlap_voter", ChamberKind.CHALLENGE),
+        ]
+        ballot = GovernanceBallot(
+            ballot_id="B-OVERLAP",
+            description="Cross-chamber overlap test",
+            chambers=_full_chambers(),
+            votes=votes,
+        )
+        tally = ballot.tally()
+        total_yes = sum(y for y, _ in tally.values())
+        # One voter = one vote total across all chambers
+        assert total_yes == 1
+
+    def test_overlap_cannot_pass_ballot(self) -> None:
+        """Same 3 voters voting in all 3 chambers cannot pass a ballot."""
+        votes = []
+        for kind in ChamberKind:
+            for i in range(3):
+                votes.append(_vote(f"shared_v{i}", kind))
+        ballot = GovernanceBallot(
+            ballot_id="B-OVERLAP-FAIL",
+            description="Shared voters across chambers",
+            chambers=_full_chambers(),
+            votes=votes,
+        )
+        # 3 voters total — they get assigned to the first chamber only
+        assert ballot.evaluate() is False
+
+    def test_independent_voters_pass(self) -> None:
+        """9 distinct voters (3 per chamber) should pass."""
+        votes = []
+        for kind in ChamberKind:
+            for i in range(3):
+                votes.append(_vote(f"{kind.value}_v{i}", kind))
+        ballot = GovernanceBallot(
+            ballot_id="B-INDEPENDENT",
+            description="Fully independent chambers",
+            chambers=_full_chambers(),
+            votes=votes,
+        )
+        assert ballot.evaluate() is True

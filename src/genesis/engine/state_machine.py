@@ -124,12 +124,17 @@ class MissionStateMachine:
         if policy.constitutional_flow:
             return errors  # Constitutional flow has its own validation
 
-        # Check approval count — deduplicate by reviewer_id so that
-        # the same reviewer cannot inflate the approval count.
+        # Check approval count — only count approvals from assigned reviewers,
+        # deduplicated by reviewer_id.  Unassigned or fake IDs are ignored.
+        assigned_ids = {r.id for r in mission.reviewers}
         seen_reviewers: set[str] = set()
         approvals = 0
         for d in mission.review_decisions:
-            if d.decision == ReviewDecisionVerdict.APPROVE and d.reviewer_id not in seen_reviewers:
+            if (
+                d.decision == ReviewDecisionVerdict.APPROVE
+                and d.reviewer_id in assigned_ids
+                and d.reviewer_id not in seen_reviewers
+            ):
                 seen_reviewers.add(d.reviewer_id)
                 approvals += 1
         if approvals < policy.approvals_required:

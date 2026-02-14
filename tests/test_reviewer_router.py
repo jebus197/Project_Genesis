@@ -124,6 +124,36 @@ class TestReviewerUniqueness:
         assert any("duplicate" in e.lower() for e in errors)
 
 
+class TestBlankReviewerID:
+    def test_empty_id_rejected(self, router: ReviewerRouter) -> None:
+        """A reviewer with an empty string ID must be rejected."""
+        mission = Mission(
+            mission_id="M-BLANK",
+            mission_title="Blank ID test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        reviewers = [_rev("")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("blank" in e.lower() or "empty" in e.lower() for e in errors)
+
+    def test_whitespace_id_rejected(self, router: ReviewerRouter) -> None:
+        """A reviewer with a whitespace-only ID must be rejected."""
+        mission = Mission(
+            mission_id="M-SPACE",
+            mission_title="Whitespace ID test",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            risk_tier=RiskTier.R0,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="worker_1",
+        )
+        reviewers = [_rev("   ")]
+        errors = router.validate_assignment(mission, reviewers)
+        assert any("blank" in e.lower() or "empty" in e.lower() for e in errors)
+
+
 class TestSelfReview:
     def test_worker_blocked_as_reviewer(self, router: ReviewerRouter) -> None:
         mission = Mission(

@@ -88,27 +88,40 @@ class GovernanceBallot:
     resolved_utc: Optional[datetime] = None
     passed: Optional[bool] = None
 
-    def tally(self) -> dict[ChamberKind, tuple[int, int]]:
-        """Return (yes_count, no_count) per chamber.
+    def _assign_voters_to_chambers(self) -> dict[ChamberKind, list[ChamberVote]]:
+        """Assign each voter to exactly one chamber (first appearance wins).
 
-        Deduplicates by voter_id within each chamber: if the same voter
-        casts multiple votes in the same chamber, only the first is counted.
+        Constitutional rule: three *independent* chambers with no overlap.
+        A voter who appears in multiple chambers is counted only in the
+        first chamber encountered (ordered: proposal → ratification → challenge).
         """
-        result: dict[ChamberKind, tuple[int, int]] = {}
-        for kind in ChamberKind:
-            seen_voters: set[str] = set()
-            yes = 0
-            no = 0
+        global_seen: set[str] = set()
+        result: dict[ChamberKind, list[ChamberVote]] = {k: [] for k in ChamberKind}
+        for kind in ChamberKind:  # deterministic order
+            seen_in_chamber: set[str] = set()
             for v in self.votes:
                 if v.chamber != kind:
                     continue
-                if v.voter_id in seen_voters:
-                    continue  # One vote per voter per chamber
-                seen_voters.add(v.voter_id)
-                if v.vote:
-                    yes += 1
-                else:
-                    no += 1
+                if v.voter_id in global_seen:
+                    continue  # Already counted in another chamber
+                if v.voter_id in seen_in_chamber:
+                    continue  # Duplicate within this chamber
+                seen_in_chamber.add(v.voter_id)
+                global_seen.add(v.voter_id)
+                result[kind].append(v)
+        return result
+
+    def tally(self) -> dict[ChamberKind, tuple[int, int]]:
+        """Return (yes_count, no_count) per chamber.
+
+        Deduplicates by voter_id within each chamber and enforces
+        non-overlap across chambers (one voter, one chamber only).
+        """
+        assigned = self._assign_voters_to_chambers()
+        result: dict[ChamberKind, tuple[int, int]] = {}
+        for kind in ChamberKind:
+            yes = sum(1 for v in assigned[kind] if v.vote)
+            no = sum(1 for v in assigned[kind] if not v.vote)
             result[kind] = (yes, no)
         return result
 
