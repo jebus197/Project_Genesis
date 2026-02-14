@@ -148,6 +148,32 @@ Open the [transaction on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0
 
 Full anchor log: [`docs/ANCHORS.md`](docs/ANCHORS.md) | Trust event record: [`docs/GENESIS_EVENTS.md`](docs/GENESIS_EVENTS.md)
 
+## The Labour Market
+
+Trust is meaningful only if it leads to real work. Genesis includes a built-in labour market — a way for people and AI systems to find the right tasks, prove they can do them, and build a track record over time.
+
+### How it works in plain terms
+
+Imagine a job board, but one where your qualifications are verified by the system itself and your reputation follows you from project to project:
+
+1. **Someone posts a task.** They describe what needs doing, what skills are required, and how complex it is — like posting a job listing.
+2. **Qualified workers bid.** The system already knows what each worker is good at (from past results), so it can show which candidates are genuinely qualified — not just who claims to be.
+3. **The best match wins.** A scoring algorithm considers skill relevance (50%), domain-specific reputation (30%), and overall trust (20%). No backroom deals, no nepotism — the formula is transparent and auditable.
+4. **The work gets done and reviewed.** This feeds back into the trust system. Good results raise your reputation in that domain. Poor results lower it.
+5. **Skills evolve naturally.** Your skill profile grows when outcomes prove you can do the work. It decays gradually if you stop practising — slowly for humans (a year to noticeably fade), faster for machines (about three months). Deep experience decays more slowly than shallow experience, which is how the real world works too.
+
+### What makes it different
+
+Most platforms let you write whatever you want on your profile. Genesis does the opposite: **your skills are earned, not claimed.** A skill only appears on your profile after a real mission outcome proves you have it. Peers can endorse your skills, but endorsement can only boost what already exists — it can never create a skill from nothing.
+
+This means when the system says someone is qualified, it actually means something. Every skill entry is backed by auditable evidence.
+
+### Domain-specific reputation
+
+Your reputation in Genesis is not one number. If you are an excellent medical researcher but a mediocre software developer, the system knows both. Trust is tracked per domain — so you might be highly trusted for healthcare analysis but start from scratch if you bid on a coding task.
+
+This prevents a common problem with flat reputation systems: someone building a high score in one field and then trading on it in a completely different one.
+
 ## Why This Is Feasible Now
 
 Genesis does not require any technology that doesn't already exist. Every building block — workflow orchestration, policy-as-code, role-based access, cryptographic logging, human review interfaces, audit pipelines — is mature and widely deployed.
@@ -203,15 +229,20 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 |---|---|
 | `config/constitutional_params.json` | Constitutional parameter defaults in machine-readable form. |
 | `config/runtime_policy.json` | Mission-class-to-risk-tier mapping and review topology. |
+| `config/skill_taxonomy.json` | Two-level skill taxonomy (6 domains, 3–5 skills each). |
+| `config/skill_trust_params.json` | Domain trust weights, decay configuration, and aggregation method. |
+| `config/skill_lifecycle_params.json` | Decay half-lives, endorsement rules, and outcome-based learning rates. |
+| `config/market_policy.json` | Allocation weights, bid requirements, and listing defaults. |
 | `examples/worked_examples/` | Reproducible low-risk and high-risk mission bundles. |
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation:**
+**Validation (580 tests):**
 
 ```bash
-python3 tools/check_invariants.py
-python3 tools/verify_examples.py
+python3 -m pytest tests/ -q            # Run full test suite
+python3 tools/check_invariants.py      # Constitutional + runtime invariant checks
+python3 tools/verify_examples.py       # Worked-example policy validation
 ```
 
 ## Closing Position

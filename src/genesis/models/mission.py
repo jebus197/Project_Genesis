@@ -146,5 +146,10 @@ class Mission:
 
     human_final_approval: bool = False
 
+    # Skill requirements (optional — backward compatible)
+    skill_requirements: list = field(default_factory=list)
+    # Type: list[SkillRequirement] — untyped here to avoid circular import.
+    # Validated in the service layer via SkillTaxonomy.
+
     created_utc: Optional[datetime] = None
     completed_utc: Optional[datetime] = None

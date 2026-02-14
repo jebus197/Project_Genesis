@@ -26,11 +26,14 @@ from __future__ import annotations
 import hashlib
 import random
 from dataclasses import dataclass
-from typing import Optional
+from typing import Any, Optional
 
 from genesis.models.mission import Mission, Reviewer, RiskTier
+from genesis.models.skill import ActorSkillProfile
+from genesis.models.trust import TrustRecord
 from genesis.policy.resolver import PolicyResolver, TierPolicy
 from genesis.review.roster import ActorRoster, RosterEntry
+from genesis.skills.matching import SkillMatchEngine
 
 
 @dataclass(frozen=True)
@@ -58,9 +61,14 @@ class ReviewerSelector:
         self,
         resolver: PolicyResolver,
         roster: ActorRoster,
+        skill_profiles: dict[str, ActorSkillProfile] | None = None,
+        trust_records: dict[str, TrustRecord] | None = None,
     ) -> None:
         self._resolver = resolver
         self._roster = roster
+        self._skill_profiles = skill_profiles or {}
+        self._trust_records = trust_records or {}
+        self._match_engine = SkillMatchEngine(resolver)
 
     def select(
         self,
@@ -103,6 +111,26 @@ class ReviewerSelector:
                     f"found {len(candidates)} eligible"
                 ],
             )
+
+        # Skill-aware pre-filtering: if mission has skill requirements,
+        # prefer candidates with relevant skills. Falls back to full pool
+        # if filtering would leave too few candidates.
+        if (
+            hasattr(mission, "skill_requirements")
+            and mission.skill_requirements
+            and self._skill_profiles
+        ):
+            filtered = [
+                c for c in candidates
+                if self._match_engine.meets_minimum_relevance(
+                    self._skill_profiles.get(c.actor_id),
+                    mission.skill_requirements,
+                    self._trust_records.get(c.actor_id),
+                )
+            ]
+            # Only use filtered pool if it has enough candidates
+            if len(filtered) >= policy.reviewers_required:
+                candidates = filtered
 
         # Set up deterministic PRNG
         rng = random.Random()

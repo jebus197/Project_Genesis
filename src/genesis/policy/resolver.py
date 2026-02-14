@@ -38,17 +38,22 @@ class PolicyResolver:
         chambers = resolver.chambers_for_phase(GenesisPhase.G1)
     """
 
-    def __init__(self, params: dict[str, Any], policy: dict[str, Any]) -> None:
+    def __init__(
+        self,
+        params: dict[str, Any],
+        policy: dict[str, Any],
+        taxonomy: dict[str, Any] | None = None,
+        skill_trust: dict[str, Any] | None = None,
+        market_policy: dict[str, Any] | None = None,
+        skill_lifecycle: dict[str, Any] | None = None,
+    ) -> None:
         self._params = params
         self._policy = policy
+        self._taxonomy = taxonomy
+        self._skill_trust = skill_trust
+        self._market_policy = market_policy
+        self._skill_lifecycle = skill_lifecycle
         self._validate_versions()
-
-    @classmethod
-    def from_config_dir(cls, config_dir: Path) -> PolicyResolver:
-        """Load from the canonical config directory."""
-        params = _load_json(config_dir / "constitutional_params.json")
-        policy = _load_json(config_dir / "runtime_policy.json")
-        return cls(params, policy)
 
     def _validate_versions(self) -> None:
         if "version" not in self._params:
@@ -319,6 +324,226 @@ class PolicyResolver:
     def identity_signals(self) -> dict[str, Any]:
         """Return identity signal policy."""
         return dict(self._policy["identity_signals"])
+
+    # ------------------------------------------------------------------
+    # Skill taxonomy (optional — pre-labour-market mode if absent)
+    # ------------------------------------------------------------------
+
+    def has_skill_taxonomy(self) -> bool:
+        """Check if a skill taxonomy config file was loaded."""
+        return self._taxonomy is not None
+
+    def skill_taxonomy_data(self) -> dict[str, Any]:
+        """Return raw skill taxonomy data for SkillTaxonomy construction.
+
+        Returns empty dict if no taxonomy is loaded (pre-labour-market mode).
+        """
+        if self._taxonomy is None:
+            return {}
+        return dict(self._taxonomy)
+
+    # ------------------------------------------------------------------
+    # Domain-specific trust (optional — requires skill_trust_params.json)
+    # ------------------------------------------------------------------
+
+    def has_skill_trust_config(self) -> bool:
+        """Check if domain trust config was loaded."""
+        return self._skill_trust is not None
+
+    def domain_trust_weights(self) -> tuple[float, float, float, float]:
+        """Return (w_Q, w_R, w_V, w_E) for domain trust computation.
+
+        Falls back to global trust weights if no domain-specific config.
+        """
+        if self._skill_trust is None:
+            return self.trust_weights()
+        dtw = self._skill_trust["domain_trust_weights"]
+        return dtw["w_Q"], dtw["w_R"], dtw["w_V"], dtw["w_E"]
+
+    def inactivity_decay_config(self) -> dict[str, Any]:
+        """Return inactivity decay configuration.
+
+        Raises ValueError if no skill trust config is loaded.
+        """
+        if self._skill_trust is None:
+            raise ValueError("No skill trust config loaded")
+        return dict(self._skill_trust["inactivity_decay"])
+
+    def half_life_days(self, is_machine: bool) -> float:
+        """Return the inactivity decay half-life for an actor kind.
+
+        HUMAN: longer (e.g. 365 days) — realistic human timescales.
+        MACHINE: shorter (e.g. 90 days) — silence likely means deprecated.
+        Falls back to 365 if no config loaded.
+        """
+        if self._skill_trust is None:
+            return 365.0
+        decay = self._skill_trust["inactivity_decay"]
+        if is_machine:
+            return float(decay["half_life_days_machine"])
+        return float(decay["half_life_days_human"])
+
+    def global_score_aggregation(self) -> dict[str, Any]:
+        """Return global score aggregation configuration."""
+        if self._skill_trust is None:
+            return {"method": "weighted_mean", "recency_weight": 0.3, "volume_weight": 0.7}
+        return dict(self._skill_trust["global_score_aggregation"])
+
+    # ------------------------------------------------------------------
+    # Skill matching (optional — requires skill_trust_params.json)
+    # ------------------------------------------------------------------
+
+    def skill_matching_config(self) -> dict[str, Any]:
+        """Return skill matching configuration.
+
+        Keys:
+        - min_relevance_score: minimum relevance to be considered (default 0.3)
+        - proficiency_weight: weight for proficiency in relevance score
+        - domain_trust_weight: weight for domain trust in relevance score
+        - worker_allocation_weights: {relevance, global_trust, domain_trust}
+
+        Falls back to defaults if no skill trust config loaded.
+        """
+        if self._skill_trust is None:
+            return {
+                "min_relevance_score": 0.3,
+                "proficiency_weight": 0.60,
+                "domain_trust_weight": 0.40,
+                "worker_allocation_weights": {
+                    "relevance": 0.50,
+                    "global_trust": 0.20,
+                    "domain_trust": 0.30,
+                },
+            }
+        return dict(self._skill_trust.get("skill_matching", {}))
+
+    # ------------------------------------------------------------------
+    # Skill lifecycle (optional — requires skill_lifecycle_params.json)
+    # ------------------------------------------------------------------
+
+    def has_skill_lifecycle_config(self) -> bool:
+        """Check if skill lifecycle config was loaded."""
+        return self._skill_lifecycle is not None
+
+    def skill_lifecycle_params(self) -> dict[str, Any]:
+        """Return skill lifecycle parameters.
+
+        Keys: skill_half_life_days_human, skill_half_life_days_machine,
+              skill_decay_floor, skill_prune_threshold,
+              endorsement: {base_boost, min_endorser_proficiency, ...},
+              outcome_updates: {approval_boost, rejection_penalty, ...}
+        """
+        if self._skill_lifecycle is None:
+            return {
+                "skill_half_life_days_human": 365.0,
+                "skill_half_life_days_machine": 90.0,
+                "skill_decay_floor": 0.01,
+                "skill_prune_threshold": 0.01,
+                "endorsement": {
+                    "base_boost": 0.05,
+                    "min_endorser_proficiency": 0.5,
+                    "max_endorsements_per_skill": 10,
+                },
+                "outcome_updates": {
+                    "approval_boost": 0.05,
+                    "rejection_penalty": 0.02,
+                    "complexity_multipliers": {
+                        "R0": 1.0, "R1": 1.5, "R2": 2.0, "R3": 2.5,
+                    },
+                },
+            }
+        return dict(self._skill_lifecycle)
+
+    # ------------------------------------------------------------------
+    # Market policy (optional — requires market_policy.json)
+    # ------------------------------------------------------------------
+
+    def has_market_config(self) -> bool:
+        """Check if market policy config was loaded."""
+        return self._market_policy is not None
+
+    def market_allocation_weights(self) -> dict[str, float]:
+        """Return market bid allocation weights.
+
+        Keys: relevance, global_trust, domain_trust.
+        Falls back to skill_matching config if no market config.
+        """
+        if self._market_policy is not None:
+            return dict(self._market_policy.get("allocation_weights", {}))
+        # Fall back to skill matching worker_allocation_weights
+        sm = self.skill_matching_config()
+        return dict(sm.get("worker_allocation_weights", {
+            "relevance": 0.50,
+            "global_trust": 0.20,
+            "domain_trust": 0.30,
+        }))
+
+    def market_listing_defaults(self) -> dict[str, Any]:
+        """Return default listing configuration.
+
+        Keys: max_bids_per_listing, bid_window_hours,
+              min_skill_requirements, auto_close_on_allocation.
+        """
+        if self._market_policy is None:
+            return {
+                "max_bids_per_listing": 50,
+                "bid_window_hours": 48,
+                "min_skill_requirements": 0,
+                "auto_close_on_allocation": True,
+            }
+        return dict(self._market_policy.get("listing_defaults", {}))
+
+    def market_bid_requirements(self) -> dict[str, Any]:
+        """Return bid submission requirements.
+
+        Keys: min_trust_to_bid, min_relevance_to_bid,
+              allow_multiple_bids_per_worker.
+        """
+        if self._market_policy is None:
+            return {
+                "min_trust_to_bid": 0.10,
+                "min_relevance_to_bid": 0.0,
+                "allow_multiple_bids_per_worker": False,
+            }
+        return dict(self._market_policy.get("bid_requirements", {}))
+
+    @classmethod
+    def from_config_dir(cls, config_dir: Path) -> PolicyResolver:
+        """Load from the canonical config directory."""
+        params = _load_json(config_dir / "constitutional_params.json")
+        policy = _load_json(config_dir / "runtime_policy.json")
+
+        # Skill taxonomy is optional — system works without it
+        taxonomy_path = config_dir / "skill_taxonomy.json"
+        taxonomy = None
+        if taxonomy_path.exists():
+            taxonomy = _load_json(taxonomy_path)
+
+        # Skill trust params are optional — system works without them
+        skill_trust_path = config_dir / "skill_trust_params.json"
+        skill_trust = None
+        if skill_trust_path.exists():
+            skill_trust = _load_json(skill_trust_path)
+
+        # Market policy is optional — system works without it
+        market_path = config_dir / "market_policy.json"
+        market_policy = None
+        if market_path.exists():
+            market_policy = _load_json(market_path)
+
+        # Skill lifecycle params are optional — system works without them
+        lifecycle_path = config_dir / "skill_lifecycle_params.json"
+        skill_lifecycle = None
+        if lifecycle_path.exists():
+            skill_lifecycle = _load_json(lifecycle_path)
+
+        return cls(
+            params, policy,
+            taxonomy=taxonomy,
+            skill_trust=skill_trust,
+            market_policy=market_policy,
+            skill_lifecycle=skill_lifecycle,
+        )
 
 
 def _load_json(path: Path) -> dict[str, Any]:

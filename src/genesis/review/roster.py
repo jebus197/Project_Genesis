@@ -38,6 +38,7 @@ class RosterEntry:
 
     All fields required for reviewer selection are mandatory.
     Trust score is mutable (updated by the trust engine).
+    skill_profile is optional (backward compatible — None before labour market).
     """
     actor_id: str
     actor_kind: ActorKind
@@ -47,6 +48,9 @@ class RosterEntry:
     model_family: str
     method_type: str
     status: ActorStatus = ActorStatus.ACTIVE
+    skill_profile: Optional[object] = None
+    # Type: Optional[ActorSkillProfile] — untyped to avoid circular import.
+    # Set via GenesisService.update_actor_skills().
 
     def is_available(self) -> bool:
         """An actor is available if active or on probation."""

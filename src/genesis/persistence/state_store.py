@@ -4,6 +4,7 @@ Stores and recovers:
 - Actor roster (all registered actors with trust scores)
 - Mission state (all missions with their current lifecycle state)
 - Reviewer quality assessment histories (sliding windows for calibration)
+- Actor skill profiles (proficiency per skill)
 - Epoch chain state (previous hash, committed record count)
 
 This is a simple file-based store suitable for single-node deployment.
@@ -30,7 +31,21 @@ from genesis.models.mission import (
     Reviewer,
     RiskTier,
 )
+from genesis.models.domain_trust import DomainTrustScore
 from genesis.models.quality import ReviewerQualityAssessment
+from genesis.models.market import (
+    AllocationResult,
+    Bid,
+    BidState,
+    ListingState,
+    MarketListing,
+)
+from genesis.models.skill import (
+    ActorSkillProfile,
+    SkillId,
+    SkillProficiency,
+    SkillRequirement,
+)
 from genesis.models.trust import ActorKind, TrustRecord
 from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
 
@@ -111,6 +126,25 @@ class StateStore:
         """Serialize trust records to state."""
         entries = {}
         for actor_id, record in records.items():
+            # Serialize domain scores
+            domain_scores_data: dict[str, dict[str, Any]] = {}
+            for domain, ds in record.domain_scores.items():
+                if isinstance(ds, DomainTrustScore):
+                    domain_scores_data[domain] = {
+                        "domain": ds.domain,
+                        "score": ds.score,
+                        "quality": ds.quality,
+                        "reliability": ds.reliability,
+                        "volume": ds.volume,
+                        "effort": ds.effort,
+                        "mission_count": ds.mission_count,
+                        "last_active_utc": (
+                            ds.last_active_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                            if ds.last_active_utc
+                            else None
+                        ),
+                    }
+
             entries[actor_id] = {
                 "actor_id": record.actor_id,
                 "actor_kind": record.actor_kind.value,
@@ -121,6 +155,12 @@ class StateStore:
                 "effort": record.effort,
                 "quarantined": record.quarantined,
                 "decommissioned": record.decommissioned,
+                "last_active_utc": (
+                    record.last_active_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if record.last_active_utc
+                    else None
+                ),
+                "domain_scores": domain_scores_data,
             }
         self._state["trust_records"] = entries
         self._save()
@@ -129,6 +169,32 @@ class StateStore:
         """Deserialize trust records from state."""
         records = {}
         for actor_id, data in self._state.get("trust_records", {}).items():
+            # Deserialize domain scores
+            domain_scores: dict[str, DomainTrustScore] = {}
+            for domain, ds_data in data.get("domain_scores", {}).items():
+                last_active = None
+                if ds_data.get("last_active_utc"):
+                    last_active = datetime.strptime(
+                        ds_data["last_active_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                    ).replace(tzinfo=timezone.utc)
+                domain_scores[domain] = DomainTrustScore(
+                    domain=ds_data.get("domain", domain),
+                    score=ds_data.get("score", 0.0),
+                    quality=ds_data.get("quality", 0.0),
+                    reliability=ds_data.get("reliability", 0.0),
+                    volume=ds_data.get("volume", 0.0),
+                    effort=ds_data.get("effort", 0.0),
+                    mission_count=ds_data.get("mission_count", 0),
+                    last_active_utc=last_active,
+                )
+
+            # Deserialize last_active_utc for the global record
+            last_active_utc = None
+            if data.get("last_active_utc"):
+                last_active_utc = datetime.strptime(
+                    data["last_active_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
             record = TrustRecord(
                 actor_id=data["actor_id"],
                 actor_kind=ActorKind(data["actor_kind"]),
@@ -137,6 +203,8 @@ class StateStore:
                 reliability=data.get("reliability", 0.0),
                 volume=data.get("volume", 0.0),
                 effort=data.get("effort", 0.0),
+                last_active_utc=last_active_utc,
+                domain_scores=domain_scores,
             )
             record.quarantined = data.get("quarantined", False)
             record.decommissioned = data.get("decommissioned", False)
@@ -185,6 +253,14 @@ class StateStore:
                     }
                     for e in m.evidence
                 ],
+                "skill_requirements": [
+                    {
+                        "skill_id": req.skill_id.canonical,
+                        "minimum_proficiency": req.minimum_proficiency,
+                        "required": req.required,
+                    }
+                    for req in m.skill_requirements
+                ],
             }
         self._state["missions"] = entries
         self._save()
@@ -215,6 +291,14 @@ class StateStore:
                 ],
                 evidence=[
                     EvidenceRecord(**e) for e in data.get("evidence", [])
+                ],
+                skill_requirements=[
+                    SkillRequirement(
+                        skill_id=SkillId.parse(sr["skill_id"]),
+                        minimum_proficiency=sr.get("minimum_proficiency", 0.0),
+                        required=sr.get("required", True),
+                    )
+                    for sr in data.get("skill_requirements", [])
                 ],
             )
             missions[mid] = mission
@@ -275,6 +359,228 @@ class StateStore:
                 )
             histories[reviewer_id] = assessments
         return histories
+
+    # ------------------------------------------------------------------
+    # Actor skill profiles
+    # ------------------------------------------------------------------
+
+    def save_skill_profiles(
+        self,
+        profiles: dict[str, ActorSkillProfile],
+    ) -> None:
+        """Serialize actor skill profiles to state."""
+        entries: dict[str, dict[str, Any]] = {}
+        for actor_id, profile in profiles.items():
+            skills_data: dict[str, dict[str, Any]] = {}
+            for canonical, sp in profile.skills.items():
+                skills_data[canonical] = {
+                    "domain": sp.skill_id.domain,
+                    "skill": sp.skill_id.skill,
+                    "proficiency_score": sp.proficiency_score,
+                    "evidence_count": sp.evidence_count,
+                    "last_demonstrated_utc": (
+                        sp.last_demonstrated_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        if sp.last_demonstrated_utc
+                        else None
+                    ),
+                    "endorsement_count": sp.endorsement_count,
+                    "source": sp.source,
+                }
+            entries[actor_id] = {
+                "actor_id": profile.actor_id,
+                "skills": skills_data,
+                "primary_domains": profile.primary_domains,
+                "updated_utc": (
+                    profile.updated_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if profile.updated_utc
+                    else None
+                ),
+            }
+        self._state["skill_profiles"] = entries
+        self._save()
+
+    def load_skill_profiles(self) -> dict[str, ActorSkillProfile]:
+        """Deserialize actor skill profiles from state."""
+        profiles: dict[str, ActorSkillProfile] = {}
+        for actor_id, data in self._state.get("skill_profiles", {}).items():
+            skills: dict[str, SkillProficiency] = {}
+            for canonical, sp_data in data.get("skills", {}).items():
+                skill_id = SkillId(
+                    domain=sp_data["domain"],
+                    skill=sp_data["skill"],
+                )
+                last_demo = None
+                if sp_data.get("last_demonstrated_utc"):
+                    last_demo = datetime.strptime(
+                        sp_data["last_demonstrated_utc"],
+                        "%Y-%m-%dT%H:%M:%SZ",
+                    ).replace(tzinfo=timezone.utc)
+
+                skills[canonical] = SkillProficiency(
+                    skill_id=skill_id,
+                    proficiency_score=sp_data["proficiency_score"],
+                    evidence_count=sp_data.get("evidence_count", 0),
+                    last_demonstrated_utc=last_demo,
+                    endorsement_count=sp_data.get("endorsement_count", 0),
+                    source=sp_data.get("source", "outcome_derived"),
+                )
+
+            updated = None
+            if data.get("updated_utc"):
+                updated = datetime.strptime(
+                    data["updated_utc"],
+                    "%Y-%m-%dT%H:%M:%SZ",
+                ).replace(tzinfo=timezone.utc)
+
+            profiles[actor_id] = ActorSkillProfile(
+                actor_id=data["actor_id"],
+                skills=skills,
+                primary_domains=data.get("primary_domains", []),
+                updated_utc=updated,
+            )
+        return profiles
+
+    # ------------------------------------------------------------------
+    # Market listings persistence
+    # ------------------------------------------------------------------
+
+    def save_listings(
+        self,
+        listings: dict[str, MarketListing],
+        bids: dict[str, list[Bid]],
+    ) -> None:
+        """Serialize market listings and bids to state."""
+        listing_entries: dict[str, dict[str, Any]] = {}
+        for lid, listing in listings.items():
+            listing_entries[lid] = {
+                "listing_id": listing.listing_id,
+                "title": listing.title,
+                "description": listing.description,
+                "creator_id": listing.creator_id,
+                "state": listing.state.value,
+                "skill_requirements": [
+                    {
+                        "skill_id": req.skill_id.canonical,
+                        "minimum_proficiency": req.minimum_proficiency,
+                        "required": req.required,
+                    }
+                    for req in listing.skill_requirements
+                ],
+                "created_utc": (
+                    listing.created_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if listing.created_utc else None
+                ),
+                "opened_utc": (
+                    listing.opened_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if listing.opened_utc else None
+                ),
+                "allocated_utc": (
+                    listing.allocated_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if listing.allocated_utc else None
+                ),
+                "allocated_worker_id": listing.allocated_worker_id,
+                "allocated_mission_id": listing.allocated_mission_id,
+                "domain_tags": listing.domain_tags,
+                "preferences": listing.preferences,
+            }
+
+        bid_entries: dict[str, list[dict[str, Any]]] = {}
+        for lid, bid_list in bids.items():
+            bid_entries[lid] = [
+                {
+                    "bid_id": b.bid_id,
+                    "listing_id": b.listing_id,
+                    "worker_id": b.worker_id,
+                    "state": b.state.value,
+                    "relevance_score": b.relevance_score,
+                    "global_trust": b.global_trust,
+                    "domain_trust": b.domain_trust,
+                    "composite_score": b.composite_score,
+                    "submitted_utc": (
+                        b.submitted_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                        if b.submitted_utc else None
+                    ),
+                    "notes": b.notes,
+                }
+                for b in bid_list
+            ]
+
+        self._state["listings"] = listing_entries
+        self._state["bids"] = bid_entries
+        self._save()
+
+    def load_listings(self) -> tuple[dict[str, MarketListing], dict[str, list[Bid]]]:
+        """Deserialize market listings and bids from state.
+
+        Returns (listings_dict, bids_dict).
+        """
+        listings: dict[str, MarketListing] = {}
+        for lid, data in self._state.get("listings", {}).items():
+            created_utc = None
+            if data.get("created_utc"):
+                created_utc = datetime.strptime(
+                    data["created_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
+            opened_utc = None
+            if data.get("opened_utc"):
+                opened_utc = datetime.strptime(
+                    data["opened_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
+            allocated_utc = None
+            if data.get("allocated_utc"):
+                allocated_utc = datetime.strptime(
+                    data["allocated_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
+            listings[lid] = MarketListing(
+                listing_id=data["listing_id"],
+                title=data["title"],
+                description=data["description"],
+                creator_id=data["creator_id"],
+                state=ListingState(data["state"]),
+                skill_requirements=[
+                    SkillRequirement(
+                        skill_id=SkillId.parse(sr["skill_id"]),
+                        minimum_proficiency=sr.get("minimum_proficiency", 0.0),
+                        required=sr.get("required", True),
+                    )
+                    for sr in data.get("skill_requirements", [])
+                ],
+                created_utc=created_utc,
+                opened_utc=opened_utc,
+                allocated_utc=allocated_utc,
+                allocated_worker_id=data.get("allocated_worker_id"),
+                allocated_mission_id=data.get("allocated_mission_id"),
+                domain_tags=data.get("domain_tags", []),
+                preferences=data.get("preferences", {}),
+            )
+
+        bids: dict[str, list[Bid]] = {}
+        for lid, bid_list in self._state.get("bids", {}).items():
+            bids[lid] = []
+            for bd in bid_list:
+                submitted_utc = None
+                if bd.get("submitted_utc"):
+                    submitted_utc = datetime.strptime(
+                        bd["submitted_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                    ).replace(tzinfo=timezone.utc)
+
+                bids[lid].append(Bid(
+                    bid_id=bd["bid_id"],
+                    listing_id=bd["listing_id"],
+                    worker_id=bd["worker_id"],
+                    state=BidState(bd["state"]),
+                    relevance_score=bd.get("relevance_score", 0.0),
+                    global_trust=bd.get("global_trust", 0.0),
+                    domain_trust=bd.get("domain_trust", 0.0),
+                    composite_score=bd.get("composite_score", 0.0),
+                    submitted_utc=submitted_utc,
+                    notes=bd.get("notes", ""),
+                ))
+
+        return listings, bids
 
     # ------------------------------------------------------------------
     # Epoch chain state

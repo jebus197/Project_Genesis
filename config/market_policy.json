@@ -1,0 +1,20 @@
+{
+  "version": "0.1",
+  "updated_utc": "2026-02-14T12:00:00Z",
+  "allocation_weights": {
+    "relevance": 0.50,
+    "global_trust": 0.20,
+    "domain_trust": 0.30
+  },
+  "listing_defaults": {
+    "max_bids_per_listing": 50,
+    "bid_window_hours": 48,
+    "min_skill_requirements": 0,
+    "auto_close_on_allocation": true
+  },
+  "bid_requirements": {
+    "min_trust_to_bid": 0.10,
+    "min_relevance_to_bid": 0.0,
+    "allow_multiple_bids_per_worker": false
+  }
+}

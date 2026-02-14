@@ -150,6 +150,17 @@ class QualityEngine:
 
         derived = _clamp(w_c * consensus + w_e * evidence + w_x * complexity)
 
+        # Extract domains from skill requirements (for domain-specific trust)
+        domains: list[str] = []
+        if hasattr(mission, "skill_requirements") and mission.skill_requirements:
+            seen: set[str] = set()
+            for req in mission.skill_requirements:
+                if hasattr(req, "skill_id") and hasattr(req.skill_id, "domain"):
+                    d = req.skill_id.domain
+                    if d not in seen:
+                        domains.append(d)
+                        seen.add(d)
+
         return WorkerQualityAssessment(
             mission_id=mission.mission_id,
             worker_id=mission.worker_id,  # type: ignore[arg-type]
@@ -163,6 +174,7 @@ class QualityEngine:
                 "mission_state": mission.state.value,
                 "risk_tier": mission.risk_tier.value,
             },
+            domains=domains,
         )
 
     def assess_reviewer_quality(

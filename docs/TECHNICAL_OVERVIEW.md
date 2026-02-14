@@ -15,11 +15,15 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 5. [Normative Dispute Resolution](#normative-dispute-resolution)
 6. [Anti-Capture Architecture](#anti-capture-architecture)
 7. [Genesis Bootstrap Protocol](#genesis-bootstrap-protocol)
-8. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
-9. [Blockchain Anchoring](#blockchain-anchoring)
-10. [Identity and Security Posture](#identity-and-security-posture)
-11. [Success Metrics](#success-metrics)
-12. [Governance Engine Architecture](#governance-engine-architecture)
+8. [Skill Taxonomy and Proficiency Model](#skill-taxonomy-and-proficiency-model)
+9. [Domain-Specific Trust](#domain-specific-trust)
+10. [Labour Market](#labour-market)
+11. [Skill Lifecycle](#skill-lifecycle)
+12. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
+13. [Blockchain Anchoring](#blockchain-anchoring)
+14. [Identity and Security Posture](#identity-and-security-posture)
+15. [Success Metrics](#success-metrics)
+16. [Governance Engine Architecture](#governance-engine-architecture)
 
 ---
 
@@ -238,6 +242,174 @@ Critical rules:
 - Phase transitions are **one-way**. The system cannot regress from G2 to G1, or from G1 to G0.
 - If G0 time limits expire without reaching 50 participants, **the project fails closed** — it does not limp along indefinitely under founder control.
 - The founder's authority is explicitly time-limited and structurally eliminated in G1.
+
+---
+
+## Skill Taxonomy and Proficiency Model
+
+Genesis tracks what each participant can actually do — not what they claim to be capable of.
+
+### Two-level taxonomy
+
+Skills are organised in a two-level hierarchy: **domains** contain **skills**. The default taxonomy defines 6 domains with 3–5 skills each (configuration: `config/skill_taxonomy.json`).
+
+Example:
+```
+software_engineering/
+  ├── code_review
+  ├── system_design
+  ├── testing
+  └── documentation
+```
+
+Every skill is identified by a canonical string (`domain/skill_name`) and validated against the taxonomy at every API boundary.
+
+### Actor skill profiles
+
+Each participant has an `ActorSkillProfile` containing:
+
+- **Proficiency scores** (`0.0` – `1.0`) per skill — earned through mission outcomes, not self-reported.
+- **Evidence count** — how many verified outcomes back the score.
+- **Last demonstrated timestamp** — drives the decay engine.
+- **Endorsement count** — peer endorsements received for this skill.
+- **Source tag** — `outcome_derived` or `peer_endorsed`, so the origin is always traceable.
+
+### Mission skill requirements
+
+Missions declare a list of `SkillRequirement` entries, each specifying a skill and a minimum proficiency. The matching and allocation engines use these to find qualified workers.
+
+---
+
+## Domain-Specific Trust
+
+A single trust score conflates too many things. Someone excellent at medical research might be mediocre at software development. Genesis resolves this by tracking **per-domain trust** alongside the global score.
+
+### How it works
+
+When a mission is completed, the system identifies which domains the work touched (from the mission's skill requirements). Trust updates flow to those specific domains, not just the global score:
+
+```
+domain_trust_update(domain, quality, reliability, volume)
+→ domain_score = weighted_combination(quality, reliability, volume)
+→ global_score = aggregate(all_domain_scores, global_weights)
+```
+
+The global score is recomputed after every domain update using configurable aggregation (default: weighted average with recency bias). Configuration: `config/skill_trust_params.json`.
+
+### Inactivity decay per domain
+
+Each domain trust score decays independently:
+
+- **Human half-life:** 365 days per domain.
+- **Machine half-life:** 90 days per domain.
+- Domains where you have deep experience (high evidence count) decay more slowly.
+
+The decay formula uses volume dampening:
+
+```
+factor = max(floor, 1 - (days / half_life) / (1 + ln(1 + evidence_count)))
+```
+
+This means a doctor who hasn't coded in a year loses their software trust but retains their medical trust — which is how the real world works.
+
+### Trust status dashboard
+
+For any actor, the system can compute a full status report: days until half-life per domain, urgency indicators (green / amber / red), projected scores, and recommended actions. This is computed on demand, not stored.
+
+---
+
+## Labour Market
+
+Genesis includes a built-in job board that connects workers to tasks using the skill and trust data described above.
+
+### Listing lifecycle
+
+A market listing moves through a defined state machine:
+
+```
+DRAFT → OPEN → ACCEPTING_BIDS → EVALUATING → ALLOCATED → CLOSED
+                                                          ↑
+                                   CANCELLED ←────── (any non-terminal)
+```
+
+Every transition is fail-closed: if the audit event for a transition cannot be recorded, the transition does not happen.
+
+### Bid scoring
+
+When bids are evaluated, each worker receives a composite score:
+
+```
+bid_score = 0.50 × relevance  +  0.20 × global_trust  +  0.30 × domain_trust
+```
+
+Where:
+- **Relevance** = how well the worker's skill profile matches the listing's requirements (computed by the `SkillMatchEngine`).
+- **Global trust** = the worker's overall trust score.
+- **Domain trust** = trust in the specific domains the listing requires.
+
+The highest-scoring bidder wins. The formula is transparent — workers can see exactly why they were or were not selected.
+
+### Transactional allocation
+
+Allocation is a single atomic operation. Either everything succeeds — listing state, bid states, mission creation, and audit event — or everything rolls back cleanly. There is no partial allocation state.
+
+The `WORKER_ALLOCATED` audit event is the single commit point. All mutations before it are staged without side effects. If the audit write fails, nothing has changed. If it succeeds, all in-memory state is committed.
+
+### Persistence safety
+
+Every mutating operation in the service layer is protected against storage failures:
+
+- **Post-audit paths** (after an audit event has been durably committed): if the state store write fails, the operation succeeds with a degradation warning. In-memory state stays aligned with the audit trail. The `persistence_degraded` flag is set for operator visibility.
+- **Non-audit paths** (no audit event committed yet): if the state store write fails, all in-memory mutations are rolled back and the operation returns a typed error.
+
+No mutating API call can raise an uncaught storage exception.
+
+---
+
+## Skill Lifecycle
+
+Skills are living things in Genesis. They grow, they can be boosted by peers, and they fade if unused.
+
+### Outcome-derived proficiency
+
+When a mission completes, the system automatically updates the worker's skill profile based on the outcome:
+
+- **Approved missions** increase proficiency in all required skills.
+- **Rejected missions** decrease proficiency.
+- The magnitude scales with the mission's complexity and the worker's current proficiency level (it's harder to improve at high levels).
+
+This is the **primary path** for skill creation. A skill can only appear on a profile through a verified mission outcome.
+
+### Peer endorsement
+
+Participants can endorse each other's skills, but with strict guardrails:
+
+- **Self-endorsement is structurally blocked.**
+- **You can only endorse skills you possess yourself** (at sufficient proficiency).
+- **You can only endorse skills that already exist** on the target's profile. Endorsement boosts — it never creates.
+- **Diminishing returns** prevent endorsement gaming:
+
+```
+boost = base_boost × endorser_trust / (1 + existing_endorsements)
+```
+
+The first endorsement has the most impact. Each subsequent one has less. After a configurable cap (default: 10 per skill), further endorsements have negligible effect.
+
+### Decay
+
+Skills fade without practice. The decay engine runs periodically and applies time-based decay to all proficiency scores:
+
+```
+factor = max(floor, 1 - (days / half_life) / (1 + ln(1 + evidence_count)))
+```
+
+Key properties:
+- **Humans** have a 365-day half-life. Step away for a year, and your skills noticeably fade. But deep experience (high evidence count) fades more slowly.
+- **Machines** have a 90-day half-life. An AI model that hasn't been validated in three months loses proficiency quickly.
+- **Materiality threshold** — trivially small floating-point decay (less than 0.1%) is ignored. Only meaningful decay is recorded.
+- **Pruning** — skills that decay below a configurable floor are removed from the profile entirely.
+
+Configuration: `config/skill_lifecycle_params.json`.
 
 ---
 
@@ -465,13 +637,16 @@ The runtime software implements the governance framework described above. The co
 
 ```
 src/genesis/
-├── models/          Data models (mission, trust, commitment, governance)
-├── policy/          Policy resolver (loads constitutional and runtime config)
+├── models/          Data models (mission, trust, commitment, governance, market, skill)
+├── policy/          Policy resolver (loads constitutional, runtime, and market config)
 ├── engine/          Mission state machine, evidence validation, reviewer routing
-├── trust/           Trust scoring, decay, quality gates, fast-elevation control
+├── trust/           Trust scoring, domain trust, decay, quality gates, fast-elevation control
+├── quality/         Quality assessment engine (derives worker and reviewer quality from outcomes)
+├── skills/          Skill taxonomy, decay, endorsement, outcome updates, matching
+├── market/          Labour market: listing state machine, bid scoring, allocation engine
 ├── governance/      Genesis phase controller (G0→G1→G2→G3 progression)
 ├── crypto/          Merkle trees, commitment builder, blockchain anchoring, epoch service
-├── review/          Actor roster, constrained-random reviewer selector
+├── review/          Actor roster, skill-aware constrained-random reviewer selector
 ├── persistence/     Event log (append-only JSONL) and state store (JSON)
 ├── service.py       Unified service facade (orchestrates all subsystems)
 └── cli.py           Command-line interface
@@ -479,15 +654,19 @@ src/genesis/
 
 Key design principles:
 
-1. **Fail-closed**: if the system encounters an ambiguous state, it blocks rather than proceeding. A mission that cannot prove compliance stays open.
-2. **Parameter-driven**: all constitutional values are loaded from `config/constitutional_params.json`. No magic numbers in code.
-3. **Auditable transitions**: every state change in the mission lifecycle is an explicit, logged event.
+1. **Fail-closed**: if the system encounters an ambiguous state, it blocks rather than proceeding. A mission that cannot prove compliance stays open. A storage failure after an audit commit does not crash — it degrades gracefully.
+2. **Parameter-driven**: all constitutional values are loaded from `config/constitutional_params.json`. Market and skill parameters from their respective config files. No magic numbers in code.
+3. **Auditable transitions**: every state change — in missions, listings, bids, trust, and skills — is an explicit, logged event with a tamper-evident hash.
 4. **Self-review impossible**: the reviewer router structurally prevents any actor from reviewing their own work.
+5. **Engine purity**: computation engines (trust, quality, matching, decay, endorsement, allocation) are pure functions with no side effects. The service layer handles all persistence and event recording.
+6. **Transactional safety**: every mutating service operation either fully succeeds or fully rolls back. Post-audit operations degrade rather than roll back to prevent audit/state mismatch.
 
-All constitutional invariants are tested automatically. The test suite (225 tests) covers every critical rule described in this document.
+All constitutional invariants are tested automatically. The test suite (580 tests) covers every critical rule described in this document — including the labour market, skill lifecycle, domain trust, and persistence safety.
 
 ```bash
-python3 -m pytest tests/ -v
+python3 -m pytest tests/ -q            # Run full test suite
+python3 tools/check_invariants.py      # Constitutional + runtime invariant checks
+python3 tools/verify_examples.py       # Worked-example policy validation
 ```
 
 ### Deployment
@@ -499,6 +678,6 @@ The project includes containerised deployment and continuous integration:
 
 ---
 
-*This document describes the technical architecture as of the founding session (2026-02-13). It will evolve as the system develops, but changes to constitutional parameters require governance approval as described above.*
+*This document describes the technical architecture as of the labour market implementation (2026-02-14). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
 
 \* subject to review

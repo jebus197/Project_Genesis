@@ -6,14 +6,15 @@ Trust in Genesis is:
 - E (effort) measures reasoning effort proportional to mission complexity.
 - Human floor is always positive; machine floor is zero.
 - Fast elevation (delta > delta_fast) triggers automatic suspension.
+- Domain-specific trust: actors build per-domain reputation alongside global score.
 """
 
 from __future__ import annotations
 
 import enum
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Optional
+from typing import Any, Optional
 
 
 class ActorKind(str, enum.Enum):
@@ -74,6 +75,12 @@ class TrustRecord:
 
     # Domain-specific decay tracking
     last_active_utc: Optional[datetime] = None
+
+    # Domain-specific trust scores (empty dict = pre-labour-market mode)
+    # Keyed by domain name. Global 'score' is the aggregate.
+    domain_scores: dict[str, Any] = field(default_factory=dict)
+    # Type: dict[str, DomainTrustScore] — uses Any to avoid circular import.
+    # Set via TrustEngine.apply_domain_update().
 
     def is_eligible_to_vote(self, tau_vote: float) -> bool:
         """Check if actor meets voting eligibility threshold.

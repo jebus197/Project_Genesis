@@ -1,0 +1,32 @@
+{
+  "version": "0.1",
+  "updated_utc": "2026-02-14T12:00:00Z",
+  "domain_trust_weights": {
+    "w_Q": 0.70,
+    "w_R": 0.20,
+    "w_V": 0.05,
+    "w_E": 0.05
+  },
+  "inactivity_decay": {
+    "half_life_days_human": 365,
+    "half_life_days_machine": 90,
+    "volume_dampening": true,
+    "min_score_after_decay": 0.0,
+    "decay_floor": 0.01
+  },
+  "global_score_aggregation": {
+    "method": "weighted_mean",
+    "recency_weight": 0.3,
+    "volume_weight": 0.7
+  },
+  "skill_matching": {
+    "min_relevance_score": 0.3,
+    "proficiency_weight": 0.60,
+    "domain_trust_weight": 0.40,
+    "worker_allocation_weights": {
+      "relevance": 0.50,
+      "global_trust": 0.20,
+      "domain_trust": 0.30
+    }
+  }
+}

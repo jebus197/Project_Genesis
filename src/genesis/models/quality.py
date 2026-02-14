@@ -32,6 +32,7 @@ class WorkerQualityAssessment:
     derived_quality: float      # final Q for trust update, clamped [0,1]
     assessment_utc: datetime
     details: dict[str, Any] = field(default_factory=dict)
+    domains: list[str] = field(default_factory=list)  # skill domains exercised
 
 
 @dataclass(frozen=True)

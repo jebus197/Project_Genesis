@@ -1,0 +1,58 @@
+{
+  "version": "0.1",
+  "updated_utc": "2026-02-14T12:00:00Z",
+  "governance_phase_required": "G1",
+  "domains": {
+    "software_engineering": {
+      "description": "Software development and engineering",
+      "skills": [
+        "python",
+        "rust",
+        "smart_contracts",
+        "testing",
+        "architecture"
+      ]
+    },
+    "data_science": {
+      "description": "Data analysis and machine learning",
+      "skills": [
+        "statistical_modeling",
+        "ml_pipelines",
+        "data_cleaning",
+        "visualization"
+      ]
+    },
+    "legal_analysis": {
+      "description": "Legal review and compliance",
+      "skills": [
+        "regulatory_compliance",
+        "contract_review",
+        "policy_drafting"
+      ]
+    },
+    "financial_audit": {
+      "description": "Financial analysis and auditing",
+      "skills": [
+        "risk_assessment",
+        "forensic_accounting",
+        "valuation"
+      ]
+    },
+    "policy_research": {
+      "description": "Policy analysis and research",
+      "skills": [
+        "literature_review",
+        "impact_assessment",
+        "stakeholder_analysis"
+      ]
+    },
+    "documentation": {
+      "description": "Technical and non-technical writing",
+      "skills": [
+        "technical_writing",
+        "api_documentation",
+        "user_guides"
+      ]
+    }
+  }
+}

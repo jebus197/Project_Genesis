@@ -37,6 +37,15 @@ class EventKind(str, enum.Enum):
     GOVERNANCE_BALLOT = "governance_ballot"
     PHASE_TRANSITION = "phase_transition"
     QUALITY_ASSESSED = "quality_assessed"
+    # Market events
+    LISTING_CREATED = "listing_created"
+    LISTING_TRANSITION = "listing_transition"
+    BID_SUBMITTED = "bid_submitted"
+    WORKER_ALLOCATED = "worker_allocated"
+    # Skill lifecycle events
+    SKILL_UPDATED = "skill_updated"
+    SKILL_ENDORSED = "skill_endorsed"
+    SKILL_DECAYED = "skill_decayed"
 
 
 @dataclass(frozen=True)
