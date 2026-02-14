@@ -162,13 +162,46 @@ class EventLog:
             f.write(json.dumps(record, sort_keys=True, ensure_ascii=False) + "\n")
 
     def _load_from_file(self, path: Path) -> None:
-        """Load events from a JSONL file."""
+        """Load events from a JSONL file with integrity verification.
+
+        Fail-closed: rejects tampered records (hash mismatch) and
+        duplicate event IDs (replay protection on recovery).
+        """
         with path.open("r", encoding="utf-8") as f:
-            for line in f:
+            for line_num, line in enumerate(f, 1):
                 line = line.strip()
                 if not line:
                     continue
                 data = json.loads(line)
+
+                event_id = data["event_id"]
+
+                # Replay protection: reject duplicate IDs on load
+                if event_id in self._event_ids:
+                    raise ValueError(
+                        f"Duplicate event ID on recovery (line {line_num}): {event_id}"
+                    )
+
+                # Recompute canonical hash to verify integrity
+                canonical = json.dumps(
+                    {
+                        "event_id": data["event_id"],
+                        "event_kind": data["event_kind"],
+                        "timestamp_utc": data["timestamp_utc"],
+                        "actor_id": data["actor_id"],
+                        "payload": data["payload"],
+                    },
+                    sort_keys=True,
+                    ensure_ascii=False,
+                ).encode("utf-8")
+                expected_hash = f"sha256:{hashlib.sha256(canonical).hexdigest()}"
+
+                if data["event_hash"] != expected_hash:
+                    raise ValueError(
+                        f"Integrity check failed (line {line_num}): event {event_id} "
+                        f"stored hash {data['event_hash']} != computed {expected_hash}"
+                    )
+
                 event = EventRecord(
                     event_id=data["event_id"],
                     event_kind=EventKind(data["event_kind"]),

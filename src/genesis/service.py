@@ -7,9 +7,12 @@ It orchestrates all subsystems:
 - Reviewer selection (constrained-random from roster)
 - Epoch management (open, collect, close, anchor)
 - Phase governance (G0→G1→G2→G3 progression)
+- Persistence (event log, state store)
 
 All operations produce typed results. All state changes are logged
-to the event collector for eventual commitment.
+to the event collector for eventual commitment. Audit-trail events
+are never silently dropped — if no epoch is open, the operation fails
+closed rather than proceeding without an audit record.
 """
 
 from __future__ import annotations
@@ -40,6 +43,8 @@ from genesis.models.mission import (
     RiskTier,
 )
 from genesis.models.trust import ActorKind, TrustDelta, TrustRecord
+from genesis.persistence.event_log import EventLog, EventRecord, EventKind
+from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
 from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
 from genesis.review.selector import ReviewerSelector, SelectionResult
@@ -76,26 +81,45 @@ class GenesisService:
         service.open_epoch()
         # ... operations happen, events are collected ...
         record = service.close_epoch(beacon_round=12345)
+
+    Persistence (optional):
+        service = GenesisService(resolver, event_log=log, state_store=store)
+        # State is persisted on each mutation and loaded on construction.
     """
 
     def __init__(
         self,
         resolver: PolicyResolver,
         previous_hash: str = GENESIS_PREVIOUS_HASH,
+        event_log: Optional[EventLog] = None,
+        state_store: Optional[StateStore] = None,
     ) -> None:
         self._resolver = resolver
         self._trust_engine = TrustEngine(resolver)
         self._state_machine = MissionStateMachine(resolver)
         self._reviewer_router = ReviewerRouter(resolver)
         self._evidence_validator = EvidenceValidator()
-        self._roster = ActorRoster()
-        self._selector = ReviewerSelector(resolver, self._roster)
-        self._epoch_service = EpochService(resolver, previous_hash)
         self._phase_controller = GenesisPhaseController(resolver)
 
-        # In-memory state
-        self._missions: dict[str, Mission] = {}
-        self._trust_records: dict[str, TrustRecord] = {}
+        # Persistence layer (optional — in-memory if not provided)
+        self._event_log = event_log
+        self._state_store = state_store
+
+        # Load persisted state or start fresh
+        if state_store is not None:
+            self._roster = state_store.load_roster()
+            self._trust_records = state_store.load_trust_records()
+            self._missions = state_store.load_missions()
+            stored_hash, _ = state_store.load_epoch_state()
+            self._epoch_service = EpochService(resolver, stored_hash)
+        else:
+            self._roster = ActorRoster()
+            self._trust_records: dict[str, TrustRecord] = {}
+            self._missions: dict[str, Mission] = {}
+            self._epoch_service = EpochService(resolver, previous_hash)
+
+        self._selector = ReviewerSelector(resolver, self._roster)
+        self._event_counter = 0  # monotonic counter for unique event IDs
 
     # ------------------------------------------------------------------
     # Actor management
@@ -130,6 +154,7 @@ class GenesisService:
                 score=initial_trust,
             )
 
+            self._persist_state()
             return ServiceResult(success=True, data={"actor_id": actor_id.strip()})
         except ValueError as e:
             return ServiceResult(success=False, errors=[str(e)])
@@ -147,6 +172,7 @@ class GenesisService:
         trust = self._trust_records.get(actor_id.strip())
         if trust:
             trust.quarantined = True
+        self._persist_state()
         return ServiceResult(success=True)
 
     # ------------------------------------------------------------------
@@ -180,9 +206,13 @@ class GenesisService:
         )
         self._missions[mission_id] = mission
 
-        # Record event
-        self._record_mission_event(mission, "created")
+        # Record audit event (fail-closed: errors propagate)
+        err = self._record_mission_event(mission, "created")
+        if err:
+            del self._missions[mission_id]
+            return ServiceResult(success=False, errors=[err])
 
+        self._persist_state()
         return ServiceResult(
             success=True,
             data={"mission_id": mission_id, "risk_tier": tier.value},
@@ -252,7 +282,12 @@ class GenesisService:
         )
         mission.review_decisions.append(decision)
 
-        self._record_mission_event(mission, f"review:{reviewer_id}:{verdict}")
+        err = self._record_mission_event(mission, f"review:{reviewer_id}:{verdict}")
+        if err:
+            mission.review_decisions.pop()
+            return ServiceResult(success=False, errors=[err])
+
+        self._persist_state()
         return ServiceResult(success=True)
 
     def add_evidence(
@@ -279,8 +314,99 @@ class GenesisService:
         return self._transition_mission(mission_id, MissionState.REVIEW_COMPLETE)
 
     def approve_mission(self, mission_id: str) -> ServiceResult:
-        """Transition mission from REVIEW_COMPLETE to APPROVED."""
+        """Approve a mission — routes through human gate if policy requires it.
+
+        For R2+ missions with human_final_gate=true, this transitions to
+        HUMAN_GATE_PENDING. Use human_gate_approve() to complete.
+        For other missions, transitions directly to APPROVED.
+        """
+        mission = self._missions.get(mission_id)
+        if mission is None:
+            return ServiceResult(success=False, errors=[f"Mission not found: {mission_id}"])
+
+        policy = self._resolver.tier_policy(mission.risk_tier)
+        if policy.human_final_gate and not mission.human_final_approval:
+            # Route to human gate — cannot skip
+            return self._transition_mission(mission_id, MissionState.HUMAN_GATE_PENDING)
+
         return self._transition_mission(mission_id, MissionState.APPROVED)
+
+    def human_gate_approve(
+        self,
+        mission_id: str,
+        approver_id: str,
+    ) -> ServiceResult:
+        """Human final approval for high-risk missions.
+
+        This is the only path to APPROVED for missions that require
+        human_final_gate. The approver must be a registered human actor.
+        """
+        mission = self._missions.get(mission_id)
+        if mission is None:
+            return ServiceResult(success=False, errors=[f"Mission not found: {mission_id}"])
+
+        if mission.state != MissionState.HUMAN_GATE_PENDING:
+            return ServiceResult(
+                success=False,
+                errors=[f"Mission {mission_id} not in HUMAN_GATE_PENDING state"],
+            )
+
+        # Verify approver is a registered human
+        entry = self._roster.get(approver_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Approver not found: {approver_id}"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=[f"Human gate requires human approver; {approver_id} is {entry.actor_kind.value}"],
+            )
+
+        mission.human_final_approval = True
+
+        err = self._record_mission_event(mission, f"human_gate_approve:{approver_id}")
+        if err:
+            mission.human_final_approval = False
+            return ServiceResult(success=False, errors=[err])
+
+        return self._transition_mission(mission_id, MissionState.APPROVED)
+
+    def human_gate_reject(
+        self,
+        mission_id: str,
+        rejector_id: str,
+    ) -> ServiceResult:
+        """Human final rejection for high-risk missions."""
+        mission = self._missions.get(mission_id)
+        if mission is None:
+            return ServiceResult(success=False, errors=[f"Mission not found: {mission_id}"])
+
+        if mission.state != MissionState.HUMAN_GATE_PENDING:
+            return ServiceResult(
+                success=False,
+                errors=[f"Mission {mission_id} not in HUMAN_GATE_PENDING state"],
+            )
+
+        # Verify rejector is a registered human
+        entry = self._roster.get(rejector_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Rejector not found: {rejector_id}"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=[f"Human gate requires human actor; {rejector_id} is {entry.actor_kind.value}"],
+            )
+
+        err = self._record_mission_event(mission, f"human_gate_reject:{rejector_id}")
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        return self._transition_mission(mission_id, MissionState.REJECTED)
 
     def get_mission(self, mission_id: str) -> Optional[Mission]:
         """Retrieve a mission by ID."""
@@ -300,7 +426,13 @@ class GenesisService:
         effort: float = 0.0,
         mission_id: Optional[str] = None,
     ) -> ServiceResult:
-        """Update an actor's trust score."""
+        """Update an actor's trust score.
+
+        Enforces machine recertification: after applying the trust update,
+        checks recertification requirements for machine actors. Failures
+        increment the recertification counter and may trigger quarantine
+        or decommission per constitutional rules.
+        """
         record = self._trust_records.get(actor_id.strip())
         if record is None:
             return ServiceResult(
@@ -314,6 +446,48 @@ class GenesisService:
             mission_id=mission_id,
         )
 
+        # Machine recertification enforcement
+        recert_issues: list[str] = []
+        if new_record.actor_kind == ActorKind.MACHINE:
+            recert_issues = self._trust_engine.check_recertification(new_record)
+            if recert_issues:
+                # Increment failure counter
+                new_record = TrustRecord(
+                    actor_id=new_record.actor_id,
+                    actor_kind=new_record.actor_kind,
+                    score=new_record.score,
+                    quality=new_record.quality,
+                    reliability=new_record.reliability,
+                    volume=new_record.volume,
+                    effort=new_record.effort,
+                    quarantined=new_record.quarantined,
+                    recertification_failures=new_record.recertification_failures + 1,
+                    last_recertification_utc=new_record.last_recertification_utc,
+                    decommissioned=new_record.decommissioned,
+                    last_active_utc=new_record.last_active_utc,
+                )
+                # Check if decommission threshold reached
+                decomm = self._resolver.decommission_rules()
+                if new_record.recertification_failures >= decomm["M_RECERT_FAIL_MAX"]:
+                    new_record = TrustRecord(
+                        actor_id=new_record.actor_id,
+                        actor_kind=new_record.actor_kind,
+                        score=0.0,
+                        quality=new_record.quality,
+                        reliability=new_record.reliability,
+                        volume=new_record.volume,
+                        effort=new_record.effort,
+                        quarantined=True,
+                        recertification_failures=new_record.recertification_failures,
+                        last_recertification_utc=new_record.last_recertification_utc,
+                        decommissioned=True,
+                        last_active_utc=new_record.last_active_utc,
+                    )
+                    # Update roster status
+                    roster_entry = self._roster.get(actor_id)
+                    if roster_entry:
+                        roster_entry.status = ActorStatus.DECOMMISSIONED
+
         self._trust_records[actor_id.strip()] = new_record
 
         # Update roster trust score
@@ -321,19 +495,30 @@ class GenesisService:
         if roster_entry:
             roster_entry.trust_score = new_record.score
 
-        # Record event
-        self._record_trust_event(actor_id, delta)
+        # Record event (fail-closed)
+        err = self._record_trust_event(actor_id, delta)
+        if err:
+            # Rollback
+            self._trust_records[actor_id.strip()] = record
+            if roster_entry:
+                roster_entry.trust_score = record.score
+            return ServiceResult(success=False, errors=[err])
 
-        return ServiceResult(
-            success=True,
-            data={
-                "actor_id": actor_id,
-                "old_score": record.score,
-                "new_score": new_record.score,
-                "delta": delta.abs_delta,
-                "suspended": delta.suspended,
-            },
-        )
+        self._persist_state()
+
+        result_data = {
+            "actor_id": actor_id,
+            "old_score": record.score,
+            "new_score": new_record.score,
+            "delta": delta.abs_delta,
+            "suspended": delta.suspended,
+        }
+        if recert_issues:
+            result_data["recertification_issues"] = recert_issues
+            result_data["recertification_failures"] = new_record.recertification_failures
+            result_data["decommissioned"] = new_record.decommissioned
+
+        return ServiceResult(success=True, data=result_data)
 
     def get_trust(self, actor_id: str) -> Optional[TrustRecord]:
         """Retrieve trust record for an actor."""
@@ -347,6 +532,7 @@ class GenesisService:
         """Open a new commitment epoch."""
         try:
             eid = self._epoch_service.open_epoch(epoch_id)
+            self._persist_state()
             return ServiceResult(success=True, data={"epoch_id": eid})
         except RuntimeError as e:
             return ServiceResult(success=False, errors=[str(e)])
@@ -362,6 +548,7 @@ class GenesisService:
                 beacon_round=beacon_round,
                 chamber_nonce=chamber_nonce,
             )
+            self._persist_state()
             return ServiceResult(
                 success=True,
                 data={
@@ -418,28 +605,89 @@ class GenesisService:
             return ServiceResult(success=False, errors=errors)
 
         # State machine validates but does not apply — caller applies on success
+        previous_state = mission.state
         mission.state = target
 
-        self._record_mission_event(mission, f"transition:{target.value}")
+        err = self._record_mission_event(mission, f"transition:{target.value}")
+        if err:
+            mission.state = previous_state  # Rollback
+            return ServiceResult(success=False, errors=[err])
+
+        self._persist_state()
         return ServiceResult(success=True, data={"state": mission.state.value})
 
-    def _record_mission_event(self, mission: Mission, action: str) -> None:
-        """Hash and record a mission event in the current epoch."""
+    def _next_event_id(self) -> str:
+        """Generate a monotonically increasing unique event ID."""
+        self._event_counter += 1
+        return f"EVT-{self._event_counter:08d}"
+
+    def _record_mission_event(self, mission: Mission, action: str) -> Optional[str]:
+        """Hash and record a mission event. Returns error string or None.
+
+        Fail-closed: if no epoch is open, returns an error rather than
+        silently dropping the audit event.
+        """
         event_data = f"{mission.mission_id}:{action}:{datetime.now(timezone.utc).isoformat()}"
         event_hash = "sha256:" + hashlib.sha256(event_data.encode()).hexdigest()
         try:
             self._epoch_service.record_mission_event(event_hash)
-        except RuntimeError:
-            pass  # No epoch open — events will be captured in next epoch
+        except RuntimeError as e:
+            return f"Audit-trail failure (no epoch open): {e}"
 
-    def _record_trust_event(self, actor_id: str, delta: TrustDelta) -> None:
-        """Hash and record a trust delta in the current epoch."""
+        # Append to durable event log if available
+        if self._event_log is not None:
+            event = EventRecord.create(
+                event_id=self._next_event_id(),
+                event_kind=EventKind.MISSION_TRANSITION,
+                actor_id=mission.worker_id or "system",
+                payload={
+                    "mission_id": mission.mission_id,
+                    "action": action,
+                    "event_hash": event_hash,
+                },
+            )
+            self._event_log.append(event)
+
+        return None
+
+    def _record_trust_event(self, actor_id: str, delta: TrustDelta) -> Optional[str]:
+        """Hash and record a trust delta. Returns error string or None.
+
+        Fail-closed: if no epoch is open, returns an error.
+        """
         event_data = f"{actor_id}:{delta.abs_delta}:{datetime.now(timezone.utc).isoformat()}"
         event_hash = "sha256:" + hashlib.sha256(event_data.encode()).hexdigest()
         try:
             self._epoch_service.record_trust_delta(event_hash)
-        except RuntimeError:
-            pass
+        except RuntimeError as e:
+            return f"Audit-trail failure (no epoch open): {e}"
+
+        if self._event_log is not None:
+            event = EventRecord.create(
+                event_id=self._next_event_id(),
+                event_kind=EventKind.TRUST_UPDATED,
+                actor_id=actor_id,
+                payload={
+                    "delta": delta.abs_delta,
+                    "suspended": delta.suspended,
+                    "event_hash": event_hash,
+                },
+            )
+            self._event_log.append(event)
+
+        return None
+
+    def _persist_state(self) -> None:
+        """Persist current state to the state store (if wired)."""
+        if self._state_store is None:
+            return
+        self._state_store.save_roster(self._roster)
+        self._state_store.save_trust_records(self._trust_records)
+        self._state_store.save_missions(self._missions)
+        self._state_store.save_epoch_state(
+            self._epoch_service.previous_hash,
+            len(self._epoch_service.committed_records),
+        )
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}

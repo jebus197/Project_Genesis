@@ -112,6 +112,45 @@ class TestEventLog:
         assert log2.events()[0].event_id == "E-1"
         assert log2.events()[1].event_id == "E-2"
 
+    def test_tampered_hash_rejected_on_load(self, tmp_path: Path) -> None:
+        """Tampered event_hash in JSONL file must be rejected on recovery."""
+        import json
+        log_path = tmp_path / "tampered.jsonl"
+
+        # Write a valid event via the log
+        log1 = EventLog(storage_path=log_path)
+        log1.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "alice", {"x": 1}))
+
+        # Tamper with the hash on disk
+        lines = log_path.read_text().strip().split("\n")
+        record = json.loads(lines[0])
+        record["event_hash"] = "sha256:" + "0" * 64  # wrong hash
+        log_path.write_text(json.dumps(record) + "\n")
+
+        # Loading should fail
+        with pytest.raises(ValueError, match="Integrity check failed"):
+            EventLog(storage_path=log_path)
+
+    def test_duplicate_id_rejected_on_load(self, tmp_path: Path) -> None:
+        """Duplicate event IDs in JSONL file must be rejected on recovery."""
+        import json
+        log_path = tmp_path / "duped.jsonl"
+
+        # Write two events with same content manually
+        event = EventRecord.create("E-DUP", EventKind.MISSION_CREATED, "alice", {"x": 1})
+        line = json.dumps({
+            "event_id": event.event_id,
+            "event_kind": event.event_kind.value,
+            "timestamp_utc": event.timestamp_utc,
+            "actor_id": event.actor_id,
+            "payload": event.payload,
+            "event_hash": event.event_hash,
+        }, sort_keys=True, ensure_ascii=False)
+        log_path.write_text(line + "\n" + line + "\n")
+
+        with pytest.raises(ValueError, match="Duplicate event ID"):
+            EventLog(storage_path=log_path)
+
     def test_events_since(self) -> None:
         log = EventLog()
         ts1 = datetime(2026, 2, 14, 10, 0, tzinfo=timezone.utc)

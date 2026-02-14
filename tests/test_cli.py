@@ -50,10 +50,12 @@ class TestCLIExecution:
         ])
         assert exit_code == 0
 
-    def test_create_mission_e2e(self) -> None:
+    def test_create_mission_fails_without_epoch(self) -> None:
+        """Creating a mission via CLI fails closed when no epoch is open."""
         exit_code = main([
             "create-mission", "--id", "M-CLI-001",
             "--title", "CLI test mission",
             "--class", "documentation_update",
         ])
-        assert exit_code == 0
+        # Fail-closed: no epoch open → error exit
+        assert exit_code == 1

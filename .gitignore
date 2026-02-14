@@ -8,6 +8,9 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 
+# Runtime state (persisted by CLI/service — not source code)
+data/
+
 # Local-only chat export archives (not project source)
 Google Gemini.pdf
 Project Assessment and Implications*.pdf

@@ -18,16 +18,27 @@ from pathlib import Path
 
 from genesis.models.mission import DomainType, MissionClass
 from genesis.models.trust import ActorKind
+from genesis.persistence.event_log import EventLog
+from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
 from genesis.service import GenesisService
 
 
 DEFAULT_CONFIG = Path(__file__).resolve().parents[2] / "config"
+DEFAULT_DATA = Path(__file__).resolve().parents[2] / "data"
 
 
-def _make_service(config_dir: Path) -> GenesisService:
+def _make_service(config_dir: Path, data_dir: Path = DEFAULT_DATA) -> GenesisService:
+    """Create a GenesisService with durable persistence."""
+    data_dir.mkdir(parents=True, exist_ok=True)
     resolver = PolicyResolver.from_config_dir(config_dir)
-    return GenesisService(resolver)
+    event_log = EventLog(storage_path=data_dir / "events.jsonl")
+    state_store = StateStore(storage_path=data_dir / "state.json")
+    return GenesisService(
+        resolver,
+        event_log=event_log,
+        state_store=state_store,
+    )
 
 
 def cmd_status(args: argparse.Namespace) -> int:
