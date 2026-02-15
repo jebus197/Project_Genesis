@@ -54,6 +54,11 @@
       "required_adjudicator_domains": ["healthcare", "social_services"],
       "max_duration_days": null,
       "renewable": false
+    },
+    "proof_of_life": {
+      "required_adjudicator_domains": ["legal"],
+      "max_duration_days": null,
+      "renewable": false
     }
   },
 

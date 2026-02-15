@@ -130,6 +130,8 @@ Hard rules:
 3. Proof-of-work evidence alone cannot mint trust.
 4. Human trust cannot fall below a non-zero floor (`T_floor_H > 0`).
 5. Machine trust may decay to zero (`T_floor_M = 0`); `T_M = 0` triggers operational quarantine and supervised re-certification before privileged re-entry.
+6. Human actors on approved protected leave have trust score, domain scores, and skill decay frozen exactly until return. Leave is granted by a blind, randomised quorum of domain-specific experts (minimum 3).
+7. A memorialised account (confirmed death) is permanently frozen. Memorialisation reversal requires a legal quorum petition with proof-of-life evidence meeting equally rigorous evidentiary standards.
 
 ### 4.2 Fast elevation gate
 

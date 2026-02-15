@@ -679,6 +679,10 @@ class StateStore:
                     record.memorialised_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
                     if record.memorialised_utc else None
                 ),
+                "restored_utc": (
+                    record.restored_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if record.restored_utc else None
+                ),
             }
         self._state["leave_records"] = entries
         self._save()
@@ -770,6 +774,12 @@ class StateStore:
                     data["memorialised_utc"], "%Y-%m-%dT%H:%M:%SZ"
                 ).replace(tzinfo=timezone.utc)
 
+            restored_utc = None
+            if data.get("restored_utc"):
+                restored_utc = datetime.strptime(
+                    data["restored_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
             # Legacy compat: map "permanent" → "memorialised"
             raw_state = data["state"]
             if raw_state == "permanent":
@@ -794,6 +804,7 @@ class StateStore:
                 denied_utc=denied_utc,
                 returned_utc=returned_utc,
                 memorialised_utc=memorialised_utc,
+                restored_utc=restored_utc,
             )
         return records
 

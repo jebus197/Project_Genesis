@@ -105,6 +105,12 @@ Trust is not permanent. It decays over time if you stop contributing:
 - **Human decay** is gradual ("dormancy decay") with a grace period. Humans who step away don't lose trust instantly — the system acknowledges that people take breaks, change jobs, or have life events. However, trust never falls below a non-zero human floor (`T_floor_H > 0`), recognising that a human's accumulated track record has lasting value.
 - **Machine decay** is faster ("freshness decay") and the floor is zero (`T_floor_M = 0`). Machines that stop being validated go stale quickly, because an unmonitored AI system's reliability cannot be assumed. A machine at zero trust enters operational quarantine and must be re-certified before regaining privileges.
 
+### Protected leave
+
+Life events — illness, bereavement, disability, mental health crises, caregiving, pregnancy, and child care — are not inactivity. When a human actor is granted protected leave through a quorum of domain-specific experts (minimum 3, blind adjudication, randomised selection), their trust score, domain scores, and skill decay clocks are frozen exactly until return. Adjudicators must hold earned domain trust in the relevant professional field. All adjudications are hashed and epoch-anchored.
+
+Death triggers a separate memorialisation flow: family or friends petition a qualified quorum with verifiable evidence, and if approved the account is permanently frozen as a memorial. If a memorialisation was made in error or through malicious misrepresentation, the affected person may petition a legal quorum with proof-of-life evidence to have the memorialised state reversed and their account restored, subject to equally rigorous evidentiary standards.
+
 ### Fast-elevation control
 
 If any actor's trust jumps by more than `delta_fast = 0.02` in a single epoch, the jump is automatically suspended. Activation requires:

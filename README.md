@@ -177,6 +177,24 @@ Your reputation in Genesis is not one number. If you are an excellent medical re
 
 This prevents a common problem with flat reputation systems: someone building a high score in one field and then trading on it in a completely different one.
 
+## Protected Leave and Trust Freeze
+
+Trust decays by design — but life events are not inactivity. Illness, bereavement, disability, mental health crises, caregiving, pregnancy, and child care should never cost someone their verified track record.
+
+When a life event occurs, the affected participant can petition anonymously for a trust freeze. The petition is routed — blindly — to a randomised quorum of domain-specific experts (medical issues to medical professionals, legal issues to legal experts, and so on). Neither the petitioner nor the adjudicators see each other's identity. A minimum of three qualified experts must independently concur before the freeze is granted.
+
+If approved, the participant's trust score, domain scores, and skill levels are frozen exactly — no decay, no loss — until they return. The experts themselves are graded by the same verification machinery that governs all other work in Genesis. Poor-quality adjudication triggers immediate removal from the quorum and trust decay for the adjudicator. No politics, no favours — just verifiable, distributed judgment.
+
+Anti-gaming protections are structural: self-adjudication is blocked, adjudicators must hold earned domain trust in the relevant professional field, a minimum cooldown separates leave requests, and every adjudication is recorded in the tamper-evident audit trail.
+
+### Death and memorialisation
+
+When a participant dies, family or friends may petition — with verifiable evidence — to memorialise the account. A qualified quorum reviews the evidence blindly. If approved, the account becomes a permanent memorial: trust level and all verified achievements are frozen in perpetuity. The individual's contribution to the shared record remains visible and honoured.
+
+If a memorialisation was made in error or through malicious misrepresentation, the affected person can petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification — ensuring the reversal process is as rigorous as the original memorialisation.
+
+Any decision — freeze, memorialisation, or reversal — may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
+
 ## Why This Is Feasible Now
 
 Genesis does not require any technology that doesn't already exist. Every building block — workflow orchestration, policy-as-code, role-based access, cryptographic logging, human review interfaces, audit pipelines — is mature and widely deployed.
@@ -240,7 +258,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (754 tests):**
+**Validation (768 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

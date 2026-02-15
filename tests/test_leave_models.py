@@ -22,11 +22,11 @@ from genesis.models.leave import (
 # ===================================================================
 
 class TestLeaveCategory:
-    def test_eight_categories_exist(self) -> None:
-        """All eight protected categories must be present (including death)."""
+    def test_nine_categories_exist(self) -> None:
+        """All nine protected categories must be present (including death and proof_of_life)."""
         expected = {
             "illness", "bereavement", "disability", "mental_health",
-            "caregiver", "pregnancy", "child_care", "death",
+            "caregiver", "pregnancy", "child_care", "death", "proof_of_life",
         }
         actual = {c.value for c in LeaveCategory}
         assert actual == expected
@@ -100,14 +100,23 @@ class TestCategoryRequiredDomains:
     def test_child_care_requires_social_services(self) -> None:
         assert "social_services" in CATEGORY_REQUIRED_DOMAINS["child_care"]
 
+    def test_proof_of_life_requires_legal(self) -> None:
+        assert "legal" in CATEGORY_REQUIRED_DOMAINS["proof_of_life"]
+
+    def test_proof_of_life_category_exists(self) -> None:
+        assert LeaveCategory("proof_of_life") == LeaveCategory.PROOF_OF_LIFE
+
 
 # ===================================================================
 # LeaveState
 # ===================================================================
 
 class TestLeaveState:
-    def test_six_states_exist(self) -> None:
-        expected = {"pending", "approved", "denied", "active", "returned", "memorialised"}
+    def test_seven_states_exist(self) -> None:
+        expected = {
+            "pending", "approved", "denied", "active",
+            "returned", "memorialised", "restored",
+        }
         actual = {s.value for s in LeaveState}
         assert actual == expected
 
@@ -251,6 +260,7 @@ class TestLeaveRecord:
         assert record.approved_utc is None
         assert record.denied_utc is None
         assert record.returned_utc is None
+        assert record.restored_utc is None
 
     def test_reason_summary_default_empty(self) -> None:
         record = self._make_record()

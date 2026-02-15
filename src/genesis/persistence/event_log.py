@@ -54,6 +54,7 @@ class EventKind(str, enum.Enum):
     LEAVE_RETURNED = "leave_returned"
     LEAVE_PERMANENT = "leave_permanent"  # Legacy — kept for log compat
     LEAVE_MEMORIALISED = "leave_memorialised"
+    LEAVE_RESTORED = "leave_restored"
 
 
 @dataclass(frozen=True)

@@ -1633,6 +1633,15 @@ class GenesisService:
                     "using petition_memorialisation(), not self-requested"
                 ],
             )
+        # PROOF_OF_LIFE must use petition_memorialisation_reversal()
+        if category == LeaveCategory.PROOF_OF_LIFE:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Proof-of-life reversal must use "
+                    "petition_memorialisation_reversal()"
+                ],
+            )
         if not entry.is_available():
             return ServiceResult(
                 success=False,
@@ -1814,6 +1823,7 @@ class GenesisService:
                     return ServiceResult(success=True, data=data_pending)
 
                 # DEATH category → memorialise (seal forever)
+                # PROOF_OF_LIFE → restore memorialised account
                 # All other categories → activate leave (temporary freeze)
                 if record.category == LeaveCategory.DEATH:
                     activation_data = self._memorialise_account(record, now)
@@ -1822,6 +1832,19 @@ class GenesisService:
                         # Rollback memorialisation
                         self._undo_memorialisation(record, old_state,
                                                     old_approved_utc, old_adjudications)
+                        return ServiceResult(success=False, errors=[err])
+                elif record.category == LeaveCategory.PROOF_OF_LIFE:
+                    activation_data = self._restore_memorialised_account(
+                        record, now,
+                    )
+                    err = self._record_leave_event(record, "restored")
+                    if err:
+                        # Rollback restoration
+                        self._undo_restoration(
+                            record, old_state, old_approved_utc,
+                            old_adjudications,
+                            activation_data.get("_rollback"),
+                        )
                         return ServiceResult(success=False, errors=[err])
                 else:
                     activation_data = self._activate_leave(record, now)
@@ -2030,6 +2053,95 @@ class GenesisService:
             state=LeaveState.PENDING,
             reason_summary=reason_summary,
             petitioner_id=petitioner_id,
+            requested_utc=now,
+        )
+        self._leave_records[leave_id] = record
+
+        err = self._record_leave_event(record, "requested")
+        if err:
+            del self._leave_records[leave_id]
+            self._leave_counter -= 1
+            return ServiceResult(success=False, errors=[err])
+
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {"leave_id": leave_id, "state": record.state.value}
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
+
+    def petition_memorialisation_reversal(
+        self,
+        actor_id: str,
+        reason_summary: str = "",
+    ) -> ServiceResult:
+        """Petition to reverse a memorialisation — proof-of-life.
+
+        Filed by the supposedly-deceased actor themselves. This is the
+        one case where the affected person petitions directly, because
+        they are asserting their own existence.
+
+        Creates a PENDING leave record with category PROOF_OF_LIFE.
+        The same quorum adjudication process applies, but routed to
+        legal experts. The evidentiary standard is equally rigorous
+        as the original memorialisation.
+
+        On approval:
+        - The original DEATH record transitions to RESTORED.
+        - Actor status returns to pre-memorialisation state.
+        - Trust is unfrozen: score and domain scores preserved.
+        - last_active_utc reset to now (decay resumes from return).
+        """
+        actor_id = actor_id.strip()
+
+        # Validate actor exists
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False, errors=[f"Actor not found: {actor_id}"],
+            )
+        # Must currently be memorialised
+        if entry.status != ActorStatus.MEMORIALISED:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor {actor_id} is not memorialised "
+                    f"(status: {entry.status.value})"
+                ],
+            )
+        # Must be human (only human accounts can be memorialised)
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only human actors can petition for restoration"],
+            )
+        # Block duplicate proof-of-life petitions
+        existing_pol = [
+            r for r in self._leave_records.values()
+            if r.actor_id == actor_id
+            and r.category == LeaveCategory.PROOF_OF_LIFE
+            and r.state == LeaveState.PENDING
+        ]
+        if existing_pol:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor {actor_id} already has a pending "
+                    f"proof-of-life petition"
+                ],
+            )
+
+        # Create PENDING proof-of-life leave record
+        now = datetime.now(timezone.utc)
+        self._leave_counter += 1
+        leave_id = f"LEAVE-{self._leave_counter:06d}"
+
+        record = LeaveRecord(
+            leave_id=leave_id,
+            actor_id=actor_id,
+            category=LeaveCategory.PROOF_OF_LIFE,
+            state=LeaveState.PENDING,
+            reason_summary=reason_summary,
+            petitioner_id=actor_id,  # Self-petitioned — they're alive
             requested_utc=now,
         )
         self._leave_records[leave_id] = record
@@ -2289,6 +2401,126 @@ class GenesisService:
             else:
                 entry.status = ActorStatus.ACTIVE
 
+    def _restore_memorialised_account(
+        self, record: LeaveRecord, now: datetime,
+    ) -> dict[str, Any]:
+        """Restore a memorialised account — proof-of-life approved.
+
+        Finds the original DEATH record, transitions it to RESTORED,
+        restores the actor's pre-memorialisation status, and resets
+        last_active_utc to now (decay resumes from return moment).
+        """
+        actor_id = record.actor_id
+        entry = self._roster.get(actor_id)
+        trust = self._trust_records.get(actor_id)
+
+        # Find the original DEATH/MEMORIALISED record
+        death_record = None
+        for r in self._leave_records.values():
+            if (r.actor_id == actor_id
+                    and r.category == LeaveCategory.DEATH
+                    and r.state == LeaveState.MEMORIALISED):
+                death_record = r
+                break
+
+        # Snapshot for rollback
+        rollback_data: dict[str, Any] = {}
+        if death_record:
+            rollback_data["death_leave_id"] = death_record.leave_id
+            rollback_data["death_old_state"] = death_record.state.value
+        if entry:
+            rollback_data["old_actor_status"] = entry.status.value
+        if trust:
+            rollback_data["old_last_active"] = trust.last_active_utc
+            # Snapshot per-domain last_active timestamps for rollback
+            rollback_data["old_domain_last_active"] = {
+                domain: ds.last_active_utc
+                for domain, ds in trust.domain_scores.items()
+                if isinstance(ds, DomainTrustScore)
+                and hasattr(ds, "last_active_utc")
+            }
+
+        # Transition the original death record to RESTORED
+        if death_record:
+            death_record.state = LeaveState.RESTORED
+            death_record.restored_utc = now
+
+        # Mark the proof-of-life record as approved
+        record.state = LeaveState.RESTORED
+        record.approved_utc = now
+        record.restored_utc = now
+
+        # Restore actor status to pre-memorialisation state
+        if entry and death_record and death_record.pre_leave_status:
+            try:
+                entry.status = ActorStatus(death_record.pre_leave_status)
+            except ValueError:
+                entry.status = ActorStatus.ACTIVE
+        elif entry:
+            entry.status = ActorStatus.ACTIVE
+
+        # Reset last_active_utc to now (decay resumes from return)
+        if trust:
+            trust.last_active_utc = now
+            # Reset per-domain last_active timestamps too
+            for ds in trust.domain_scores.values():
+                if isinstance(ds, DomainTrustScore) and hasattr(ds, "last_active_utc"):
+                    ds.last_active_utc = now
+
+        return {
+            "trust_score_at_freeze": (
+                death_record.trust_score_at_freeze if death_record else None
+            ),
+            "restored": True,
+            "_rollback": rollback_data,
+        }
+
+    def _undo_restoration(
+        self,
+        record: LeaveRecord,
+        old_state: LeaveState,
+        old_approved_utc: Optional[datetime],
+        old_adjudications: list[LeaveAdjudication],
+        rollback_data: Optional[dict[str, Any]] = None,
+    ) -> None:
+        """Rollback helper for a failed restoration."""
+        actor_id = record.actor_id
+        record.state = old_state
+        record.approved_utc = old_approved_utc
+        record.restored_utc = None
+        record.adjudications = old_adjudications
+
+        if rollback_data:
+            # Restore the death record
+            death_leave_id = rollback_data.get("death_leave_id")
+            if death_leave_id:
+                death_record = self._leave_records.get(death_leave_id)
+                if death_record:
+                    death_record.state = LeaveState.MEMORIALISED
+                    death_record.restored_utc = None
+
+            # Restore actor status
+            entry = self._roster.get(actor_id)
+            old_status = rollback_data.get("old_actor_status")
+            if entry and old_status:
+                try:
+                    entry.status = ActorStatus(old_status)
+                except ValueError:
+                    entry.status = ActorStatus.MEMORIALISED
+
+            # Restore trust last_active (global + per-domain)
+            trust = self._trust_records.get(actor_id)
+            if trust and "old_last_active" in rollback_data:
+                trust.last_active_utc = rollback_data["old_last_active"]
+            old_domain_last_active = rollback_data.get(
+                "old_domain_last_active", {},
+            )
+            if trust:
+                for domain, old_ts in old_domain_last_active.items():
+                    ds = trust.domain_scores.get(domain)
+                    if ds is not None and isinstance(ds, DomainTrustScore):
+                        ds.last_active_utc = old_ts
+
     def _record_leave_event(
         self, record: LeaveRecord, action: str,
     ) -> Optional[str]:
@@ -2322,6 +2554,7 @@ class GenesisService:
             "returned": EventKind.LEAVE_RETURNED,
             "permanent": EventKind.LEAVE_PERMANENT,
             "memorialised": EventKind.LEAVE_MEMORIALISED,
+            "restored": EventKind.LEAVE_RESTORED,
         }
         event_kind = action_to_kind.get(action, EventKind.LEAVE_REQUESTED)
 

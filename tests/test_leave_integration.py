@@ -1556,3 +1556,384 @@ class TestCXFindingRegressions:
         )
         assert result.success is False
         assert "cap reached" in result.errors[0].lower()
+
+
+# ===================================================================
+# Memorialisation reversal (proof-of-life) tests
+# ===================================================================
+
+def _memorialise_actor(
+    service: GenesisService, actors: dict[str, str],
+) -> str:
+    """Helper: memorialise the applicant and return the death leave_id."""
+    service.register_actor(
+        "PETITIONER-POL", ActorKind.HUMAN,
+        region="EU", organization="WorkCorp",
+    )
+    result = service.petition_memorialisation(
+        actors["applicant"], "PETITIONER-POL",
+        reason_summary="Actor has passed away",
+    )
+    leave_id = result.data["leave_id"]
+
+    # Give adjudicators social_services domain trust (death requires both)
+    for doc_key in ["doc1", "doc2", "doc3"]:
+        trust = service._trust_records.get(actors[doc_key])
+        if trust and "social_services" not in trust.domain_scores:
+            trust.domain_scores["social_services"] = DomainTrustScore(
+                domain="social_services", score=0.50, mission_count=8,
+            )
+
+    for doc_key in ["doc1", "doc2", "doc3"]:
+        service.adjudicate_leave(
+            leave_id, actors[doc_key], AdjudicationVerdict.APPROVE,
+        )
+    return leave_id
+
+
+def _setup_legal_adjudicators(
+    service: GenesisService, count: int = 3,
+) -> list[str]:
+    """Register legal-domain adjudicators for proof-of-life quorum."""
+    legal_ids = []
+    for i in range(count):
+        aid = f"LAWYER-{i+1:03d}"
+        service.register_actor(
+            aid, ActorKind.HUMAN,
+            region=["EU", "US", "APAC"][i % 3],
+            organization=["LawFirm-A", "LawFirm-B", "LawFirm-C"][i % 3],
+        )
+        trust = service._trust_records.get(aid)
+        if trust:
+            trust.score = 0.60
+            trust.domain_scores["legal"] = DomainTrustScore(
+                domain="legal", score=0.50, mission_count=10,
+            )
+        entry = service._roster.get(aid)
+        if entry:
+            entry.trust_score = 0.60
+        legal_ids.append(aid)
+    return legal_ids
+
+
+class TestMemorialisationReversal:
+    """Tests for proof-of-life memorialisation reversal."""
+
+    def test_full_reversal_flow(self) -> None:
+        """Memorialise → petition reversal → 3 legal approvals → restored."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+        death_id = _memorialise_actor(service, actors)
+
+        # Verify memorialised
+        entry = service._roster.get(actors["applicant"])
+        assert entry.status == ActorStatus.MEMORIALISED
+
+        # Petition proof-of-life
+        result = service.petition_memorialisation_reversal(
+            actors["applicant"],
+            reason_summary="I am alive — false death report",
+        )
+        assert result.success is True
+        pol_id = result.data["leave_id"]
+        assert result.data["state"] == "pending"
+
+        # Set up legal adjudicators
+        lawyers = _setup_legal_adjudicators(service)
+
+        # 3 legal adjudicators approve
+        for lawyer_id in lawyers:
+            result = service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+            assert result.success is True
+
+        assert result.data["state"] == "restored"
+        assert result.data.get("trust_frozen") is True  # Shows the frozen score
+
+        # Actor is no longer memorialised
+        entry = service._roster.get(actors["applicant"])
+        assert entry.status == ActorStatus.ACTIVE
+
+        # Death record transitioned to RESTORED
+        death_record = service.get_leave_record(death_id)
+        assert death_record.state == LeaveState.RESTORED
+        assert death_record.restored_utc is not None
+
+        # Proof-of-life record also RESTORED
+        pol_record = service.get_leave_record(pol_id)
+        assert pol_record.state == LeaveState.RESTORED
+        assert pol_record.restored_utc is not None
+
+        # Actor is no longer on leave
+        assert service.is_actor_on_leave(actors["applicant"]) is False
+
+    def test_reversal_preserves_trust(self) -> None:
+        """Trust score is preserved through memorialisation and restoration."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+
+        # Build some trust first
+        trust = service._trust_records.get(actors["applicant"])
+        original_score = trust.score
+
+        death_id = _memorialise_actor(service, actors)
+
+        # Verify trust was frozen
+        death_record = service.get_leave_record(death_id)
+        assert death_record.trust_score_at_freeze == original_score
+
+        # Restore
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+        for lawyer_id in lawyers:
+            service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+
+        # Trust score preserved
+        trust = service._trust_records.get(actors["applicant"])
+        assert trust.score == original_score
+
+    def test_reversal_resumes_decay(self) -> None:
+        """After restoration, trust decay resumes (actor is no longer frozen)."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+        _memorialise_actor(service, actors)
+
+        # Restore
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+        for lawyer_id in lawyers:
+            service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+
+        # Actor is no longer on leave — decay should apply
+        assert service.is_actor_on_leave(actors["applicant"]) is False
+
+    def test_reversal_requires_memorialised_status(self) -> None:
+        """Cannot petition reversal for a non-memorialised actor."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        assert result.success is False
+        assert "not memorialised" in result.errors[0]
+
+    def test_reversal_blocks_duplicate_pending(self) -> None:
+        """Cannot file two pending proof-of-life petitions."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+        _memorialise_actor(service, actors)
+
+        result1 = service.petition_memorialisation_reversal(actors["applicant"])
+        assert result1.success is True
+
+        result2 = service.petition_memorialisation_reversal(actors["applicant"])
+        assert result2.success is False
+        assert "pending" in result2.errors[0]
+
+    def test_reversal_denied_flow(self) -> None:
+        """If the legal quorum denies, actor stays memorialised."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+        death_id = _memorialise_actor(service, actors)
+
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+
+        for lawyer_id in lawyers:
+            result = service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.DENY,
+            )
+            assert result.success is True
+
+        # Actor stays memorialised
+        entry = service._roster.get(actors["applicant"])
+        assert entry.status == ActorStatus.MEMORIALISED
+
+        death_record = service.get_leave_record(death_id)
+        assert death_record.state == LeaveState.MEMORIALISED
+
+    def test_reversal_only_human(self) -> None:
+        """Only human actors can petition for restoration."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+
+        # Register a machine actor
+        service.register_actor(
+            "MACHINE-001", ActorKind.MACHINE,
+            region="EU", organization="AILab",
+        )
+        result = service.petition_memorialisation_reversal("MACHINE-001")
+        assert result.success is False
+        # Machine isn't memorialised, so "not memorialised" check fires first
+        assert "not memorialised" in result.errors[0]
+
+    def test_proof_of_life_blocked_via_request_leave(self) -> None:
+        """PROOF_OF_LIFE category cannot be self-requested via request_leave()."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+
+        result = service.request_leave(
+            actors["applicant"], LeaveCategory.PROOF_OF_LIFE,
+        )
+        assert result.success is False
+        assert "petition_memorialisation_reversal" in result.errors[0]
+
+    def test_can_re_memorialise_after_restoration(self) -> None:
+        """After restoration, a new death petition can be filed if needed."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+        _memorialise_actor(service, actors)
+
+        # Restore
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+        for lawyer_id in lawyers:
+            service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+
+        # Actor is restored
+        entry = service._roster.get(actors["applicant"])
+        assert entry.status == ActorStatus.ACTIVE
+
+        # File a new death petition
+        service.register_actor(
+            "PETITIONER-POL2", ActorKind.HUMAN,
+            region="EU", organization="WorkCorp",
+        )
+        result = service.petition_memorialisation(
+            actors["applicant"], "PETITIONER-POL2",
+            reason_summary="Actor has actually passed away",
+        )
+        assert result.success is True
+
+    def test_reversal_event_recorded(self) -> None:
+        """Proof-of-life restoration records audit events."""
+        event_log = EventLog()
+        service = _make_service(event_log=event_log)
+        actors = _setup_leave_scenario(service)
+        _memorialise_actor(service, actors)
+
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+        for lawyer_id in lawyers:
+            service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+
+        # Check that a LEAVE_RESTORED event was recorded
+        from genesis.persistence.event_log import EventKind
+        restored_events = [
+            e for e in event_log.events()
+            if e.event_kind == EventKind.LEAVE_RESTORED
+        ]
+        assert len(restored_events) >= 1
+
+    def test_reversal_persistence_round_trip(self, tmp_path: Path) -> None:
+        """Restored state survives save/load cycle."""
+        store = StateStore(tmp_path / "state.json")
+        service = _make_service(event_log=EventLog(), state_store=store)
+        actors = _setup_leave_scenario(service)
+        _memorialise_actor(service, actors)
+
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+        for lawyer_id in lawyers:
+            service.adjudicate_leave(
+                pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+            )
+
+        # Save
+        service._persist_state()
+
+        # Load in a new service
+        store2 = StateStore(tmp_path / "state.json")
+        loaded = store2.load_leave_records()
+
+        pol_record = loaded.get(pol_id)
+        assert pol_record is not None
+        assert pol_record.state == LeaveState.RESTORED
+        assert pol_record.restored_utc is not None
+        assert pol_record.category == LeaveCategory.PROOF_OF_LIFE
+
+    def test_restoration_rollback_preserves_domain_timestamps(self) -> None:
+        """P1 regression: forced event failure must roll back global AND per-domain timestamps."""
+        service = _make_service(event_log=EventLog())
+        actors = _setup_leave_scenario(service)
+
+        # Build domain scores on the applicant BEFORE memorialisation
+        trust = service._trust_records.get(actors["applicant"])
+        trust.domain_scores["healthcare"] = DomainTrustScore(
+            domain="healthcare", score=0.40, mission_count=5,
+            last_active_utc=datetime(2025, 6, 1, tzinfo=timezone.utc),
+        )
+        trust.domain_scores["engineering"] = DomainTrustScore(
+            domain="engineering", score=0.35, mission_count=3,
+            last_active_utc=datetime(2025, 7, 1, tzinfo=timezone.utc),
+        )
+        original_global_last_active = trust.last_active_utc
+        original_healthcare_ts = trust.domain_scores["healthcare"].last_active_utc
+        original_engineering_ts = trust.domain_scores["engineering"].last_active_utc
+
+        # Memorialise the actor
+        _memorialise_actor(service, actors)
+        assert service._roster.get(actors["applicant"]).status == ActorStatus.MEMORIALISED
+
+        # Petition proof-of-life
+        result = service.petition_memorialisation_reversal(actors["applicant"])
+        pol_id = result.data["leave_id"]
+        lawyers = _setup_legal_adjudicators(service)
+
+        # Force the epoch closed so _record_leave_event fails on the "restored" action
+        service._epoch_service.current_epoch.closed = True
+
+        # The final adjudication (3rd approve) triggers restoration → event fails → rollback
+        for i, lawyer_id in enumerate(lawyers):
+            if i < 2:
+                # Reopen epoch for the adjudication events themselves
+                service._epoch_service.current_epoch.closed = False
+                service.adjudicate_leave(
+                    pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+                )
+            else:
+                # Close epoch JUST before the 3rd vote triggers quorum
+                service._epoch_service.current_epoch.closed = False
+                # Monkey-patch _record_leave_event to fail only on "restored"
+                original_record_event = service._record_leave_event
+
+                def _failing_record(record, action, _orig=original_record_event):
+                    if action == "restored":
+                        return "Forced audit failure for test"
+                    return _orig(record, action)
+
+                service._record_leave_event = _failing_record
+                result = service.adjudicate_leave(
+                    pol_id, lawyer_id, AdjudicationVerdict.APPROVE,
+                )
+                service._record_leave_event = original_record_event
+
+        # The restoration should have failed
+        assert result.success is False
+        assert "Forced audit failure" in result.errors[0]
+
+        # Actor must still be memorialised
+        entry = service._roster.get(actors["applicant"])
+        assert entry.status == ActorStatus.MEMORIALISED
+
+        # Global last_active must be rolled back (NOT set to now)
+        trust = service._trust_records.get(actors["applicant"])
+        assert trust.last_active_utc == original_global_last_active
+
+        # Per-domain timestamps must ALSO be rolled back
+        assert trust.domain_scores["healthcare"].last_active_utc == original_healthcare_ts
+        assert trust.domain_scores["engineering"].last_active_utc == original_engineering_ts

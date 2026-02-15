@@ -21,6 +21,15 @@ Death/memorialisation:
 - Quorum-adjudicated with evidence, same as all other categories.
 - Account permanently memorialised — trust frozen, never reactivated.
 - The person's record stands honestly forever.
+
+Memorialisation reversal (proof of life):
+- If a memorialisation was made in error or through malicious
+  misrepresentation, the affected person may petition a legal
+  quorum with proof-of-life evidence.
+- Evidentiary standard is equally rigorous as the original
+  memorialisation.
+- On approval, the account is restored: trust unfrozen, status
+  returned to pre-memorialisation state.
 """
 
 from __future__ import annotations
@@ -45,6 +54,7 @@ class LeaveCategory(str, enum.Enum):
     PREGNANCY = "pregnancy"
     CHILD_CARE = "child_care"
     DEATH = "death"
+    PROOF_OF_LIFE = "proof_of_life"
 
 
 # Default mapping from category to required adjudicator domains.
@@ -58,6 +68,7 @@ CATEGORY_REQUIRED_DOMAINS: dict[str, list[str]] = {
     "pregnancy": ["healthcare"],
     "child_care": ["social_services"],
     "death": ["healthcare", "social_services"],
+    "proof_of_life": ["legal"],
 }
 
 
@@ -67,11 +78,17 @@ class LeaveState(str, enum.Enum):
     PENDING → APPROVED/DENIED (after quorum)
     APPROVED → ACTIVE (trust frozen)
     ACTIVE → RETURNED (actor comes back) or MEMORIALISED (death)
+    MEMORIALISED → RESTORED (proof-of-life reversal)
 
     Memorialisation:
     - Petitioned by a third party with evidence of death.
     - Quorum-adjudicated.
     - Account sealed permanently — trust frozen, never reactivated.
+
+    Memorialisation reversal:
+    - The affected person petitions a legal quorum with proof-of-life.
+    - Equally rigorous evidentiary standard as the original.
+    - On approval, the original death record transitions to RESTORED.
     """
     PENDING = "pending"
     APPROVED = "approved"
@@ -79,6 +96,7 @@ class LeaveState(str, enum.Enum):
     ACTIVE = "active"
     RETURNED = "returned"
     MEMORIALISED = "memorialised"
+    RESTORED = "restored"
 
 
 class AdjudicationVerdict(str, enum.Enum):
@@ -153,6 +171,7 @@ class LeaveRecord:
     denied_utc: Optional[datetime] = None
     returned_utc: Optional[datetime] = None
     memorialised_utc: Optional[datetime] = None
+    restored_utc: Optional[datetime] = None
 
     def approve_count(self) -> int:
         """Count adjudicators who voted APPROVE."""

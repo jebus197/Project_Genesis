@@ -297,6 +297,24 @@ Genesis uses bounded earned trust, not unbounded hierarchy.
 - Cryptographic commitment records prove integrity of records and process history.
 - It does not prove correctness by itself; correctness still depends on independent review and evidence quality.
 
+13. Protected leave and trust freeze:
+- Life events — illness, bereavement, disability, mental health crises, caregiving, pregnancy, and child care — are not inactivity. Without a protection mechanism, an actor who gets sick loses trust through no fault of their own.
+- A human actor may petition anonymously for a temporary trust freeze.
+- The petition is routed to a randomised quorum of domain-specific experts (medical issues to medical professionals, legal issues to legal experts, etc.). Neither party sees the other's identity.
+- Minimum quorum: 3 qualified experts must independently concur.
+- If approved: trust score, domain scores, and skill levels are frozen exactly — no decay, no loss — until the actor returns.
+- Adjudicators must hold earned domain trust in the relevant professional field. Self-adjudication is blocked.
+- Adjudicator work is graded; poor-quality adjudication triggers immediate removal and trust decay.
+- Anti-gaming protections: minimum cooldown between leave requests, annual cap on non-denied leaves.
+- All adjudications are recorded in the tamper-evident audit trail.
+- This mechanism applies to human actors only. Machines cannot request leave.
+
+14. Death and memorialisation:
+- When a human participant dies, family or friends may petition with verifiable evidence to memorialise the account.
+- A qualified quorum reviews the evidence blindly. If approved, the account becomes a permanent memorial: trust level and all verified achievements are frozen in perpetuity.
+- If a memorialisation was made in error or through malicious misrepresentation, the affected person may petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification.
+- Any memorialisation or reversal decision may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
+
 ## Parameter review matrix (canonical)
 
 This is the single canonical parameter table for governance and crypto defaults.
