@@ -81,6 +81,8 @@ class EscrowManager:
             state=EscrowState.PENDING,
             created_utc=now,
         )
+        if escrow_id in self._escrows:
+            raise ValueError(f"Escrow ID already exists: {escrow_id}")
         self._escrows[escrow_id] = record
         return record
 
@@ -117,6 +119,19 @@ class EscrowManager:
         record = self._get(escrow_id)
         if now is None:
             now = datetime.now(timezone.utc)
+
+        # Validate breakdown matches escrowed amount
+        if commission.mission_reward != record.amount:
+            raise ValueError(
+                f"Commission breakdown mission_reward ({commission.mission_reward}) "
+                f"does not match escrowed amount ({record.amount})"
+            )
+        if commission.commission_amount + commission.worker_payout != record.amount:
+            raise ValueError(
+                f"Commission ({commission.commission_amount}) + worker payout "
+                f"({commission.worker_payout}) does not equal escrowed amount "
+                f"({record.amount})"
+            )
 
         if record.state == EscrowState.LOCKED:
             record.transition_to(EscrowState.RELEASING)

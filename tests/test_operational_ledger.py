@@ -134,3 +134,45 @@ class TestBootstrapDetection:
         for i in range(50):
             ledger.record_completed_mission(_make_mission(f"m{i}", "500", i))
         assert ledger.total_completed_missions() >= 50
+
+
+class TestFutureDateExclusion:
+    def test_future_missions_excluded(self) -> None:
+        """Missions with future timestamps are excluded from the window."""
+        ledger = OperationalLedger()
+        now = _now()
+        # 3 normal missions
+        for i in range(3):
+            ledger.record_completed_mission(_make_mission(f"m{i}", "500", days_ago=i * 10))
+        # 1 future-dated mission (30 days ahead)
+        future_mission = CompletedMission(
+            mission_id="future",
+            reward_amount=Decimal("500"),
+            completed_utc=now + timedelta(days=30),
+            operational_costs=Decimal("10"),
+        )
+        ledger.record_completed_mission(future_mission)
+        result = ledger.missions_in_window(90, 3, now)
+        assert all(m.mission_id != "future" for m in result)
+        assert len(result) == 3
+
+    def test_future_costs_excluded(self) -> None:
+        """Costs with future timestamps are excluded from the window."""
+        ledger = OperationalLedger()
+        now = _now()
+        # 3 normal missions and costs
+        for i in range(3):
+            ledger.record_completed_mission(_make_mission(f"m{i}", "500", days_ago=i * 10))
+            ledger.record_operational_cost(_make_cost(f"c{i}", "10", days_ago=i * 10))
+        # 1 future-dated cost
+        future_cost = OperationalCostEntry(
+            cost_id="future_cost",
+            category=CostCategory.INFRASTRUCTURE,
+            amount=Decimal("9999"),
+            timestamp_utc=now + timedelta(days=30),
+            description="Future cost",
+        )
+        ledger.record_operational_cost(future_cost)
+        result = ledger.costs_in_window(90, 3, now)
+        assert all(c.cost_id != "future_cost" for c in result)
+        assert len(result) == 3

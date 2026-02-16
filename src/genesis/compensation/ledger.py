@@ -64,9 +64,10 @@ class OperationalLedger:
         """
         cutoff = now - timedelta(days=window_days)
 
-        # Sort by completion time descending for window extraction
+        # Filter out future-dated entries, then sort descending
+        valid_missions = [m for m in self._missions if m.completed_utc <= now]
         sorted_missions = sorted(
-            self._missions, key=lambda m: m.completed_utc, reverse=True
+            valid_missions, key=lambda m: m.completed_utc, reverse=True
         )
 
         # Get missions within the time window
@@ -97,4 +98,4 @@ class OperationalLedger:
 
         # Use the earliest mission in the window as the cost cutoff
         earliest_mission = min(m.completed_utc for m in window_missions)
-        return [c for c in self._costs if c.timestamp_utc >= earliest_mission]
+        return [c for c in self._costs if earliest_mission <= c.timestamp_utc <= now]

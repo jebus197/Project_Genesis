@@ -177,6 +177,64 @@ class TestInvalidTransitions:
             manager.lock_escrow("nonexistent", now=_now())
 
 
+class TestDuplicateEscrowId:
+    def test_create_rejects_duplicate_id(self) -> None:
+        """Second create with same escrow_id raises ValueError."""
+        manager = EscrowManager()
+        manager.create_escrow(
+            "m1", "poster1", Decimal("500"), escrow_id="e1", now=_now()
+        )
+        with pytest.raises(ValueError, match="Escrow ID already exists"):
+            manager.create_escrow(
+                "m2", "poster2", Decimal("300"), escrow_id="e1", now=_now()
+            )
+
+
+class TestBreakdownValidation:
+    def test_release_rejects_mismatched_reward(self) -> None:
+        """Breakdown for wrong mission amount raises ValueError."""
+        manager = EscrowManager()
+        manager.create_escrow(
+            "m1", "poster1", Decimal("100"), escrow_id="e1", now=_now()
+        )
+        manager.lock_escrow("e1", now=_now())
+        # Breakdown computed for $500, but escrow is $100
+        breakdown = _mock_breakdown("500", "0.05")
+        with pytest.raises(ValueError, match="does not match escrowed amount"):
+            manager.release_escrow("e1", breakdown, now=_now())
+
+    def test_release_rejects_amounts_not_summing(self) -> None:
+        """Commission + payout != escrow amount raises ValueError."""
+        manager = EscrowManager()
+        manager.create_escrow(
+            "m1", "poster1", Decimal("500"), escrow_id="e1", now=_now()
+        )
+        manager.lock_escrow("e1", now=_now())
+        # Create a breakdown where mission_reward matches but amounts don't sum
+        breakdown = CommissionBreakdown(
+            rate=Decimal("0.05"),
+            raw_rate=Decimal("0.05"),
+            cost_ratio=Decimal("0.04"),
+            commission_amount=Decimal("25"),
+            worker_payout=Decimal("400"),  # 25 + 400 = 425 ≠ 500
+            mission_reward=Decimal("500"),
+            cost_breakdown={"infrastructure": Decimal("10")},
+            is_bootstrap=False,
+            window_stats=WindowStats(
+                missions_in_window=60,
+                total_completed_missions=100,
+                window_days_actual=60,
+                window_days_configured=90,
+                min_missions_configured=50,
+                is_bootstrap=False,
+            ),
+            reserve_contribution=Decimal("2"),
+            safety_margin=Decimal("1.3"),
+        )
+        with pytest.raises(ValueError, match="does not equal escrowed amount"):
+            manager.release_escrow("e1", breakdown, now=_now())
+
+
 class TestCommissionDeduction:
     def test_commission_deducted_on_release(self) -> None:
         """Worker receives reward minus commission."""
