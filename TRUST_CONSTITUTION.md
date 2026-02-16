@@ -877,7 +877,23 @@ This constitution is anchored on-chain. The anchoring event creates permanent, t
 
 Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
 
-### Current anchor (v3 — creator provisions + founder legacy)
+### Current anchor (v4 — First Light sustainability + machine registration)
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10273917 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac`](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac) |
+| Anchored | 2026-02-16 |
+
+**Independent verification:**
+
+The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac) and confirm the Input Data field contains `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91`. The git history preserves the exact file state that produced this hash.
+
+### Previous anchor (v3 — creator provisions + founder legacy)
 
 | Field | Value |
 |---|---|
@@ -888,10 +904,6 @@ Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
 | Transaction | [`eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
 | Anchored | 2026-02-16 |
-
-**Independent verification:**
-
-The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) and confirm the Input Data field contains `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393`. The git history preserves the exact file state that produced this hash.
 
 ### Previous anchor (v2 — with compensation model and real-time dynamic commission)
 

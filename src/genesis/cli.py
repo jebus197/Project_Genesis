@@ -58,6 +58,7 @@ def cmd_register_actor(args: argparse.Namespace) -> int:
         model_family=args.family or ("human_reviewer" if args.kind == "human" else "unknown"),
         method_type=args.method or ("human_reviewer" if args.kind == "human" else "unknown"),
         initial_trust=args.trust,
+        registered_by=getattr(args, "operator", None),
     )
     if result.success:
         print(f"Registered actor: {result.data['actor_id']}")
@@ -116,6 +117,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_reg.add_argument("--family", help="Model family (default: human_reviewer)")
     p_reg.add_argument("--method", help="Method type (default: human_reviewer)")
     p_reg.add_argument("--trust", type=float, default=0.10, help="Initial trust (default: 0.10)")
+    p_reg.add_argument("--operator", help="Human operator ID (required for machine registration)")
 
     # create-mission
     p_create = sub.add_parser("create-mission", help="Create a new mission")

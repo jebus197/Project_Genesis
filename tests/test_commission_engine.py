@@ -349,3 +349,20 @@ class TestCostBreakdown:
         )
         assert result.rate == Decimal("0.10")
         assert result.is_bootstrap is True
+
+    def test_creator_allocation_in_every_breakdown(self, engine: CommissionEngine) -> None:
+        """Creator allocation must appear in cost_breakdown for every transaction."""
+        ledger = OperationalLedger()
+        now = _now()
+        for i in range(60):
+            ledger.record_completed_mission(
+                _make_mission(f"m_{i}", "500", days_ago=i, now=now)
+            )
+        ledger.record_operational_cost(
+            _make_cost("infra_1", CostCategory.INFRASTRUCTURE, "100", 5, now)
+        )
+        result = engine.compute_commission(
+            Decimal("500"), ledger, _healthy_reserve(), now=now
+        )
+        assert "creator_allocation" in result.cost_breakdown
+        assert result.cost_breakdown["creator_allocation"] > Decimal("0")

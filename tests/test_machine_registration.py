@@ -64,10 +64,11 @@ class TestMachineRegistration:
 
     def test_register_machine_with_machine_operator_fails(self, service: GenesisService) -> None:
         _register_human(service, "human-op")
-        # Register a machine via legacy path
+        # Register a machine via the proper path (human operator required)
         service.register_actor(
             actor_id="machine-a", actor_kind=ActorKind.MACHINE,
             region="NA", organization="Org1",
+            registered_by="human-op",
         )
         # Now try to have machine-a register another machine
         result = service.register_machine(
@@ -169,17 +170,15 @@ class TestLegacyBackwardCompat:
         actor = service.get_actor("legacy-h")
         assert actor.actor_kind == ActorKind.HUMAN
 
-    def test_legacy_register_machine_without_operator(self, service: GenesisService) -> None:
-        """Legacy path allows machine without operator for backward compat."""
+    def test_legacy_register_machine_without_operator_fails(self, service: GenesisService) -> None:
+        """Machine registration without operator must fail — no legacy bypass."""
         result = service.register_actor(
             actor_id="legacy-bot", actor_kind=ActorKind.MACHINE,
             region="NA", organization="Org1",
             model_family="gpt", method_type="reasoning_model",
         )
-        assert result.success
-        bot = service.get_actor("legacy-bot")
-        assert bot.actor_kind == ActorKind.MACHINE
-        assert bot.registered_by is None  # legacy — no operator
+        assert not result.success
+        assert "human operator" in result.errors[0].lower()
 
     def test_legacy_register_machine_with_operator(self, service: GenesisService) -> None:
         """Legacy path with registered_by delegates to register_machine()."""

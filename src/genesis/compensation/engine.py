@@ -149,6 +149,14 @@ class CommissionEngine:
         # Build cost breakdown by category
         cost_breakdown = self._build_cost_breakdown(window_costs, reserve_contribution)
 
+        # Creator allocation — constitutional line item in every breakdown
+        creator_rate = params.get("creator_allocation_rate", Decimal("0"))
+        if creator_rate > Decimal("0") and commission_amount > Decimal("0"):
+            creator_amount = (commission_amount * creator_rate).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP,
+            )
+            cost_breakdown["creator_allocation"] = creator_amount
+
         return CommissionBreakdown(
             rate=rate,
             raw_rate=raw_rate,

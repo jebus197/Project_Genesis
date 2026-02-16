@@ -271,7 +271,7 @@ class FirstLightEstimator:
                 reserve_date = now + timedelta(days=months_to_reserve * 30.44)
             else:
                 # No surplus yet — estimate when surplus will start
-                if sustainability_date is not None and sustainability_date > now:
+                if sustainability_date is not None and sustainability_date >= now:
                     # After sustainability, surplus = revenue - costs
                     projected_surplus_monthly = Decimal(str(revenue_target)) - monthly_costs
                     if projected_surplus_monthly > 0:
@@ -293,6 +293,11 @@ class FirstLightEstimator:
             first_light_date = sustainability_date
         else:
             first_light_date = reserve_date
+
+        # Guard: First Light cannot be now if reserve is unmet
+        if first_light_date is not None and first_light_date <= now:
+            if monthly_costs > 0 and reserve_balance < reserve_target:
+                first_light_date = None
 
         # Optimistic/pessimistic bounds
         if opt_revenue_date is not None and pess_revenue_date is not None:

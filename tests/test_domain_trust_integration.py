@@ -73,9 +73,14 @@ def _setup_actors(service):
         initial_trust=0.5,
     )
     service.register_actor(
+        "reviewer-2-operator", ActorKind.HUMAN, "us", "skynet",
+        initial_trust=0.5,
+    )
+    service.register_actor(
         "reviewer-2", ActorKind.MACHINE, "us", "skynet",
         model_family="gpt", method_type="llm_evaluator",
         initial_trust=0.5,
+        registered_by="reviewer-2-operator",
     )
     service.register_actor(
         "reviewer-3", ActorKind.HUMAN, "apac", "delta",

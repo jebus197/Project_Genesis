@@ -453,8 +453,13 @@ class TestDeathMemorialisation:
         service.open_epoch()
 
         service.register_actor(
+            "MACHINE-MEM-OP", ActorKind.HUMAN,
+            region="EU", organization="AICorp",
+        )
+        service.register_actor(
             "MACHINE-MEM", ActorKind.MACHINE,
             region="EU", organization="AICorp",
+            registered_by="MACHINE-MEM-OP",
         )
         service.register_actor(
             "PETITIONER-MEM", ActorKind.HUMAN,
@@ -527,11 +532,16 @@ class TestEligibilityEnforcement:
         service = _make_service(event_log=EventLog())
         actors = _setup_leave_scenario(service)
 
-        # Register a machine with high trust
+        # Register a human operator, then a machine with high trust
+        service.register_actor(
+            "MACHINE-001-OP", ActorKind.HUMAN,
+            region="EU", organization="AIOrg",
+        )
         service.register_actor(
             "MACHINE-001", ActorKind.MACHINE,
             region="EU", organization="AIOrg",
             model_family="gpt-4", method_type="transformer",
+            registered_by="MACHINE-001-OP",
         )
         trust = service._trust_records.get("MACHINE-001")
         trust.score = 0.90
@@ -957,8 +967,13 @@ class TestCXFindingRegressions:
         service.open_epoch()
 
         service.register_actor(
+            "MACHINE-001-OP", ActorKind.HUMAN,
+            region="EU", organization="RoboCorp",
+        )
+        service.register_actor(
             "MACHINE-001", ActorKind.MACHINE,
             region="EU", organization="RoboCorp",
+            registered_by="MACHINE-001-OP",
         )
 
         result = service.request_leave("MACHINE-001", LeaveCategory.ILLNESS)
@@ -1764,10 +1779,15 @@ class TestMemorialisationReversal:
         service = _make_service(event_log=EventLog())
         actors = _setup_leave_scenario(service)
 
-        # Register a machine actor
+        # Register a human operator, then a machine actor
+        service.register_actor(
+            "MACHINE-001-OP", ActorKind.HUMAN,
+            region="EU", organization="AILab",
+        )
         service.register_actor(
             "MACHINE-001", ActorKind.MACHINE,
             region="EU", organization="AILab",
+            registered_by="MACHINE-001-OP",
         )
         result = service.petition_memorialisation_reversal("MACHINE-001")
         assert result.success is False

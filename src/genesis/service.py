@@ -253,37 +253,11 @@ class GenesisService:
                     method_type=method_type,
                     initial_trust=initial_trust,
                 )
-            # Legacy path: machine without operator validation
-            try:
-                now = datetime.now(timezone.utc)
-                entry = RosterEntry(
-                    actor_id=actor_id,
-                    actor_kind=ActorKind.MACHINE,
-                    trust_score=initial_trust,
-                    region=region,
-                    organization=organization,
-                    model_family=model_family,
-                    method_type=method_type,
-                    registered_utc=now,
-                )
-                self._roster.register(entry)
-                aid = actor_id.strip()
-                self._trust_records[aid] = TrustRecord(
-                    actor_id=aid,
-                    actor_kind=ActorKind.MACHINE,
-                    score=initial_trust,
-                )
-
-                def _rollback() -> None:
-                    self._roster._actors.pop(aid, None)
-                    self._trust_records.pop(aid, None)
-
-                err = self._safe_persist(on_rollback=_rollback)
-                if err:
-                    return ServiceResult(success=False, errors=[err])
-                return ServiceResult(success=True, data={"actor_id": aid})
-            except ValueError as e:
-                return ServiceResult(success=False, errors=[str(e)])
+            # No legacy path — machines MUST have a human operator
+            return ServiceResult(
+                success=False,
+                errors=["Machine registration requires a human operator (registered_by)."],
+            )
         return ServiceResult(success=False, errors=[f"Unknown actor kind: {actor_kind}"])
 
     def register_human(

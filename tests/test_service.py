@@ -75,9 +75,14 @@ class TestActorRegistration:
 
     def test_quarantine_actor(self, service: GenesisService) -> None:
         service.register_actor(
+            actor_id="charlie-operator", actor_kind=ActorKind.HUMAN,
+            region="APAC", organization="Org3",
+        )
+        service.register_actor(
             actor_id="charlie", actor_kind=ActorKind.MACHINE,
             region="APAC", organization="Org3",
             model_family="gpt", method_type="reasoning_model",
+            registered_by="charlie-operator",
         )
         result = service.quarantine_actor("charlie")
         assert result.success
@@ -305,9 +310,14 @@ class TestHumanGateAPI:
         mid = self._setup_r2_mission(service)
         service.approve_mission(mid)
         service.register_actor(
+            actor_id="bot-operator", actor_kind=ActorKind.HUMAN,
+            region="NA", organization="Org1",
+        )
+        service.register_actor(
             actor_id="bot", actor_kind=ActorKind.MACHINE,
             region="NA", organization="Org1",
             model_family="gpt", method_type="reasoning_model",
+            registered_by="bot-operator",
         )
         result = service.human_gate_approve(mid, approver_id="bot")
         assert not result.success
@@ -331,9 +341,14 @@ class TestMachineRecertification:
     def test_recert_failure_increments_counter(self, service: GenesisService) -> None:
         """Machine with low quality should accumulate recertification failures."""
         service.register_actor(
+            actor_id="bot1-operator", actor_kind=ActorKind.HUMAN,
+            region="NA", organization="Org1",
+        )
+        service.register_actor(
             actor_id="bot1", actor_kind=ActorKind.MACHINE,
             region="NA", organization="Org1",
             model_family="gpt", method_type="reasoning_model",
+            registered_by="bot1-operator",
         )
         # Low quality + reliability → recert failure
         result = service.update_trust(
@@ -483,11 +498,17 @@ class TestDecommissionRollback:
         # Create service WITHOUT an open epoch so audit recording will fail
         svc = GenesisService(resolver)
 
+        # Register a human operator for the machine
+        svc.register_actor(
+            actor_id="bot_rollback_operator", actor_kind=ActorKind.HUMAN,
+            region="NA", organization="Org1",
+        )
         # Register a machine actor
         svc.register_actor(
             actor_id="bot_rollback", actor_kind=ActorKind.MACHINE,
             region="NA", organization="Org1",
             model_family="gpt", method_type="reasoning_model",
+            registered_by="bot_rollback_operator",
         )
 
         # Verify actor starts as ACTIVE

@@ -402,14 +402,19 @@ class TestFindMatchingWorkersService:
             "w1", ActorKind.HUMAN, "eu", "acme", initial_trust=0.5,
         )
         service.register_actor(
+            "w2-operator", ActorKind.HUMAN, "us", "skynet",
+            initial_trust=0.5,
+        )
+        service.register_actor(
             "w2", ActorKind.MACHINE, "us", "skynet",
             model_family="gpt", method_type="llm_evaluator",
             initial_trust=0.5,
+            registered_by="w2-operator",
         )
 
         result = service.find_matching_workers(requirements=[])
         assert result.success
-        assert result.data["total_matches"] == 2
+        assert result.data["total_matches"] == 3
 
     def test_find_matching_workers_with_exclusion(self, resolver) -> None:
         """Excluded workers are not returned."""

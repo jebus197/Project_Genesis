@@ -273,6 +273,46 @@ class TestProjections:
         assert result.projected_sustainability_date == NOW
 
 
+class TestFalseNowRegression:
+    """Regression: First Light must never be 'now' when reserve is unmet."""
+
+    def test_first_light_not_now_when_reserve_unmet(
+        self, estimator: FirstLightEstimator,
+    ) -> None:
+        """Even with enough humans for revenue, unmet reserve blocks first_light = now."""
+        ts = _make_timestamps(100, interval_days=1.0)
+        result = estimator.estimate(
+            ts,
+            monthly_revenue=Decimal("200"),
+            monthly_costs=Decimal("500"),
+            reserve_balance=Decimal("0"),  # Reserve unmet
+            missions_per_human_per_month=2.0,
+            avg_mission_value=Decimal("100"),
+            commission_rate=Decimal("0.05"),
+            now=NOW,
+        )
+        # First Light must be in the future or None — never now with unmet reserve
+        if result.estimated_first_light is not None:
+            assert result.estimated_first_light > NOW
+
+    def test_first_light_achievable_when_reserve_met(
+        self, estimator: FirstLightEstimator,
+    ) -> None:
+        """With reserve fully met and sufficient revenue, First Light can be now."""
+        ts = _make_timestamps(100, interval_days=1.0)
+        result = estimator.estimate(
+            ts,
+            monthly_revenue=Decimal("2000"),
+            monthly_costs=Decimal("500"),
+            reserve_balance=Decimal("5000"),  # Well above 3-month target
+            missions_per_human_per_month=2.0,
+            avg_mission_value=Decimal("100"),
+            commission_rate=Decimal("0.05"),
+            now=NOW,
+        )
+        assert result.achieved is True
+
+
 class TestEdgeCases:
     """Numeric edge cases and robustness."""
 
