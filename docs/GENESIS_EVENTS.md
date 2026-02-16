@@ -79,7 +79,7 @@ The block number (10255231) and its timestamp on Sepolia prove the document exis
 
 This is the founding act of Project Genesis. Every future trust event builds on this anchor. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
 
-### Re-anchoring note (2026-02-16)
+### Re-anchoring note — v2 (2026-02-16)
 
 The constitution was re-anchored after the addition of the compensation model, real-time dynamic commission mechanism, and associated constitutional parameters. This re-anchoring is **not** a new trust-minting event — GE-0001 remains the founding event. The re-anchoring simply records that the constitution has evolved and its current form is also blockchain-witnessed.
 
@@ -95,6 +95,57 @@ Key additions to the constitution in this version:
 - All commission parameters reclassified as constitutional constants (no governance ballot)
 - Legal compliance layer, crypto volatility protection, payment dispute resolution
 - 46 design tests (up from 37), 9 additional constitutional parameters
+
+### Re-anchoring note — v3 (2026-02-16)
+
+The constitution was re-anchored after codifying creator provisions, founder legacy, PoC mode, and First Light. This is **not** a new trust-minting event — GE-0001 remains the founding event. The anchoring narrative is: v1 (founding) → v2 (compensation) → v3 (creator provisions + founder legacy).
+
+| Field | Value |
+|---|---|
+| SHA-256 | `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` |
+| Block | 10272673 |
+| Transaction | [`eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
+
+Key additions to the constitution in this version:
+- Creator allocation (2%) — transparent, constitutional, visible in every per-transaction breakdown
+- Founder's Veto — G0-only, transparent, logged on-chain, auto-expires at First Light
+- Dormancy and founder's legacy — 50-year clause with metrology-consensus time verification and supermajority-selected charitable recipients
+- PoC mode — platform marked as Proof of Concept until First Light
+- First Light — named transition event at G0→G1 (50 verified humans)
+- 628 tests (up from 608), 1 additional constitutional parameter (`creator_allocation_rate`)
+
+---
+
+## Event GE-0002: Founder Trust Record Minted
+
+**Date:** 2026-02-16
+**Type:** Founding trust-minting event
+**Actor:** George Jackson (project founder)
+**Genesis phase:** G0 (founder stewardship)
+
+### What happened
+
+George Jackson's identity was formally minted as the first trust record in the Genesis trust chain — the "genesis block" of the trust system. This is the first `ACTOR_REGISTERED` event in the audit trail.
+
+| Field | Value |
+|---|---|
+| Actor ID | `george-jackson-001` |
+| Actor kind | `HUMAN` |
+| Role | Creator, constitutional authority |
+| Email | `jebus.2504@gmail.com` |
+| Event kind | `ACTOR_REGISTERED` |
+
+### Why this matters
+
+Every trust chain needs a first link. George Jackson designed the constitution, the trust model, the governance framework, the compensation model, and the white market thesis. The quality and scope of that work constitutes the evidence for the founding trust record. By the system's own rules, trust is earned through verified work — and the work that created the system is itself the first piece of verified work.
+
+### Constitutional provisions anchored with this minting
+
+- Creator allocation (2%) — transparent, constitutional, visible in every breakdown
+- Founder's Veto — G0-only, auto-expires at G1
+- Dormancy and founder's legacy — 50-year clause with metrology-consensus trigger and supermajority-selected charitable recipients
+- PoC mode — platform marked as Proof of Concept until First Light
+- First Light — named transition event at G0→G1 (50 verified humans)
 
 ---
 

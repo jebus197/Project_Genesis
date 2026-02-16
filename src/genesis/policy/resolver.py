@@ -616,7 +616,7 @@ class PolicyResolver:
     def commission_params(self) -> dict[str, Any]:
         """Return all commission parameters with Decimal values.
 
-        Returns a dict with all 9 constitutional commission parameters.
+        Returns a dict with all 10 constitutional commission parameters.
         Numeric string values are converted to Decimal for exact arithmetic.
 
         Raises ValueError if no commission config is loaded.
@@ -635,7 +635,29 @@ class PolicyResolver:
             "commission_window_min_missions": Decimal(str(cp["commission_window_min_missions"])),
             "commission_bootstrap_min_rate": Decimal(cp["commission_bootstrap_min_rate"]),
             "commission_reserve_maintenance_rate": Decimal(cp["commission_reserve_maintenance_rate"]),
+            "creator_allocation_rate": Decimal(cp["creator_allocation_rate"]),
         }
+
+    def founder_veto_active(self) -> bool:
+        """Return whether the founder veto is active (G0 only).
+
+        The founder retains transparent veto authority during the G0
+        bootstrap phase. This authority expires irrevocably at G1.
+        """
+        return bool(self._params.get("genesis", {}).get("founder_veto_active", False))
+
+    def poc_mode(self) -> dict[str, Any]:
+        """Return PoC mode configuration.
+
+        Keys: active (bool), label (str), banner_text (str), watermark (bool).
+        Returns safe defaults if not configured.
+        """
+        return dict(self._policy.get("poc_mode", {
+            "active": False,
+            "label": "",
+            "banner_text": "",
+            "watermark": False,
+        }))
 
     @classmethod
     def from_config_dir(cls, config_dir: Path) -> PolicyResolver:

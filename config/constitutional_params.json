@@ -101,7 +101,8 @@
       "q_h": 15,
       "r_h": 3,
       "o_h": 3
-    }
+    },
+    "founder_veto_active": true
   },
   "commitment_tiers": {
     "EPOCH_HOURS": 1,

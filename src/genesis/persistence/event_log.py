@@ -65,6 +65,11 @@ class EventKind(str, enum.Enum):
     OPERATIONAL_COST_RECORDED = "operational_cost_recorded"
     RESERVE_CONTRIBUTION = "reserve_contribution"
     PAYMENT_COMPLETED = "payment_completed"
+    CREATOR_ALLOCATION_DISBURSED = "creator_allocation_disbursed"
+    # Governance lifecycle events
+    FOUNDER_VETO_EXERCISED = "founder_veto_exercised"
+    # Platform lifecycle events
+    FIRST_LIGHT = "first_light"
 
 
 @dataclass(frozen=True)

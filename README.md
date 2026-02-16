@@ -13,6 +13,8 @@ It is an institutional operating model — a white market for trusted work, gove
 
 Owner and project lead: George Jackson
 
+> **Status: Proof of Concept** — Genesis is in PoC mode. Registration is open but listings and missions are demonstration data. The platform transitions to live operations at **First Light** (see below).
+
 ---
 
 ## The Problem
@@ -114,21 +116,30 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored twice — once at founding, and once after the compensation model was added. Both anchors are independently verifiable.
+The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored three times — at founding, after the compensation model was added, and after creator provisions and founder legacy were codified. All anchors are independently verifiable.
 
-**Current anchor (with compensation model):**
+**Current anchor (v3 — creator provisions + founder legacy):**
 
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
-| SHA-256 Hash | `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` |
+| SHA-256 Hash | `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` |
 | Chain | Ethereum Sepolia (Chain ID 11155111) |
-| Block | 10271157 |
+| Block | 10272673 |
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`eb0b0e69...`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
+| Anchored | 2026-02-16 |
+
+**Previous anchor (v2 — compensation model):**
+
+| Field | Value |
+|---|---|
+| SHA-256 Hash | `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` |
+| Block | 10271157 |
 | Transaction | [`fde734dd...`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
 | Anchored | 2026-02-16 |
 
-**Founding anchor:**
+**Founding anchor (v1):**
 
 | Field | Value |
 |---|---|
@@ -145,11 +156,11 @@ You don't need to trust this project to verify the anchor. You only need a termi
 
 **Step 1 — Check the current anchor against the blockchain:**
 
-Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `e941df98...`. The git history preserves the exact file state that produced this hash.
+Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `b9981e3e...`. The git history preserves the exact file state that produced this hash.
 
-**Step 2 — Verify the founding anchor:**
+**Step 2 — Verify earlier anchors:**
 
-Open the [founding transaction on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb). The Input Data field contains `33f2b003...` — the hash of the original constitution before the compensation model was added.
+Open the [v2 transaction](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) (`e941df98...` — compensation model) or the [founding transaction](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) (`33f2b003...` — original constitution). Each records the constitution at a different stage of its evolution.
 
 **What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 
@@ -236,6 +247,17 @@ When a participant dies, family or friends may petition — with verifiable evid
 If a memorialisation was made in error or through malicious misrepresentation, the affected person can petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification — ensuring the reversal process is as rigorous as the original memorialisation.
 
 Any decision — freeze, memorialisation, or reversal — may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
+
+## First Light
+
+Genesis transitions from Proof of Concept to live operations at "First Light" — the moment 50 verified human participants are registered (the G0→G1 threshold in the constitutional bootstrap protocol). At First Light:
+
+- The PoC banner is removed and the marketplace opens for real transactions.
+- Constitutional governance activates with provisional chambers.
+- The founder's provisional veto authority expires.
+- The event is logged on-chain as a constitutional lifecycle event.
+
+First Light is irreversible. Once crossed, the platform cannot revert to PoC mode.
 
 ## Why This Is Feasible Now
 

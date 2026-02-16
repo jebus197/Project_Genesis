@@ -81,5 +81,11 @@
     "can_mint_trust": false,
     "can_grant_privileged_routing": false,
     "can_grant_constitutional_authority": false
+  },
+  "poc_mode": {
+    "active": true,
+    "label": "Proof of Concept",
+    "banner_text": "PoC Mode: This is a demonstration environment. Listings and missions shown are examples of how the platform will operate at First Light.",
+    "watermark": true
   }
 }

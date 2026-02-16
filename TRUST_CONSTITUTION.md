@@ -398,6 +398,19 @@ The constitutional amendment process provides the safety valve: if real-world ev
 3. Leave, dispute, and memorialisation adjudicator compensation.
 4. Operational overhead.
 5. Reserve fund (until target reached, then maintenance only).
+6. Creator allocation (see below).
+
+### Creator allocation
+
+A constitutional allocation of 2% of platform revenue (`CREATOR_ALLOCATION_RATE = 0.02`) is reserved for the project founder. This allocation:
+
+1. Flows through the commission formula as an operational cost category (`CREATOR_ALLOCATION`), computed identically to all other cost line items.
+2. Appears as a visible, named line item in every per-transaction published cost breakdown. There is no hidden margin.
+3. Is a constitutional constant — changeable only by 3-chamber supermajority amendment, like all other commission parameters.
+4. Is computed and disbursed through the same deterministic, auditable pipeline as all other operational costs.
+5. Cannot influence trust scores, allocation ranking, or governance weight (per the separation of trust from finance rule in §6).
+
+The creator allocation exists because building and maintaining a governance platform is itself productive work. The allocation is transparent by design: every participant sees it in every breakdown, and the rate is anchored in the constitution alongside every other commission parameter.
 
 ### Commission design tests
 
@@ -511,6 +524,7 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `COMMISSION_WINDOW_MIN_MISSIONS` | `50` | Constitutional amendment only | Minimum sample size for statistical reliability |
 | `COMMISSION_BOOTSTRAP_MIN_RATE` | `0.05` (5%) | Constitutional amendment only | Bootstrap period minimum rate — auto-expires when window fills |
 | `COMMISSION_RESERVE_MAINTENANCE_RATE` | `0.005` (0.5%) | Constitutional amendment only | Reserve maintenance rate when target is met |
+| `CREATOR_ALLOCATION_RATE` | `0.02` (2%) | Constitutional amendment only | Founder creator allocation — transparent, visible in every breakdown |
 | `ACCEPTED_CURRENCIES` | `BTC, ETH, USDC, USDT` | Governance ballot | Accepted settlement currencies |
 | `VOLATILITY_TOPUP_THRESHOLD` | `0.20` (20%) | Governance ballot | Volatile-stake top-up trigger |
 | `ESCROW_HOLD_PERIOD` | `48 hours` | Governance ballot | Post-completion dispute window |
@@ -553,6 +567,7 @@ The constitutional governance model requires chamber sizes, geographic diversity
 
 1. Phase G0 — Founder stewardship (0 to 50 verified humans):
 - The founder (or a small founding group of up to 5 verified humans) holds provisional governance authority.
+- During G0, the founder retains transparent veto authority over all governance and operational decisions. Every exercise of veto authority is logged, signed, and committed on-chain with the tag `founder_veto`. This veto authority expires automatically and irrevocably at the G0→G1 transition.
 - All governance decisions made during G0 are logged, signed, and committed on-chain with the tag `genesis_provisional`.
 - No constitutional amendments are permitted during G0. The founding constitution is frozen.
 - Operational risk tiers R0 and R1 are active. R2 operates with reduced reviewer requirements (see genesis parameter overrides below). R3 (constitutional changes) is locked.
@@ -610,6 +625,51 @@ The active genesis phase is determined by:
 
 Time-limit overrides:
 - If G0 duration exceeds `G0_MAX_DAYS + G0_EXTENSION_DAYS` and `N_H < 50`, the network must be publicly declared non-viable and shut down or restructured with a new genesis.
+
+### First Light
+
+"First Light" is the named transition event marking Genesis's passage from Proof of Concept to live operations. First Light occurs at the G0→G1 threshold (50 verified human participants). At First Light:
+
+1. The PoC mode banner is removed from all platform pages.
+2. Demonstration data is replaced with live marketplace operations.
+3. The event is logged as `EventKind.FIRST_LIGHT` in the audit trail.
+4. The event is committed to L1 as a constitutional lifecycle event.
+5. Constitutional governance activates (G1 provisional chambers).
+6. The founder's veto authority expires.
+
+First Light is irreversible — once the threshold is crossed and the event is logged, the platform cannot revert to PoC mode.
+
+### Dormancy and founder's legacy
+
+If the founder's accumulated creator allocation remains unclaimed for 50 continuous years of account inactivity, the following process activates. This is the founder's stated living legacy — public, visible, and constitutional.
+
+**Dormancy trigger:**
+
+1. The dormancy trigger fires automatically on-chain. No ballot, no quorum, and no governance action is required to initiate the process.
+2. Inactivity is defined as the absence of any cryptographically signed action from the founder's verified Genesis identity. Any signed action (login, transaction, governance action, or explicit proof-of-life attestation) resets the 50-year dormancy counter.
+3. The founder's verified Genesis identity — not a hardware wallet or physical token — serves as the proof-of-activity mechanism. Identity recovery, if needed, follows the platform's standard trust-adjudication process (quorum of high-trust members, blind, diverse).
+
+**Multi-source time verification (metrology consensus):**
+
+4. The 50-year elapsed time must be independently verified against a minimum of 3 internationally recognised time authorities plus Ethereum block timestamps before the dormancy trigger fires. Mandatory sources include:
+   - NIST (National Institute of Standards and Technology, United States)
+   - PTB (Physikalisch-Technische Bundesanstalt, Germany)
+   - BIPM/NPL (Bureau International des Poids et Mesures / National Physical Laboratory, United Kingdom — the definitive sources for Coordinated Universal Time)
+   - Ethereum blockchain (block timestamps and cumulative block count from the last founder-signed action)
+5. All sources must agree on elapsed time within a tolerance of ±24 hours. If any source disagrees by more than 1 year, the trigger halts — fail-closed. The dormancy event does not fire until consensus is re-established.
+6. No single time source can trigger the dormancy event. This multi-source consensus requirement is a constitutional invariant.
+
+**Recipient selection:**
+
+7. Eligible recipient organisations are nominated by any verified human member. Nominees must meet the founder's stated criteria: dedicated to using science for human betterment and the alleviation of human suffering.
+8. A 3-chamber supermajority vote of high-trust members selects the recipient organisations from the nominated pool. The vote is constrained by the founder's criteria — organisations that do not demonstrably meet the criteria are ineligible regardless of vote count.
+9. The accumulated allocation is distributed among the selected organisations. All disbursements are anonymous.
+
+**Perpetuity:**
+
+10. After the initial 50-year distribution, the process repeats annually in perpetuity: nomination, supermajority vote, distribution.
+11. This provision applies only to the founder's creator allocation. It does not affect other actors' earnings or the platform's operational funds.
+12. Smart contract implementation uses a time-locked distribution trigger with a governance gate, designed to be tamper-resistant and independently verifiable. The constitutional commitment is binding regardless of implementation timeline.
 
 ## Progressive commitment strategy (constitutional)
 
@@ -802,7 +862,23 @@ This constitution is anchored on-chain. The anchoring event creates permanent, t
 
 Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
 
-### Current anchor (v2 — with compensation model and real-time dynamic commission)
+### Current anchor (v3 — creator provisions + founder legacy)
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10272673 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
+| Anchored | 2026-02-16 |
+
+**Independent verification:**
+
+The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) and confirm the Input Data field contains `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393`. The git history preserves the exact file state that produced this hash.
+
+### Previous anchor (v2 — with compensation model and real-time dynamic commission)
 
 | Field | Value |
 |---|---|
@@ -813,10 +889,6 @@ Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
 | Transaction | [`fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
 | Anchored | 2026-02-16 |
-
-**Independent verification:**
-
-The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) and confirm the Input Data field contains `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd`. The git history preserves the exact file state that produced this hash.
 
 ### Previous anchor (v1 — founding constitution)
 
@@ -830,7 +902,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** Both anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the constitution with compensation model and real-time dynamic commission existed in its current form. The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All three anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the compensation model additions. The v3 anchor (current) proves the constitution with creator allocation, founder's veto, dormancy/legacy provision, PoC mode, and First Light existed in its current form. The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 

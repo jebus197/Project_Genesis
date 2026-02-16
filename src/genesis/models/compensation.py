@@ -29,6 +29,7 @@ class CostCategory(str, enum.Enum):
     ADJUDICATOR = "adjudicator"
     RESERVE_GAP = "reserve_gap"
     RESERVE_MAINTENANCE = "reserve_maintenance"
+    CREATOR_ALLOCATION = "creator_allocation"
 
 
 class EscrowState(str, enum.Enum):
