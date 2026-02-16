@@ -20,19 +20,22 @@ def _now() -> datetime:
 def _mock_breakdown(
     mission_reward: str = "500",
     rate: str = "0.05",
+    creator_allocation_rate: str = "0.02",
 ) -> CommissionBreakdown:
     """Create a mock commission breakdown for escrow release tests."""
     reward = Decimal(mission_reward)
     r = Decimal(rate)
     commission = reward * r
+    creator_alloc = (reward * Decimal(creator_allocation_rate)).quantize(Decimal("0.01"))
     return CommissionBreakdown(
         rate=r,
         raw_rate=r,
         cost_ratio=Decimal("0.04"),
         commission_amount=commission,
-        worker_payout=reward - commission,
+        creator_allocation=creator_alloc,
+        worker_payout=reward - commission - creator_alloc,
         mission_reward=reward,
-        cost_breakdown={"infrastructure": Decimal("10")},
+        cost_breakdown={"infrastructure": Decimal("10"), "creator_allocation": creator_alloc},
         is_bootstrap=False,
         window_stats=WindowStats(
             missions_in_window=60,
@@ -92,9 +95,9 @@ class TestEscrowLifecycle:
         record, payout = manager.release_escrow("e1", breakdown, now=_now())
         assert record.state == EscrowState.RELEASED
         assert record.released_utc is not None
-        assert payout == Decimal("475")
+        assert payout == Decimal("465")  # 500 - 25 commission - 10 creator
         assert record.commission_amount == Decimal("25")
-        assert record.worker_payout == Decimal("475")
+        assert record.worker_payout == Decimal("465")
 
     def test_refund_path(self) -> None:
         """PENDING → LOCKED → REFUNDED."""
@@ -121,7 +124,7 @@ class TestEscrowLifecycle:
         breakdown = _mock_breakdown("500", "0.05")
         record, payout = manager.release_escrow("e1", breakdown, now=_now())
         assert record.state == EscrowState.RELEASED
-        assert payout == Decimal("475")
+        assert payout == Decimal("465")  # 500 - 25 commission - 10 creator
 
     def test_dispute_then_refund(self) -> None:
         """PENDING → LOCKED → DISPUTED → REFUNDED."""
@@ -204,7 +207,7 @@ class TestBreakdownValidation:
             manager.release_escrow("e1", breakdown, now=_now())
 
     def test_release_rejects_amounts_not_summing(self) -> None:
-        """Commission + payout != escrow amount raises ValueError."""
+        """Commission + creator + payout != escrow amount raises ValueError."""
         manager = EscrowManager()
         manager.create_escrow(
             "m1", "poster1", Decimal("500"), escrow_id="e1", now=_now()
@@ -216,7 +219,8 @@ class TestBreakdownValidation:
             raw_rate=Decimal("0.05"),
             cost_ratio=Decimal("0.04"),
             commission_amount=Decimal("25"),
-            worker_payout=Decimal("400"),  # 25 + 400 = 425 ≠ 500
+            creator_allocation=Decimal("10"),
+            worker_payout=Decimal("400"),  # 25 + 10 + 400 = 435 ≠ 500
             mission_reward=Decimal("500"),
             cost_breakdown={"infrastructure": Decimal("10")},
             is_bootstrap=False,
@@ -237,7 +241,7 @@ class TestBreakdownValidation:
 
 class TestCommissionDeduction:
     def test_commission_deducted_on_release(self) -> None:
-        """Worker receives reward minus commission."""
+        """Worker receives reward minus commission minus creator allocation."""
         manager = EscrowManager()
         manager.create_escrow(
             "m1", "poster1", Decimal("1000"), escrow_id="e1", now=_now()
@@ -245,5 +249,5 @@ class TestCommissionDeduction:
         manager.lock_escrow("e1", now=_now())
         breakdown = _mock_breakdown("1000", "0.05")
         record, payout = manager.release_escrow("e1", breakdown, now=_now())
-        assert payout == Decimal("950")
+        assert payout == Decimal("930")  # 1000 - 50 commission - 20 creator
         assert record.commission_amount == Decimal("50")

@@ -408,9 +408,11 @@ The constitutional amendment process provides the safety valve: if real-world ev
 
 ### Creator allocation
 
-A constitutional allocation of 2% of platform revenue (`CREATOR_ALLOCATION_RATE = 0.02`) is reserved for the project founder. This allocation:
+A constitutional allocation of 2% of platform revenue (`CREATOR_ALLOCATION_RATE = 0.02`) is reserved for the project founder. This is a separate constitutional deduction computed alongside the commission. The total worker deduction for any mission is: commission (operational costs) + creator allocation (2% of mission reward). Both appear as distinct, visible line items in the same per-transaction published cost breakdown.
 
-1. Flows through the commission formula as an operational cost category (`CREATOR_ALLOCATION`), computed identically to all other cost line items.
+This allocation:
+
+1. Is computed as `mission_reward × CREATOR_ALLOCATION_RATE` — based on total mission reward (platform revenue), not on the commission amount. This ensures the founder's allocation is independent of operational cost fluctuations and that the self-sustaining commission model remains unimpaired.
 2. Appears as a visible, named line item in every per-transaction published cost breakdown. There is no hidden margin.
 3. Is a constitutional constant — changeable only by 3-chamber supermajority amendment, like all other commission parameters.
 4. Is computed and disbursed through the same deterministic, auditable pipeline as all other operational costs.

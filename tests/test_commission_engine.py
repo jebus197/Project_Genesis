@@ -193,16 +193,17 @@ class TestRateComputation:
         )
         assert result.commission_amount <= Decimal("3")
 
-    def test_worker_payout_equals_reward_minus_commission(
+    def test_worker_payout_plus_deductions_equals_reward(
         self, engine: CommissionEngine
     ) -> None:
-        """Worker payout + commission = mission reward."""
+        """Worker payout + commission + creator allocation = mission reward."""
         ledger = OperationalLedger()
         _populate_ledger(ledger)
         result = engine.compute_commission(
             Decimal("500"), ledger, _healthy_reserve(), now=_now()
         )
-        assert result.worker_payout + result.commission_amount == result.mission_reward
+        total = result.worker_payout + result.commission_amount + result.creator_allocation
+        assert total == result.mission_reward
 
 
 class TestBootstrapMode:
@@ -306,6 +307,7 @@ class TestDecimalArithmetic:
         assert isinstance(result.raw_rate, Decimal)
         assert isinstance(result.cost_ratio, Decimal)
         assert isinstance(result.commission_amount, Decimal)
+        assert isinstance(result.creator_allocation, Decimal)
         assert isinstance(result.worker_payout, Decimal)
         assert isinstance(result.mission_reward, Decimal)
         assert isinstance(result.reserve_contribution, Decimal)
@@ -351,7 +353,7 @@ class TestCostBreakdown:
         assert result.is_bootstrap is True
 
     def test_creator_allocation_in_every_breakdown(self, engine: CommissionEngine) -> None:
-        """Creator allocation must appear in cost_breakdown for every transaction."""
+        """Creator allocation must appear in cost_breakdown as 2% of mission reward."""
         ledger = OperationalLedger()
         now = _now()
         for i in range(60):
@@ -365,4 +367,43 @@ class TestCostBreakdown:
             Decimal("500"), ledger, _healthy_reserve(), now=now
         )
         assert "creator_allocation" in result.cost_breakdown
-        assert result.cost_breakdown["creator_allocation"] > Decimal("0")
+        # 2% of 500 mission reward = 10.00
+        assert result.cost_breakdown["creator_allocation"] == Decimal("10.00")
+        assert result.creator_allocation == Decimal("10.00")
+
+    def test_creator_allocation_scales_with_revenue_not_commission(
+        self, engine: CommissionEngine
+    ) -> None:
+        """Same mission reward at different commission rates produces same creator allocation."""
+        now = _now()
+        # Scenario 1: low costs → low commission rate
+        ledger_low = OperationalLedger()
+        for i in range(60):
+            ledger_low.record_completed_mission(
+                _make_mission(f"m_{i}", "1000", days_ago=i, now=now)
+            )
+            ledger_low.record_operational_cost(
+                _make_cost(f"c_{i}", CostCategory.INFRASTRUCTURE, "1", days_ago=i, now=now)
+            )
+        result_low = engine.compute_commission(
+            Decimal("1000"), ledger_low, _healthy_reserve(), now=now
+        )
+
+        # Scenario 2: high costs → high commission rate
+        ledger_high = OperationalLedger()
+        for i in range(60):
+            ledger_high.record_completed_mission(
+                _make_mission(f"m_{i}", "100", days_ago=i, now=now)
+            )
+            ledger_high.record_operational_cost(
+                _make_cost(f"c_{i}", CostCategory.INFRASTRUCTURE, "50", days_ago=i, now=now)
+            )
+        result_high = engine.compute_commission(
+            Decimal("1000"), ledger_high, _healthy_reserve(), now=now
+        )
+
+        # Different commission rates
+        assert result_low.rate != result_high.rate
+        # Same creator allocation: both are 2% of 1000 = 20.00
+        assert result_low.creator_allocation == Decimal("20.00")
+        assert result_high.creator_allocation == Decimal("20.00")

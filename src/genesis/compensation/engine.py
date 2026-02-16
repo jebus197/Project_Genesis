@@ -144,17 +144,22 @@ class CommissionEngine:
         # Cannot exceed the mission reward
         commission_amount = min(commission_amount, mission_reward)
 
-        worker_payout = mission_reward - commission_amount
+        # Creator allocation — 2% of mission reward (platform revenue),
+        # per constitution. Separate constitutional deduction alongside
+        # commission. Total worker deduction = commission + creator allocation.
+        creator_rate = params.get("creator_allocation_rate", Decimal("0"))
+        if creator_rate > Decimal("0") and mission_reward > Decimal("0"):
+            creator_amount = (mission_reward * creator_rate).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP,
+            )
+        else:
+            creator_amount = Decimal("0")
+
+        worker_payout = mission_reward - commission_amount - creator_amount
 
         # Build cost breakdown by category
         cost_breakdown = self._build_cost_breakdown(window_costs, reserve_contribution)
-
-        # Creator allocation — constitutional line item in every breakdown
-        creator_rate = params.get("creator_allocation_rate", Decimal("0"))
-        if creator_rate > Decimal("0") and commission_amount > Decimal("0"):
-            creator_amount = (commission_amount * creator_rate).quantize(
-                Decimal("0.01"), rounding=ROUND_HALF_UP,
-            )
+        if creator_amount > Decimal("0"):
             cost_breakdown["creator_allocation"] = creator_amount
 
         return CommissionBreakdown(
@@ -162,6 +167,7 @@ class CommissionEngine:
             raw_rate=raw_rate,
             cost_ratio=cost_ratio,
             commission_amount=commission_amount,
+            creator_allocation=creator_amount,
             worker_payout=worker_payout,
             mission_reward=mission_reward,
             cost_breakdown=cost_breakdown,

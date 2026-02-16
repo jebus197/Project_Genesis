@@ -126,9 +126,15 @@ class EscrowManager:
                 f"Commission breakdown mission_reward ({commission.mission_reward}) "
                 f"does not match escrowed amount ({record.amount})"
             )
-        if commission.commission_amount + commission.worker_payout != record.amount:
+        total_deductions = (
+            commission.commission_amount
+            + commission.creator_allocation
+            + commission.worker_payout
+        )
+        if total_deductions != record.amount:
             raise ValueError(
-                f"Commission ({commission.commission_amount}) + worker payout "
+                f"Commission ({commission.commission_amount}) + creator allocation "
+                f"({commission.creator_allocation}) + worker payout "
                 f"({commission.worker_payout}) does not equal escrowed amount "
                 f"({record.amount})"
             )

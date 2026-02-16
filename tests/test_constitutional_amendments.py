@@ -137,9 +137,13 @@ class TestCreatorAllocationInBreakdown:
             now=now,
         )
 
-        # Creator allocation should appear as a named category in the breakdown
+        # Creator allocation = 2% of mission reward (500), not 2% of commission
         assert "creator_allocation" in breakdown.cost_breakdown
-        assert breakdown.cost_breakdown["creator_allocation"] > Decimal("0")
+        assert breakdown.cost_breakdown["creator_allocation"] == Decimal("10.00")
+        assert breakdown.creator_allocation == Decimal("10.00")
+        # Invariant: commission + creator + worker = reward
+        total = breakdown.commission_amount + breakdown.creator_allocation + breakdown.worker_payout
+        assert total == breakdown.mission_reward
 
 
 # ---------------------------------------------------------------------------

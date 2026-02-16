@@ -110,11 +110,14 @@ class CommissionBreakdown:
 
     Published with every transaction — there is nowhere for
     profit extraction to hide.
+
+    Invariant: commission_amount + creator_allocation + worker_payout == mission_reward
     """
     rate: Decimal
     raw_rate: Decimal
     cost_ratio: Decimal
     commission_amount: Decimal
+    creator_allocation: Decimal
     worker_payout: Decimal
     mission_reward: Decimal
     cost_breakdown: Dict[str, Decimal]
