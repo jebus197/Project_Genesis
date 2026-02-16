@@ -79,6 +79,23 @@ The block number (10255231) and its timestamp on Sepolia prove the document exis
 
 This is the founding act of Project Genesis. Every future trust event builds on this anchor. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
 
+### Re-anchoring note (2026-02-16)
+
+The constitution was re-anchored after the addition of the compensation model, real-time dynamic commission mechanism, and associated constitutional parameters. This re-anchoring is **not** a new trust-minting event — GE-0001 remains the founding event. The re-anchoring simply records that the constitution has evolved and its current form is also blockchain-witnessed.
+
+| Field | Value |
+|---|---|
+| SHA-256 | `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` |
+| Block | 10271157 |
+| Transaction | [`fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
+
+Key additions to the constitution in this version:
+- Full compensation model (crypto-only settlement, escrow staking, payment flow)
+- Real-time dynamic commission with rolling window mechanism
+- All commission parameters reclassified as constitutional constants (no governance ballot)
+- Legal compliance layer, crypto volatility protection, payment dispute resolution
+- 46 design tests (up from 37), 9 additional constitutional parameters
+
 ---
 
 *Future trust-minting events will be appended to this ledger as the project progresses through its genesis phases.*

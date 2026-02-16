@@ -177,6 +177,34 @@ Your reputation in Genesis is not one number. If you are an excellent medical re
 
 This prevents a common problem with flat reputation systems: someone building a high score in one field and then trading on it in a completely different one.
 
+## Compensation and the White Market
+
+Trust without compensation is volunteerism. Genesis has not disinvented money — it has made the distribution of money and resources significantly more equitable.
+
+### How payment works
+
+Genesis operates exclusively in cryptocurrency — specifically, long-established, institutionally adopted cryptocurrencies like Bitcoin, Ethereum, and major stablecoins (USDC, USDT). There is no Genesis-branded token. Creating one would contradict the foundational rule: trust cannot be bought.
+
+Before any mission begins, the work poster must stake the full reward amount into escrow. The listing does not go live until escrow is confirmed. This eliminates "work done, never paid" — the most common exploitation pattern in freelance markets — by structural design, not by policy.
+
+When work is completed and approved, a commission is deducted and the remainder is paid to the worker. The worker can exchange immediately to stablecoin or hold on the platform.
+
+### The dynamic commission
+
+The commission rate is not fixed. It is **computed in real-time for every transaction** based on actual operational costs over a rolling window — and it is **inversely proportional to the platform's financial health.** When the system is thriving, the rate falls. When costs rise, the rate rises. No human votes on the rate. No ballot sets the margin. The formula is deterministic.
+
+The rate is bounded: a constitutional floor of 2% (minimum infrastructure coverage) and a constitutional ceiling of 10% (prevents extraction). In a healthy, mature system the rate trends toward the floor. In early stages, when volume is low and costs are proportionally high, it sits closer to the ceiling.
+
+Every transaction produces a mandatory published breakdown of exactly what the commission pays for: infrastructure, blockchain anchoring, legal compliance quorum compensation, adjudicator payments, and reserve fund contribution. There is nowhere for profit extraction to hide.
+
+This is the structural opposite of every other platform: the healthy state is the rate going *down*. Every commission parameter is a constitutional constant — changeable only by 3-chamber supermajority amendment, not by ballot. This prevents the emergence of power structures around rate-setting.
+
+### Legal compliance
+
+Genesis is a white market for work. A legal compliance layer screens all mission listings — automated screening handles the vast majority; a blind quorum of qualified legal professionals reviews edge cases. This distinguishes the platform from grey-market crypto exchanges and ensures all work is legitimate.
+
+The compliance layer is funded from the commission pool. The adjudicators are compensated for their expertise, and their quality is graded by the same verification machinery as all other work.
+
 ## Protected Leave and Trust Freeze
 
 Trust decays by design — but life events are not inactivity. Illness, bereavement, disability, mental health crises, caregiving, pregnancy, and child care should never cost someone their verified track record.
@@ -197,7 +225,7 @@ Any decision — freeze, memorialisation, or reversal — may be appealed throug
 
 ## Why This Is Feasible Now
 
-Genesis does not require any technology that doesn't already exist. Every building block — workflow orchestration, policy-as-code, role-based access, cryptographic logging, human review interfaces, audit pipelines — is mature and widely deployed.
+Genesis does not require any technology that doesn't already exist. Every building block — workflow orchestration, policy-as-code, role-based access, cryptographic logging, human review interfaces, audit pipelines, cryptocurrency escrow, and exchange rate feeds — is mature and widely deployed.
 
 The hard problem was never the technology. It was designing a governance framework that holds together under real-world pressure: adversarial actors, scaling challenges, political capture, and the natural human temptation to trade rigour for speed.
 

@@ -34,9 +34,10 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 - Trust-relevant events must be logged and auditable.
 - Appeals may adjust current status, but cannot erase historical evidence.
 
-6. Separation from finance:
+6. Separation of trust from finance:
 - Financial capital has no role in trust scoring, proposal eligibility, or constitutional voting.
-- Any optional operational collateral (if ever introduced) must be strictly separated from trust computation.
+- Compensation for work is structural and necessary — but payment amounts, staked escrow, or commission revenue can never influence trust scores, allocation ranking, or governance weight.
+- The commission rate is a governed parameter; it cannot be set unilaterally.
 
 7. Identity-signal scope control:
 - Proof-of-personhood, proof-of-agenthood, timing tests, or hardware attestations are support signals only.
@@ -315,6 +316,125 @@ Genesis uses bounded earned trust, not unbounded hierarchy.
 - If a memorialisation was made in error or through malicious misrepresentation, the affected person may petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification.
 - Any memorialisation or reversal decision may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
 
+## Compensation model (constitutional)
+
+Trust without compensation is volunteerism. Genesis has not disinvented money — it has made the distribution of money and resources significantly more equitable. The compensation model is structural: transparent, auditable, and governed by the same constitutional framework as everything else.
+
+### Settlement currency
+
+1. Genesis operates exclusively in cryptocurrency for work compensation.
+2. Only long-established, institutionally adopted cryptocurrencies are accepted: `ACCEPTED_CURRENCIES = [BTC, ETH, USDC, USDT]`.
+3. No Genesis-branded token may be created. A native token would create a financial instrument that contradicts the core rule: trust cannot be bought.
+4. Stablecoins (USDC, USDT) are the recommended default for staking to avoid exchange rate risk.
+
+### Escrow and staking
+
+1. Before any mission listing goes live, the work poster must stake the full reward amount into escrow.
+2. Listings without confirmed escrow must not be published to the mission board.
+3. Escrow is custodial — Genesis holds funds in trust, not as a financial institution.
+4. On successful completion: escrow is released, commission deducted, remainder paid to worker.
+5. On cancellation: escrow returned to poster minus any partial-completion obligations.
+6. On dispute: escrow remains locked until quorum adjudication resolves the dispute.
+
+### Dynamic commission
+
+The commission rate is calculated, not set. It is **computed in real-time for every transaction** — inversely proportional to the platform's financial health. When the system is thriving, the rate falls. No human votes on the rate. No ballot sets the margin. The formula is deterministic, the inputs are auditable, and the output is independently verifiable.
+
+1. Formula: `commission_rate = clamp(cost_ratio × COMMISSION_SAFETY_MARGIN, COMMISSION_FLOOR, COMMISSION_CEILING)`.
+2. `cost_ratio = rolling_operational_costs / rolling_completed_mission_value` (computed per-transaction over a rolling window).
+3. Constitutional bounds:
+   - Floor: `COMMISSION_FLOOR = 0.02` (2%). Cannot go below this.
+   - Ceiling: `COMMISSION_CEILING = 0.10` (10%). Cannot go above this.
+4. `COMMISSION_SAFETY_MARGIN = 1.3` (constitutional constant — requires constitutional amendment to change).
+5. `COMMISSION_RESERVE_TARGET_MONTHS = 6` (constitutional constant — reserve automatically fills or drains based on gap).
+6. When the reserve fund reaches its target, the reserve contribution component drops to maintenance level (`COMMISSION_RESERVE_MAINTENANCE_RATE = 0.005`), further reducing the commission rate.
+7. Commission is charged on successful completion only — no charge on cancellation or rejection.
+8. Minimum transaction fee: `COMMISSION_MIN_FEE = 5 USDC equivalent` (constitutional constant — covers blockchain gas on small missions).
+9. Adjustment frequency: **per-transaction (real-time)**. Every commission computation produces a mandatory published cost breakdown recorded in the audit trail.
+10. The published breakdown must itemise: infrastructure costs, blockchain anchoring costs, legal compliance quorum compensation, adjudicator compensation, and reserve fund contribution.
+
+### Rolling window mechanism
+
+The commission rate is pegged to a **rolling window** of recent operational data, not periodic snapshots:
+
+1. **Time window**: the last `COMMISSION_WINDOW_DAYS = 90` days of completed missions.
+2. **Minimum sample**: at least `COMMISSION_WINDOW_MIN_MISSIONS = 50` completed missions. If fewer than 50 missions exist within the 90-day window, the window extends back in time to capture 50.
+3. This dual-threshold design is inherently adaptive: it stretches at low volume (ensuring statistical reliability) and bounds at high volume (ensuring recency).
+4. `rolling_operational_costs` = sum of auditable costs in the window: infrastructure, blockchain gas (on-chain, verifiable), legal compliance screening, adjudicator compensation (formula-driven), and reserve gap contribution.
+5. `rolling_completed_mission_value` = sum of all completed mission payouts in the window.
+6. All window inputs are recorded in the audit trail and independently verifiable.
+
+### Bootstrap protocol
+
+During early operation (fewer than `COMMISSION_WINDOW_MIN_MISSIONS` completed missions system-wide):
+
+1. The formula operates on all accumulated data from day one — actual costs against actual completed mission value.
+2. A bootstrap minimum rate of `COMMISSION_BOOTSTRAP_MIN_RATE = 0.05` (5%) is applied as a floor, preventing artificially low early rates from insufficient data.
+3. Once `COMMISSION_WINDOW_MIN_MISSIONS` missions have completed, the bootstrap minimum drops away automatically and the rolling window governs.
+4. The bootstrap minimum is a constitutional constant — it exists to prevent early-stage rate manipulation and auto-expires when the system matures.
+
+### Reserve fund mechanism
+
+The reserve fund is self-managing. No vote, no review, no human judgment:
+
+1. Target: `COMMISSION_RESERVE_TARGET_MONTHS` (6) months of rolling monthly operational costs.
+2. When the reserve balance is below target: the gap contribution is added to `rolling_operational_costs`, increasing the commission rate automatically.
+3. When the reserve balance meets or exceeds target: only a maintenance contribution (`COMMISSION_RESERVE_MAINTENANCE_RATE = 0.005`, i.e., 0.5% of operational costs) is added, preventing reserve starvation while allowing the rate to fall.
+4. The reserve gap is amortised over the rolling window period — no sudden rate spikes.
+5. Extension of the reserve target requires constitutional amendment, not ballot.
+
+### Why no governance ballot for commission parameters
+
+Every commission parameter is either a constitutional constant (requiring 3-chamber supermajority amendment to change) or algorithmically derived from observable inputs. There is nothing left to vote on.
+
+This is deliberate. Governance ballots on operational parameters risk creating exactly the kind of power structures Genesis exists to prevent. A sufficiently organised group of high-volume employers could vote to slash the safety margin, starving the reserve. A coalition of workers could vote to raise it, extracting rents. The formula must be beyond political reach — the same way the trust floor is beyond political reach.
+
+The constitutional amendment process provides the safety valve: if real-world evidence shows a parameter is miscalibrated (e.g., the safety margin consistently overcharges), that evidence justifies a constitutional amendment. This is the appropriate mechanism — deliberate, transparent, high-threshold — not a ballot.
+
+### What the commission funds
+
+1. Infrastructure (servers, blockchain anchoring, storage, exchange rate feeds).
+2. Legal compliance quorum compensation (§ Legal compliance below).
+3. Leave, dispute, and memorialisation adjudicator compensation.
+4. Operational overhead.
+5. Reserve fund (until target reached, then maintenance only).
+
+### Commission design tests
+
+1. Can the commission rate exceed `COMMISSION_CEILING`? If yes, reject design.
+2. Can the commission rate be changed without a published cost breakdown? If yes, reject design.
+3. Can commission revenue influence trust scores, allocation ranking, or governance weight? If yes, reject design.
+4. Can the floor or ceiling be changed without full constitutional amendment? If yes, reject design.
+
+### Legal compliance layer
+
+Genesis is a white market for work. All mission listings must pass legal compliance screening.
+
+1. Automated screening handles the vast majority of listings (category checks, sanctions lists, jurisdiction cross-reference).
+2. Clearly legal listings proceed automatically. Clearly illegal listings are rejected with explanation.
+3. Ambiguous listings are escalated to a legal compliance quorum.
+4. Legal compliance quorum: minimum 3 adjudicators with earned domain trust in legal/compliance domains.
+5. Blind review — same diversity requirements as all other quorums (minimum 2 organisations, minimum 2 regions).
+6. Adjudicators are compensated from the commission pool.
+7. The compliance layer checks: legality in poster's and worker's jurisdictions, sanctions compliance, intellectual property concerns, and labour law compliance.
+8. The compliance layer does NOT: withhold tax, enforce employment classification, or block work based on political opinion or content viewpoint.
+
+### Crypto volatility protection
+
+1. If a poster stakes in volatile crypto (BTC/ETH), the amount is displayed as a stablecoin equivalent at time of staking.
+2. If the staked crypto value drops more than `VOLATILITY_TOPUP_THRESHOLD = 0.20` (20%) during mission execution, the poster is prompted to top up the escrow.
+3. If the poster refuses to top up, the worker may choose to continue at reduced payout or withdraw without trust penalty.
+4. If the staked crypto value drops more than 50%, the mission is paused with a 72-hour top-up window.
+5. Stablecoin stakes (USDC/USDT) are exempt from volatility protection — no exchange rate risk.
+
+### Payment dispute resolution
+
+1. Either worker or poster may raise a payment dispute within `ESCROW_HOLD_PERIOD = 48 hours` after completion.
+2. Escrow funds remain locked during dispute.
+3. Dispute enters quorum adjudication with the same blind, diverse model as all other adjudications.
+4. Possible outcomes: full payment to worker, full refund to poster, partial payment (pro-rata), or escalation to legal compliance quorum.
+5. Vexatious disputes may reduce the disputing party's trust.
+
 ## Parameter review matrix (canonical)
 
 This is the single canonical parameter table for governance and crypto defaults.
@@ -380,6 +500,20 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `NORMATIVE_PANEL_ORGS` | `2` | Panel organizational diversity review | Minimum orgs on normative panel |
 | `COMMITMENT_COMMITTEE (n,t)` | `(15,10)` | Signature latency failures, signer compromise risk, or liveness failures | Constitutional decision certification |
 | `KEY_ROTATION` | `90 days` | Key compromise event or audit finding | Mandatory signing-key rotation interval |
+| `COMMISSION_FLOOR` | `0.02` (2%) | Constitutional amendment only | Minimum commission rate |
+| `COMMISSION_CEILING` | `0.10` (10%) | Constitutional amendment only | Maximum commission rate |
+| `COMMISSION_SAFETY_MARGIN` | `1.3` | Constitutional amendment only | Multiplier over bare operational costs — prevents capture by ballot |
+| `COMMISSION_RESERVE_TARGET_MONTHS` | `6` | Constitutional amendment only | Reserve fund target (months of operational costs) — prevents depletion by ballot |
+| `COMMISSION_MIN_FEE` | `5 USDC equiv` | Constitutional amendment only | Minimum per-transaction fee — prevents below-cost transactions by ballot |
+| `COMMISSION_WINDOW_DAYS` | `90` | Constitutional amendment only | Rolling window duration for commission computation |
+| `COMMISSION_WINDOW_MIN_MISSIONS` | `50` | Constitutional amendment only | Minimum sample size for statistical reliability |
+| `COMMISSION_BOOTSTRAP_MIN_RATE` | `0.05` (5%) | Constitutional amendment only | Bootstrap period minimum rate — auto-expires when window fills |
+| `COMMISSION_RESERVE_MAINTENANCE_RATE` | `0.005` (0.5%) | Constitutional amendment only | Reserve maintenance rate when target is met |
+| `ACCEPTED_CURRENCIES` | `BTC, ETH, USDC, USDT` | Governance ballot | Accepted settlement currencies |
+| `VOLATILITY_TOPUP_THRESHOLD` | `0.20` (20%) | Governance ballot | Volatile-stake top-up trigger |
+| `ESCROW_HOLD_PERIOD` | `48 hours` | Governance ballot | Post-completion dispute window |
+| `MIN_MISSION_REWARD` | `10 USDC equiv` | Governance ballot | Minimum mission reward |
+| `ENHANCED_KYC_THRESHOLD` | `10000 USDC equiv` | Governance ballot | Enhanced identity verification threshold |
 
 Review protocol:
 1. No parameter change is valid without multi-chamber verified-human ratification.
@@ -642,6 +776,15 @@ For R2 normative disputes:
 35. Can a normative task be closed by machine consensus alone without human adjudication? If yes, reject design.
 36. Can a normative adjudication occur without documented reasoning? If yes, reject design.
 37. Can L1 commitment integrity be reduced at any commitment tier (C0/C1/C2)? If yes, reject design.
+38. Can the commission rate exceed `COMMISSION_CEILING`? If yes, reject design.
+39. Can the commission rate be adjusted without a mandatory published cost breakdown? If yes, reject design.
+39a. Can the commission rate be set or changed by human ballot, governance vote, or any mechanism other than deterministic formula computation? If yes, reject design.
+39b. Can the commission rate be computed without a rolling window of at least `COMMISSION_WINDOW_MIN_MISSIONS` completed missions or the bootstrap protocol? If yes, reject design.
+40. Can commission revenue, escrow amounts, or payment history influence trust scores, allocation ranking, or governance weight? If yes, reject design.
+41. Can the commission floor or ceiling be changed without a full constitutional amendment? If yes, reject design.
+42. Can a mission listing go live without confirmed escrow? If yes, reject design.
+43. Can a Genesis-branded token be created? If yes, reject design.
+44. Can a work poster avoid legal compliance screening? If yes, reject design.
 
 ## Working interpretation for all future specs
 
@@ -657,6 +800,24 @@ This constitution is anchored on-chain. The anchoring event creates permanent, t
 
 Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
 
+### Current anchor (v2 — with compensation model and real-time dynamic commission)
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10271157 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
+| Anchored | 2026-02-16 |
+
+**Independent verification:**
+
+The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) and confirm the Input Data field contains `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd`. The git history preserves the exact file state that produced this hash.
+
+### Previous anchor (v1 — founding constitution)
+
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
@@ -667,16 +828,7 @@ Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Independent verification:**
-
-```bash
-shasum -a 256 TRUST_CONSTITUTION.md
-# Expected: 33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06
-```
-
-Then open the transaction on [Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) and confirm the Input Data field contains the same hash.
-
-**Important:** The hash above corresponds to the version of this constitution that was anchored. Any subsequent edits to this document will change the hash. Future versions should be re-anchored and logged in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** Both anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the constitution with compensation model and real-time dynamic commission existed in its current form. The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 

@@ -19,11 +19,12 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 9. [Domain-Specific Trust](#domain-specific-trust)
 10. [Labour Market](#labour-market)
 11. [Skill Lifecycle](#skill-lifecycle)
-12. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
-13. [Blockchain Anchoring](#blockchain-anchoring)
-14. [Identity and Security Posture](#identity-and-security-posture)
-15. [Success Metrics](#success-metrics)
-16. [Governance Engine Architecture](#governance-engine-architecture)
+12. [Compensation Model](#compensation-model)
+13. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
+14. [Blockchain Anchoring](#blockchain-anchoring)
+15. [Identity and Security Posture](#identity-and-security-posture)
+16. [Success Metrics](#success-metrics)
+17. [Governance Engine Architecture](#governance-engine-architecture)
 
 ---
 
@@ -416,6 +417,67 @@ Key properties:
 - **Pruning** — skills that decay below a configurable floor are removed from the profile entirely.
 
 Configuration: `config/skill_lifecycle_params.json`.
+
+---
+
+## Compensation Model
+
+Trust without compensation is volunteerism. Genesis operates a self-financing compensation model that is structurally transparent and inversely tied to platform health.
+
+### Settlement
+
+Genesis settles exclusively in cryptocurrency: `ACCEPTED_CURRENCIES = [BTC, ETH, USDC, USDT]`. No Genesis-branded token exists or can be created — a native token would create a tradeable asset that contradicts the core rule. Stablecoins (USDC/USDT) are the recommended default to avoid exchange rate risk.
+
+### Escrow and staking
+
+Before any mission listing goes live, the work poster must stake the full reward into escrow. This is non-negotiable — it eliminates "work done, never paid" structurally. The listing is not published until escrow is confirmed. On completion, escrow is released, commission deducted, and the remainder paid to the worker. On cancellation, funds return to the poster minus partial-completion obligations. During disputes, escrow remains locked until quorum resolution.
+
+### Dynamic commission (real-time)
+
+The commission rate is computed **per-transaction in real-time**, not set by fiat or adjusted periodically:
+
+```
+cost_ratio = rolling_operational_costs / rolling_completed_mission_value
+commission_rate = clamp(cost_ratio × COMMISSION_SAFETY_MARGIN, COMMISSION_FLOOR, COMMISSION_CEILING)
+commission = max(commission_rate × mission_reward, COMMISSION_MIN_FEE)
+```
+
+The rate is pegged to a **rolling window** of recent operational data (last 90 days or at least 50 completed missions, whichever captures more data). During bootstrap (< 50 completed missions), a minimum rate of 5% prevents artificially low early rates.
+
+Constitutional constants (all require constitutional amendment to change):
+- `COMMISSION_FLOOR = 0.02` (2%) — minimum infrastructure coverage.
+- `COMMISSION_CEILING = 0.10` (10%) — prevents extraction.
+- `COMMISSION_SAFETY_MARGIN = 1.3` — constitutional constant, not governable by ballot.
+- `COMMISSION_RESERVE_TARGET_MONTHS = 6` — constitutional constant. Reserve fills/drains automatically.
+- `COMMISSION_MIN_FEE = 5 USDC equivalent` — constitutional constant. Covers gas on small missions.
+- `COMMISSION_WINDOW_DAYS = 90` — rolling window recency horizon.
+- `COMMISSION_WINDOW_MIN_MISSIONS = 50` — minimum sample for statistical reliability.
+- `COMMISSION_BOOTSTRAP_MIN_RATE = 0.05` — bootstrap floor, auto-expires.
+- `COMMISSION_RESERVE_MAINTENANCE_RATE = 0.005` — reserve maintenance when target met.
+
+No human votes on the rate. The formula is deterministic, the inputs are auditable, and the output is independently verifiable. Every commission computation produces a mandatory published cost breakdown recorded in the audit trail. The rate trends toward the floor as volume grows. In early operation it sits near the ceiling.
+
+Reserve fund mechanism: when below target, gap contribution is added to operational costs (rate rises automatically). When at target, only maintenance contribution (rate falls). No vote, no review — the formula observes the gap and responds.
+
+Commission funds: infrastructure, blockchain anchoring, legal compliance quorum, leave/dispute adjudicator compensation, and reserve fund.
+
+### Legal compliance
+
+All mission listings pass through a legal compliance layer:
+1. **Automated screening** (first pass) — category checks, sanctions lists, jurisdiction cross-reference. Handles the vast majority of listings.
+2. **Legal compliance quorum** (edge cases) — minimum 3 adjudicators with earned domain trust in legal/compliance. Blind review, same diversity requirements as all quorums. Compensated from commission pool.
+
+### Crypto volatility protection
+
+Volatile crypto stakes (BTC/ETH) are displayed as stablecoin equivalent at time of staking. If value drops >20% during mission execution, poster is prompted to top up. If >50% crash, emergency protocol pauses mission with 72-hour top-up window. Stablecoin stakes are exempt — no volatility risk.
+
+### Payment dispute resolution
+
+Either party can raise a dispute within `ESCROW_HOLD_PERIOD = 48 hours` after completion. Escrow stays locked. Quorum adjudication determines outcome: full payment, full refund, partial payment, or escalation. Vexatious disputes may reduce the disputing party's trust.
+
+### Payment parameters
+
+All commission parameters are constitutional constants requiring 3-chamber supermajority amendment. Non-commission compensation parameters (accepted currencies, volatility threshold, escrow hold period, minimum reward, KYC threshold) are governed by ballot.
 
 ---
 

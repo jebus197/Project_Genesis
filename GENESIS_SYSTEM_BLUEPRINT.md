@@ -1,6 +1,6 @@
 # Project Genesis System Blueprint
 
-Status: Draft blueprint for review before commit (v0.2)
+Status: Draft blueprint for review before commit (v0.3)
 Date: February 13, 2026
 Owner: George Jackson
 
@@ -358,6 +358,12 @@ Fail-closed principle:
 | Reviewer heterogeneity gate | Reviewer set metadata | Accept or reject reviewer assignment | Model family and method type diversity per tier | Block review if diversity insufficient |
 | Normative resolution | Task domain_type, reviewer agreement | Human adjudication or auto-close | Normative tasks require human panel | Escalate to adjudication |
 | Commitment tier controller | Participant count, L1 anchor schedule | Anchor transaction | Minimum anchor frequency per tier, no regression | Force immediate anchor for lifecycle events |
+| Escrow staking | Mission listing, poster wallet | Escrow record, listing activation | Full reward staked before listing goes live | Block listing publication |
+| Dynamic commission | Rolling-window operational costs (per-transaction), rolling mission value | Commission rate | Rate within floor–ceiling bounds, published breakdown per transaction | Apply ceiling if calculation fails |
+| Payment disbursement | Approved mission, escrow record | Worker payment, commission deduction | Commission deducted before disbursement, receipt recorded | Hold escrow if disbursement fails |
+| Legal compliance screen | Mission listing content | Approve, reject, or escalate | Automated screening + quorum for edge cases | Block listing until screening complete |
+| Payment dispute | Dispute petition, escrow state | Resolution (full/partial/refund) | Escrow locked during dispute, quorum adjudication | Keep escrow locked until resolution |
+| Volatility monitor | Staked crypto value, market rate | Top-up prompt or emergency pause | Threshold triggers at 20% and 50% drop | Pause mission at 50% crash |
 
 ---
 
@@ -376,6 +382,11 @@ A deployment is not valid unless all are true:
 10. Reviewer heterogeneity constraints are enforced per risk tier (model family and method type diversity).
 11. Domain type classification is present on all tasks; normative tasks trigger human adjudication when agreement is below threshold.
 12. Commitment tier is correctly identified and L1 anchor frequency meets or exceeds tier minimum.
+13. No mission listing is published without confirmed escrow.
+14. Dynamic commission rate is calculated per-transaction via rolling window within constitutional floor–ceiling bounds, with mandatory published cost breakdown.
+15. Commission revenue, escrow amounts, and payment history have zero influence on trust scores, allocation ranking, or governance weight.
+16. All mission listings pass legal compliance screening before publication.
+17. Payment disputes hold escrow locked until quorum resolution.
 
 ---
 
@@ -391,3 +402,4 @@ Current flagged parameter:
 Version history:
 1. v0.1 — initial blueprint with core trust, review, and governance mechanisms.
 2. v0.2 — added genesis bootstrap protocol (§5.1), progressive commitment strategy (§6), reviewer heterogeneity (§4.3), normative dispute resolution (§4.3), genesis-scaled fast-elevation thresholds (§4.2), and updated control matrix (§8).
+3. v0.3 — added compensation model: escrow staking, dynamic commission, legal compliance screening, payment disbursement, volatility monitoring, payment dispute resolution. Updated control matrix and implementation contract.
