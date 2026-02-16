@@ -149,4 +149,37 @@ Every trust chain needs a first link. George Jackson designed the constitution, 
 
 ---
 
+## Event GE-0003: Constitution Anchored v4
+
+**Date:** 2026-02-16
+**Type:** Constitutional lifecycle event
+**Actor:** George Jackson (project founder)
+**Genesis phase:** G0 (founder stewardship)
+
+### What happened
+
+The Genesis constitution was re-anchored to Ethereum Sepolia following two significant constitutional changes:
+
+1. **First Light redefined:** Decoupled from the G0→G1 phase transition. First Light is now a financial sustainability trigger (revenue >= 1.5× costs AND 3-month reserve), not a headcount counter. Phase transitions (G0→G1→G2→G3) remain headcount-based governance scaling.
+
+2. **Machine registration enforcement:** Machines cannot self-register. Only verified human operators in ACTIVE or PROBATION status can register machine actors. Machines earn independently with their own trust scores.
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 Hash | `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10273917 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`5b8ab0e1...`](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac) |
+
+### Key code changes in this version
+
+- 667 tests passing (628 existing + 26 countdown + 13 machine registration)
+- First Light sustainability model: `src/genesis/countdown/first_light.py`
+- Machine registration enforcement: `register_machine()` validates human operator
+- New event kind: `MACHINE_REGISTERED` in audit trail
+
+---
+
 *Future trust-minting events will be appended to this ledger as the project progresses through its genesis phases.*

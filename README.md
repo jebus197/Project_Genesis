@@ -116,17 +116,26 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored three times — at founding, after the compensation model was added, and after creator provisions and founder legacy were codified. All anchors are independently verifiable.
+The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored four times — at founding, after the compensation model was added, after creator provisions and founder legacy were codified, and after First Light was decoupled as a financial sustainability trigger with machine registration enforcement. All anchors are independently verifiable.
 
-**Current anchor (v3 — creator provisions + founder legacy):**
+**Current anchor (v4 — First Light sustainability model + machine registration):**
 
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
-| SHA-256 Hash | `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` |
+| SHA-256 Hash | `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` |
 | Chain | Ethereum Sepolia (Chain ID 11155111) |
-| Block | 10272673 |
+| Block | 10273917 |
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`5b8ab0e1...`](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac) |
+| Anchored | 2026-02-16 |
+
+**Previous anchor (v3 — creator provisions + founder legacy):**
+
+| Field | Value |
+|---|---|
+| SHA-256 Hash | `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` |
+| Block | 10272673 |
 | Transaction | [`eb0b0e69...`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
 | Anchored | 2026-02-16 |
 
@@ -156,11 +165,11 @@ You don't need to trust this project to verify the anchor. You only need a termi
 
 **Step 1 — Check the current anchor against the blockchain:**
 
-Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `b9981e3e...`. The git history preserves the exact file state that produced this hash.
+Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `1633cb2d...`. The git history preserves the exact file state that produced this hash.
 
 **Step 2 — Verify earlier anchors:**
 
-Open the [v2 transaction](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) (`e941df98...` — compensation model) or the [founding transaction](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) (`33f2b003...` — original constitution). Each records the constitution at a different stage of its evolution.
+Open the [v3 transaction](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) (`b9981e3e...` — creator provisions + founder legacy), the [v2 transaction](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) (`e941df98...` — compensation model), or the [founding transaction](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) (`33f2b003...` — original constitution). Each records the constitution at a different stage of its evolution.
 
 **What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 

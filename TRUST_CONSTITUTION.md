@@ -917,7 +917,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** All three anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the compensation model additions. The v3 anchor (current) proves the constitution with creator allocation, founder's veto, dormancy/legacy provision, PoC mode, and First Light existed in its current form. The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All four anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the compensation model additions. The v3 anchor proves the constitution with creator allocation, founder's veto, dormancy/legacy provision, PoC mode, and First Light. The v4 anchor (current) proves the constitution with First Light redefined as a financial sustainability trigger (decoupled from G0→G1) and machine registration enforcement (human-operator-only). The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 
