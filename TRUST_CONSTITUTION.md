@@ -408,7 +408,9 @@ The constitutional amendment process provides the safety valve: if real-world ev
 
 ### Legal compliance layer
 
-Genesis is a white market for work. All mission listings must pass legal compliance screening.
+Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.
+
+All mission listings must pass legal compliance screening.
 
 1. Automated screening handles the vast majority of listings (category checks, sanctions lists, jurisdiction cross-reference).
 2. Clearly legal listings proceed automatically. Clearly illegal listings are rejected with explanation.

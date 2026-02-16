@@ -47,6 +47,7 @@ class PolicyResolver:
         market_policy: dict[str, Any] | None = None,
         skill_lifecycle: dict[str, Any] | None = None,
         leave_policy: dict[str, Any] | None = None,
+        commission_policy: dict[str, Any] | None = None,
     ) -> None:
         self._params = params
         self._policy = policy
@@ -55,6 +56,7 @@ class PolicyResolver:
         self._market_policy = market_policy
         self._skill_lifecycle = skill_lifecycle
         self._leave_policy = leave_policy
+        self._commission_policy = commission_policy
         self._validate_versions()
 
     def _validate_versions(self) -> None:
@@ -603,6 +605,38 @@ class PolicyResolver:
             }
         return dict(self._leave_policy.get("duration_limits", {}))
 
+    # ------------------------------------------------------------------
+    # Commission policy (optional — requires commission_policy.json)
+    # ------------------------------------------------------------------
+
+    def has_commission_config(self) -> bool:
+        """Check if commission policy config was loaded."""
+        return self._commission_policy is not None
+
+    def commission_params(self) -> dict[str, Any]:
+        """Return all commission parameters with Decimal values.
+
+        Returns a dict with all 9 constitutional commission parameters.
+        Numeric string values are converted to Decimal for exact arithmetic.
+
+        Raises ValueError if no commission config is loaded.
+        """
+        if self._commission_policy is None:
+            raise ValueError("No commission policy config loaded")
+        from decimal import Decimal
+        cp = self._commission_policy
+        return {
+            "commission_floor": Decimal(cp["commission_floor"]),
+            "commission_ceiling": Decimal(cp["commission_ceiling"]),
+            "commission_safety_margin": Decimal(cp["commission_safety_margin"]),
+            "commission_reserve_target_months": Decimal(str(cp["commission_reserve_target_months"])),
+            "commission_min_fee_usdc": Decimal(cp["commission_min_fee_usdc"]),
+            "commission_window_days": Decimal(str(cp["commission_window_days"])),
+            "commission_window_min_missions": Decimal(str(cp["commission_window_min_missions"])),
+            "commission_bootstrap_min_rate": Decimal(cp["commission_bootstrap_min_rate"]),
+            "commission_reserve_maintenance_rate": Decimal(cp["commission_reserve_maintenance_rate"]),
+        }
+
     @classmethod
     def from_config_dir(cls, config_dir: Path) -> PolicyResolver:
         """Load from the canonical config directory."""
@@ -639,6 +673,12 @@ class PolicyResolver:
         if leave_path.exists():
             leave_policy = _load_json(leave_path)
 
+        # Commission policy is optional — system works without it
+        commission_path = config_dir / "commission_policy.json"
+        commission_policy = None
+        if commission_path.exists():
+            commission_policy = _load_json(commission_path)
+
         return cls(
             params, policy,
             taxonomy=taxonomy,
@@ -646,6 +686,7 @@ class PolicyResolver:
             market_policy=market_policy,
             skill_lifecycle=skill_lifecycle,
             leave_policy=leave_policy,
+            commission_policy=commission_policy,
         )
 
 

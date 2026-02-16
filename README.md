@@ -9,7 +9,7 @@ Project Genesis is building the rules, tools, and enforcement systems needed to 
 
 This is not a chatbot. It is not a social platform. It is not a token or a blockchain product.
 
-It is an institutional operating model — a way of governing how humans and AI systems work together on things that matter.
+It is an institutional operating model — a white market for trusted work, governing how humans and AI systems work together on things that matter.
 
 Owner and project lead: George Jackson
 
@@ -42,6 +42,7 @@ Genesis wraps AI capability in a governance framework that provides:
 3. **Constitutional governance** — the rules of the system are written down, publicly available, and enforced by code. Changing them requires broad agreement from verified humans across multiple independent groups.
 4. **Cryptographically secured records** — every significant action produces a tamper-evident record, cryptographically hashed and immutable. The full process history is auditable by anyone and anchored to a public blockchain.
 5. **Earned trust, not purchased influence** — reputation in the system is built solely through cryptographic proof-of-work (evidence that real contribution occurred) and proof-of-trust (independent verification of quality over time).
+6. **Value tied to work, not speculation** — Genesis uses cryptocurrency as a payment rail, not a product. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. This structural constraint eliminates the wastefulness inherent in token economies detached from productive output. Crypto earns its value by serving real work.
 
 ## The Foundational Rule
 
@@ -201,6 +202,16 @@ The rate is bounded: a constitutional floor of 2% (minimum infrastructure covera
 Every transaction produces a mandatory published breakdown of exactly what the commission pays for: infrastructure, blockchain anchoring, legal compliance quorum compensation, adjudicator payments, and reserve fund contribution. There is nowhere for profit extraction to hide.
 
 This is the structural opposite of every other platform: the healthy state is the rate going *down*. Every commission parameter is a constitutional constant — changeable only by 3-chamber supermajority amendment, not by ballot. This prevents the emergence of power structures around rate-setting.
+
+### Why crypto, and why it matters
+
+Genesis uses cryptocurrency because it is the only settlement layer that works globally without banking intermediaries, settles in minutes rather than days, and produces an independently verifiable transaction record. For a trust system that must operate across borders and across species of intelligence, no traditional payment rail offers these properties simultaneously.
+
+But Genesis inverts the typical cryptocurrency model. In most token economies, value is created by mining, staking, or speculating — activities structurally detached from productive output. The result is an often grotesque wastefulness: vast computational and financial resources deployed to produce nothing of tangible value to anyone.
+
+Genesis eliminates this by construction. Every unit of cryptocurrency entering and leaving the system is attached to verified, quality-assessed labour. Value is not minted by proof-of-stake or proof-of-computation — it is earned by doing real work that passes independent review. The commission mechanism ensures the platform cannot extract profit; it can only recover auditable costs. The escrow system guarantees that work is funded before it begins and that payment follows verified completion.
+
+This structural constraint — crypto tethered to verified labour — is not a feature of Genesis. It is the point. If cryptocurrency is to have value, that value should come from the work it represents, not from the speculation it enables.
 
 ### Legal compliance
 

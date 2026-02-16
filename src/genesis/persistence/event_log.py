@@ -55,6 +55,16 @@ class EventKind(str, enum.Enum):
     LEAVE_PERMANENT = "leave_permanent"  # Legacy — kept for log compat
     LEAVE_MEMORIALISED = "leave_memorialised"
     LEAVE_RESTORED = "leave_restored"
+    # Compensation events
+    ESCROW_CREATED = "escrow_created"
+    ESCROW_LOCKED = "escrow_locked"
+    ESCROW_RELEASED = "escrow_released"
+    ESCROW_REFUNDED = "escrow_refunded"
+    ESCROW_DISPUTED = "escrow_disputed"
+    COMMISSION_COMPUTED = "commission_computed"
+    OPERATIONAL_COST_RECORDED = "operational_cost_recorded"
+    RESERVE_CONTRIBUTION = "reserve_contribution"
+    PAYMENT_COMPLETED = "payment_completed"
 
 
 @dataclass(frozen=True)
