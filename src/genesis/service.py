@@ -8,6 +8,7 @@ It orchestrates all subsystems:
 - Reviewer selection (constrained-random from roster)
 - Epoch management (open, collect, close, anchor)
 - Phase governance (G0→G1→G2→G3 progression)
+- First Light monitoring (financial sustainability trigger)
 - Persistence (event log, state store)
 
 All operations produce typed results. All state changes are logged
@@ -83,6 +84,7 @@ from genesis.policy.resolver import PolicyResolver
 from genesis.quality.engine import QualityEngine
 from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
 from genesis.review.selector import ReviewerSelector, SelectionResult
+from genesis.countdown.first_light import FirstLightEstimator
 from genesis.skills.taxonomy import SkillTaxonomy
 from genesis.trust.engine import TrustEngine
 
@@ -159,6 +161,25 @@ class GenesisService:
 
         # Protected leave engine
         self._leave_engine = LeaveAdjudicationEngine(resolver)
+
+        # First Light sustainability monitor — extract config from policy
+        fl_cfg = resolver._policy.get("first_light", {})
+        self._first_light_estimator = FirstLightEstimator(
+            sustainability_ratio=fl_cfg.get("sustainability_ratio", 1.5),
+            reserve_months_required=fl_cfg.get("reserve_months_required", 3),
+            ema_alpha=fl_cfg.get("ema_alpha", 0.3),
+            network_beta=fl_cfg.get("network_beta", 0.15),
+            confidence_sigma=fl_cfg.get("confidence_sigma", 1.0),
+            min_data_points=fl_cfg.get("min_data_points", 3),
+            min_rate_floor=fl_cfg.get("min_rate_floor_per_day", 0.01),
+        )
+        self._first_light_achieved: bool = False
+
+        # Founder dormancy tracking — last cryptographically signed action.
+        # Any signed action (login, transaction, governance, proof-of-life
+        # attestation) resets the 50-year dormancy counter.
+        self._founder_id: Optional[str] = None
+        self._founder_last_action_utc: Optional[datetime] = None
 
         # Load persisted state or start fresh
         if state_store is not None:
@@ -2982,6 +3003,259 @@ class GenesisService:
             return ServiceResult(success=False, errors=[str(e)])
 
     # ------------------------------------------------------------------
+    # First Light and platform lifecycle
+    # ------------------------------------------------------------------
+
+    def check_first_light(
+        self,
+        monthly_revenue: "Decimal",
+        monthly_costs: "Decimal",
+        reserve_balance: "Decimal",
+        missions_per_human_per_month: float = 0.0,
+        avg_mission_value: "Decimal" = None,
+        commission_rate: "Decimal" = None,
+    ) -> ServiceResult:
+        """Check whether First Light conditions are met and fire the event.
+
+        First Light is the irreversible sustainability trigger:
+        - monthly_revenue >= 1.5× monthly_costs, AND
+        - reserve_balance >= 3-month reserve target.
+
+        Once fired, PoC mode is disabled permanently. The event is
+        logged exactly once — subsequent calls after achievement are
+        no-ops that return the existing state.
+        """
+        from decimal import Decimal
+
+        if self._first_light_achieved:
+            return ServiceResult(
+                success=True,
+                data={"first_light": True, "already_achieved": True},
+            )
+
+        if avg_mission_value is None:
+            avg_mission_value = Decimal("0")
+        if commission_rate is None:
+            commission_rate = Decimal("0.05")
+
+        # Collect human registration timestamps from roster
+        human_timestamps = [
+            entry.registered_utc
+            for entry in self._roster.all_actors()
+            if entry.actor_kind == ActorKind.HUMAN
+            and entry.registered_utc is not None
+        ]
+
+        estimate = self._first_light_estimator.estimate(
+            human_registration_timestamps=human_timestamps,
+            monthly_revenue=monthly_revenue,
+            monthly_costs=monthly_costs,
+            reserve_balance=reserve_balance,
+            missions_per_human_per_month=missions_per_human_per_month,
+            avg_mission_value=avg_mission_value,
+            commission_rate=commission_rate,
+        )
+
+        if not estimate.achieved:
+            return ServiceResult(
+                success=True,
+                data={
+                    "first_light": False,
+                    "progress_pct": estimate.progress_pct,
+                    "estimated_date": (
+                        estimate.estimated_first_light.isoformat()
+                        if estimate.estimated_first_light else None
+                    ),
+                    "message": estimate.message,
+                },
+            )
+
+        # --- First Light achieved — fire the event (exactly once) ---
+        self._first_light_achieved = True
+
+        # 1. Log the FIRST_LIGHT event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.FIRST_LIGHT,
+                    actor_id="system",
+                    payload={
+                        "monthly_revenue": str(monthly_revenue),
+                        "monthly_costs": str(monthly_costs),
+                        "sustainability_ratio": str(estimate.current_sustainability_ratio),
+                        "reserve_balance": str(reserve_balance),
+                        "reserve_target_3mo": str(estimate.reserve_target_3mo),
+                        "human_count": estimate.current_humans,
+                    },
+                )
+                self._event_log.append(event)
+                self._epoch_service.record_mission_event(event.event_hash)
+            except (ValueError, OSError):
+                pass  # Event log append is best-effort for lifecycle events
+
+        # 2. Disable PoC mode — First Light is irreversible
+        self._resolver._policy.setdefault("poc_mode", {})["active"] = False
+
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "first_light": True,
+            "achieved_now": True,
+            "poc_mode_disabled": True,
+            "human_count": estimate.current_humans,
+            "sustainability_ratio": estimate.current_sustainability_ratio,
+        }
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
+
+    def record_creator_allocation(
+        self,
+        mission_id: str,
+        creator_allocation: "Decimal",
+        mission_reward: "Decimal",
+        worker_id: str,
+    ) -> ServiceResult:
+        """Record a creator allocation disbursement event.
+
+        Called after commission computation to emit the constitutional
+        CREATOR_ALLOCATION_DISBURSED event. The allocation itself is
+        computed by the CommissionEngine — this method logs the audit
+        trail.
+        """
+        from decimal import Decimal
+
+        if creator_allocation <= Decimal("0"):
+            return ServiceResult(
+                success=True,
+                data={"recorded": False, "reason": "zero_allocation"},
+            )
+
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.CREATOR_ALLOCATION_DISBURSED,
+                    actor_id="founder",
+                    payload={
+                        "mission_id": mission_id,
+                        "creator_allocation": str(creator_allocation),
+                        "mission_reward": str(mission_reward),
+                        "worker_id": worker_id,
+                        "rate": "0.02",
+                    },
+                )
+                self._event_log.append(event)
+                self._epoch_service.record_mission_event(event.event_hash)
+            except (ValueError, OSError) as exc:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Failed to record creator allocation: {exc}"],
+                )
+
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "recorded": True,
+            "mission_id": mission_id,
+            "creator_allocation": str(creator_allocation),
+        }
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
+
+    def set_founder(self, actor_id: str) -> ServiceResult:
+        """Designate the platform founder for dormancy tracking.
+
+        Must be called once during platform bootstrap. The founder's
+        last-action timestamp is initialised to now. Any subsequent
+        signed action (via record_founder_action) resets the 50-year
+        dormancy counter.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Founder must be a verified human"],
+            )
+        self._founder_id = actor_id
+        self._founder_last_action_utc = datetime.now(timezone.utc)
+        return ServiceResult(
+            success=True,
+            data={
+                "founder_id": actor_id,
+                "last_action_utc": self._founder_last_action_utc.isoformat(),
+            },
+        )
+
+    def record_founder_action(self) -> ServiceResult:
+        """Reset the 50-year dormancy counter.
+
+        Called on any cryptographically signed founder action: login,
+        transaction, governance action, or explicit proof-of-life
+        attestation. Resets the dormancy clock to now.
+        """
+        if self._founder_id is None:
+            return ServiceResult(
+                success=False,
+                errors=["No founder designated — call set_founder() first"],
+            )
+        self._founder_last_action_utc = datetime.now(timezone.utc)
+        return ServiceResult(
+            success=True,
+            data={
+                "founder_id": self._founder_id,
+                "last_action_utc": self._founder_last_action_utc.isoformat(),
+                "dormancy_reset": True,
+            },
+        )
+
+    def check_dormancy(self) -> ServiceResult:
+        """Check whether the 50-year founder dormancy threshold is met.
+
+        Returns the elapsed time since the founder's last signed action
+        and whether the dormancy trigger would fire. Does NOT execute
+        distribution — that requires multi-source time verification
+        (NIST, PTB, BIPM/NPL, Ethereum) and governance ballot, which
+        are external dependencies.
+        """
+        if self._founder_id is None:
+            return ServiceResult(
+                success=False,
+                errors=["No founder designated"],
+            )
+        if self._founder_last_action_utc is None:
+            return ServiceResult(
+                success=False,
+                errors=["No founder action recorded"],
+            )
+
+        now = datetime.now(timezone.utc)
+        elapsed = now - self._founder_last_action_utc
+        elapsed_years = elapsed.total_seconds() / (365.25 * 24 * 3600)
+        dormancy_threshold_years = 50.0
+
+        return ServiceResult(
+            success=True,
+            data={
+                "founder_id": self._founder_id,
+                "last_action_utc": self._founder_last_action_utc.isoformat(),
+                "elapsed_years": round(elapsed_years, 4),
+                "dormancy_threshold_years": dormancy_threshold_years,
+                "dormancy_triggered": elapsed_years >= dormancy_threshold_years,
+                "note": (
+                    "Actual distribution requires multi-source time "
+                    "verification (NIST, PTB, BIPM/NPL, Ethereum) and "
+                    "3-chamber supermajority recipient selection."
+                ),
+            },
+        )
+
+    # ------------------------------------------------------------------
     # Status and queries
     # ------------------------------------------------------------------
 
@@ -3023,6 +3297,18 @@ class GenesisService:
                 "current_open": (
                     self._epoch_service.current_epoch is not None
                     and not self._epoch_service.current_epoch.closed
+                ),
+            },
+            "first_light": {
+                "achieved": self._first_light_achieved,
+                "poc_mode_active": self._resolver.poc_mode().get("active", False),
+            },
+            "founder": {
+                "designated": self._founder_id is not None,
+                "founder_id": self._founder_id,
+                "last_action_utc": (
+                    self._founder_last_action_utc.isoformat()
+                    if self._founder_last_action_utc else None
                 ),
             },
             "persistence_degraded": self._persistence_degraded,

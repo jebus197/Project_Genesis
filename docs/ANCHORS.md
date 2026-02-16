@@ -1,19 +1,41 @@
-# Project Genesis — Blockchain Anchor Log
+# Project Genesis — Trust Mint Log
 
-This file records every blockchain anchoring event.
-Each entry links a SHA-256 hash to a Sepolia transaction,
-providing tamper-evident proof that the document existed
-in that exact form at that exact time.
+The entries below are the founding trust-minting events of Project Genesis.
 
-## Constitution anchors
+Before a single user existed, before a single mission was posted, before any revenue flowed — the rules were set in stone. Each entry is a cryptographic proof, permanently embedded in Ethereum, that the constitution existed in an exact, unalterable form at an exact moment in time.
 
-- `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` → [5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac)  
-  Document: `TRUST_CONSTITUTION.md` | Block: 10273917 | Anchored: 2026-02-16T17:59:12Z
-- `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` → [eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896)
-  Document: `TRUST_CONSTITUTION.md` | Block: 10272673 | Anchored: 2026-02-16 | **Current (v3 — creator provisions + founder legacy)**
-- `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` → [fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a)
-  Document: `TRUST_CONSTITUTION.md` | Block: 10271157 | Anchored: 2026-02-16T08:15:36Z | Previous (v2 — compensation model)
-- `da4db9104997f86b74b1edf5130f1767aefd6a8867728acb8e52d6e5bac7fc16` → [1d15b5e57e1395ee46b3a53aab3f1d242ba3cb2fd3be15ae7fab271189e964c7](https://sepolia.etherscan.io/tx/1d15b5e57e1395ee46b3a53aab3f1d242ba3cb2fd3be15ae7fab271189e964c7)
-  Document: `TRUST_CONSTITUTION.md` | Block: 10271150 | Anchored: 2026-02-16T08:14:12Z | Superseded (pre-v2 intermediate)
-- `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` → [031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb)
-  Document: `TRUST_CONSTITUTION.md` | Block: 10255231 | Sender: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) | Anchored: 2026-02-13T23:47:25Z | Previous (v1 — founding constitution)
+No other platform has done this. The rules were committed publicly, immutably, and irrevocably — before anyone had a reason to lobby for changes. This is not a technical formality. This is the founding act.
+
+Every anchor below is a 0-ETH self-send transaction on Ethereum Sepolia. The SHA-256 hash of the constitution is embedded in the transaction data field. Anyone, at any time, can independently verify that the document they hold matches the hash on-chain. The blockchain serves as a witness — a notary stamp that cannot be forged, altered, or retroactively changed.
+
+Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE)
+
+---
+
+## Genesis Block 4
+
+- `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` → [tx 5b8ab0e1...](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10273917 | Minted: 2026-02-16T17:59:12Z
+  **First Light sustainability model + machine registration enforcement.** The platform can now monitor its own financial viability and automatically transition from demonstration to live operation when conditions are met. Machines can only enter the system through verified human operators.
+
+## Genesis Block 3
+
+- `b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393` → [tx eb0b0e69...](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10272673 | Minted: 2026-02-16
+  **Creator provisions + 50-year founder legacy.** The founder's 2% allocation is constitutionally anchored alongside the dormancy clause: after 50 years of inactivity, all accumulated founder allocation flows to organisations dedicated to using science for human betterment. The rules of the legacy were committed before the legacy began.
+
+## Genesis Block 2
+
+- `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` → [tx fde734dd...](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10271157 | Minted: 2026-02-16T08:15:36Z
+  **Compensation model.** The self-sustaining commission formula, escrow lifecycle, and reserve fund mechanics are committed on-chain. Every worker sees exactly what the platform takes and why. No hidden margins.
+
+- `da4db9104997f86b74b1edf5130f1767aefd6a8867728acb8e52d6e5bac7fc16` → [tx 1d15b5e5...](https://sepolia.etherscan.io/tx/1d15b5e57e1395ee46b3a53aab3f1d242ba3cb2fd3be15ae7fab271189e964c7)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10271150 | Minted: 2026-02-16T08:14:12Z
+  Intermediate draft. Superseded by the anchor above within the same block window.
+
+## Genesis Block 1
+
+- `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` → [tx 031617e3...](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10255231 | Minted: 2026-02-13T23:47:25Z
+  **The founding constitution.** Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted. Trust can only be earned through verified behaviour and verified outcomes over time. This is the moment the rules became immutable.

@@ -879,7 +879,7 @@ This constitution is anchored on-chain. The anchoring event creates permanent, t
 
 Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
 
-### Current anchor (v4 — First Light sustainability + machine registration)
+### Genesis Block 4 — First Light sustainability + machine registration
 
 | Field | Value |
 |---|---|
@@ -895,7 +895,7 @@ Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA
 
 The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac) and confirm the Input Data field contains `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91`. The git history preserves the exact file state that produced this hash.
 
-### Previous anchor (v3 — creator provisions + founder legacy)
+### Genesis Block 3 — Creator provisions + 50-year founder legacy
 
 | Field | Value |
 |---|---|
@@ -907,7 +907,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
 | Anchored | 2026-02-16 |
 
-### Previous anchor (v2 — with compensation model and real-time dynamic commission)
+### Genesis Block 2 — Compensation model
 
 | Field | Value |
 |---|---|
@@ -919,7 +919,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
 | Anchored | 2026-02-16 |
 
-### Previous anchor (v1 — founding constitution)
+### Genesis Block 1 — The founding constitution
 
 | Field | Value |
 |---|---|
@@ -931,7 +931,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** All four anchors are valid and independently verifiable. The v1 anchor proves the founding constitution existed in its original form. The v2 anchor proves the compensation model additions. The v3 anchor proves the constitution with creator allocation, founder's veto, dormancy/legacy provision, PoC mode, and First Light. The v4 anchor (current) proves the constitution with First Light redefined as a financial sustainability trigger (decoupled from G0→G1) and machine registration enforcement (human-operator-only). The full anchor log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All four Genesis Blocks are valid and independently verifiable. Each is a trust-minting event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 proves the founding constitution existed in its original form. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 (current) proves the First Light sustainability trigger and machine registration enforcement. The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 
