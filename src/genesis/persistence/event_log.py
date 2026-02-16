@@ -70,6 +70,7 @@ class EventKind(str, enum.Enum):
     FOUNDER_VETO_EXERCISED = "founder_veto_exercised"
     # Platform lifecycle events
     FIRST_LIGHT = "first_light"
+    MACHINE_REGISTERED = "machine_registered"
 
 
 @dataclass(frozen=True)

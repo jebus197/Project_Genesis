@@ -87,5 +87,14 @@
     "label": "Proof of Concept",
     "banner_text": "PoC Mode: This is a demonstration environment. Listings and missions shown are examples of how the platform will operate at First Light.",
     "watermark": true
+  },
+  "first_light": {
+    "sustainability_ratio": 1.5,
+    "reserve_months_required": 3,
+    "ema_alpha": 0.3,
+    "network_beta": 0.15,
+    "confidence_sigma": 1.0,
+    "min_data_points": 3,
+    "min_rate_floor_per_day": 0.01
   }
 }

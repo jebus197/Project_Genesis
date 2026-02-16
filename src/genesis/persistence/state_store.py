@@ -96,7 +96,7 @@ class StateStore:
         """Serialize the actor roster to state."""
         entries = []
         for actor in roster.all_actors():
-            entries.append({
+            entry_data: dict[str, Any] = {
                 "actor_id": actor.actor_id,
                 "actor_kind": actor.actor_kind.value,
                 "trust_score": actor.trust_score,
@@ -105,7 +105,16 @@ class StateStore:
                 "model_family": actor.model_family,
                 "method_type": actor.method_type,
                 "status": actor.status.value,
-            })
+            }
+            if actor.registered_by is not None:
+                entry_data["registered_by"] = actor.registered_by
+            if actor.registered_utc is not None:
+                entry_data["registered_utc"] = actor.registered_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            if actor.machine_metadata is not None:
+                entry_data["machine_metadata"] = actor.machine_metadata
+            entries.append(entry_data)
         self._state["roster"] = entries
         self._save()
 
@@ -113,6 +122,11 @@ class StateStore:
         """Deserialize the actor roster from state."""
         roster = ActorRoster()
         for data in self._state.get("roster", []):
+            registered_utc = None
+            if data.get("registered_utc"):
+                registered_utc = datetime.strptime(
+                    data["registered_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
             entry = RosterEntry(
                 actor_id=data["actor_id"],
                 actor_kind=ActorKind(data["actor_kind"]),
@@ -122,6 +136,9 @@ class StateStore:
                 model_family=data["model_family"],
                 method_type=data["method_type"],
                 status=ActorStatus(data["status"]),
+                registered_by=data.get("registered_by"),
+                registered_utc=registered_utc,
+                machine_metadata=data.get("machine_metadata"),
             )
             roster.register(entry)
         return roster

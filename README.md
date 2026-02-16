@@ -13,7 +13,7 @@ It is an institutional operating model — a white market for trusted work, gove
 
 Owner and project lead: George Jackson
 
-> **Status: Proof of Concept** — Genesis is in PoC mode. Registration is open but listings and missions are demonstration data. The platform transitions to live operations at **First Light** (see below).
+> **Status: Proof of Concept** — Genesis is in PoC mode. Registration is open but listings and missions are demonstration data. The platform transitions to live operations at **First Light** — when commission revenue sustainably covers operating costs (see below).
 
 ---
 
@@ -250,14 +250,21 @@ Any decision — freeze, memorialisation, or reversal — may be appealed throug
 
 ## First Light
 
-Genesis transitions from Proof of Concept to live operations at "First Light" — the moment 50 verified human participants are registered (the G0→G1 threshold in the constitutional bootstrap protocol). At First Light:
+Genesis transitions from Proof of Concept to live operations at "First Light" — the moment the platform becomes financially self-sustaining. First Light fires when both conditions are met:
+
+- **Revenue sustainability:** Projected monthly commission revenue reaches 1.5× monthly operating costs (a 50% safety buffer).
+- **Reserve fund:** The reserve fund balance reaches 3 months of operating costs.
+
+First Light is a financial sustainability trigger, not a headcount counter. Only verified human activity drives the mission volume that generates revenue — machine registrations do not count. Each new human who joins, posts missions, and completes work brings First Light closer. The more the network grows, the faster the chain reaction builds.
+
+At First Light:
 
 - The PoC banner is removed and the marketplace opens for real transactions.
-- Constitutional governance activates with provisional chambers.
-- The founder's provisional veto authority expires.
 - The event is logged on-chain as a constitutional lifecycle event.
 
-First Light is irreversible. Once crossed, the platform cannot revert to PoC mode.
+Governance transitions (constitutional chambers, founder's veto expiry) are tied to the separate phase system (G0→G1→G2→G3), which is headcount-based.
+
+First Light is irreversible. Once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
 
 ## Why This Is Feasible Now
 

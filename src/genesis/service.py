@@ -211,26 +211,124 @@ class GenesisService:
         model_family: str = "human_reviewer",
         method_type: str = "human_reviewer",
         initial_trust: float = 0.10,
+        registered_by: Optional[str] = None,
     ) -> ServiceResult:
-        """Register a new actor in the roster."""
+        """Register a new actor in the roster.
+
+        For human actors, delegates to register_human().
+        For machine actors with registered_by, delegates to register_machine()
+        which validates the operator.
+
+        Legacy compatibility: machine registration without registered_by is
+        allowed through this method (creates the entry directly without
+        operator validation). New code should use register_machine() which
+        enforces the operator check.
+        """
+        # Normalise actor_kind to enum if passed as string
+        if isinstance(actor_kind, str):
+            try:
+                actor_kind = ActorKind(actor_kind.lower())
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Unknown actor kind: {actor_kind}"],
+                )
+        if actor_kind == ActorKind.HUMAN:
+            return self.register_human(
+                actor_id=actor_id,
+                region=region,
+                organization=organization,
+                model_family=model_family,
+                method_type=method_type,
+                initial_trust=initial_trust,
+            )
+        elif actor_kind == ActorKind.MACHINE:
+            if registered_by is not None:
+                return self.register_machine(
+                    actor_id=actor_id,
+                    operator_id=registered_by,
+                    region=region,
+                    organization=organization,
+                    model_family=model_family,
+                    method_type=method_type,
+                    initial_trust=initial_trust,
+                )
+            # Legacy path: machine without operator validation
+            try:
+                now = datetime.now(timezone.utc)
+                entry = RosterEntry(
+                    actor_id=actor_id,
+                    actor_kind=ActorKind.MACHINE,
+                    trust_score=initial_trust,
+                    region=region,
+                    organization=organization,
+                    model_family=model_family,
+                    method_type=method_type,
+                    registered_utc=now,
+                )
+                self._roster.register(entry)
+                aid = actor_id.strip()
+                self._trust_records[aid] = TrustRecord(
+                    actor_id=aid,
+                    actor_kind=ActorKind.MACHINE,
+                    score=initial_trust,
+                )
+
+                def _rollback() -> None:
+                    self._roster._actors.pop(aid, None)
+                    self._trust_records.pop(aid, None)
+
+                err = self._safe_persist(on_rollback=_rollback)
+                if err:
+                    return ServiceResult(success=False, errors=[err])
+                return ServiceResult(success=True, data={"actor_id": aid})
+            except ValueError as e:
+                return ServiceResult(success=False, errors=[str(e)])
+        return ServiceResult(success=False, errors=[f"Unknown actor kind: {actor_kind}"])
+
+    def register_human(
+        self,
+        actor_id: str,
+        region: str,
+        organization: str,
+        model_family: str = "human_reviewer",
+        method_type: str = "human_reviewer",
+        initial_trust: float = 0.10,
+    ) -> ServiceResult:
+        """Register a human actor (self-registration)."""
         try:
+            now = datetime.now(timezone.utc)
             entry = RosterEntry(
                 actor_id=actor_id,
-                actor_kind=actor_kind,
+                actor_kind=ActorKind.HUMAN,
                 trust_score=initial_trust,
                 region=region,
                 organization=organization,
                 model_family=model_family,
                 method_type=method_type,
+                registered_utc=now,
             )
             self._roster.register(entry)
 
             aid = actor_id.strip()
             self._trust_records[aid] = TrustRecord(
                 actor_id=aid,
-                actor_kind=actor_kind,
+                actor_kind=ActorKind.HUMAN,
                 score=initial_trust,
             )
+
+            # Log registration event
+            if self._event_log is not None:
+                try:
+                    event = EventRecord.create(
+                        event_id=self._next_event_id(),
+                        event_kind=EventKind.ACTOR_REGISTERED,
+                        actor_id=aid,
+                        payload={"actor_kind": "human", "region": region},
+                    )
+                    self._event_log.append(event)
+                except (ValueError, OSError):
+                    pass  # Non-critical — roster update is the primary action
 
             def _rollback() -> None:
                 self._roster._actors.pop(aid, None)
@@ -242,6 +340,98 @@ class GenesisService:
             return ServiceResult(success=True, data={"actor_id": aid})
         except ValueError as e:
             return ServiceResult(success=False, errors=[str(e)])
+
+    def register_machine(
+        self,
+        actor_id: str,
+        operator_id: str,
+        region: str,
+        organization: str,
+        model_family: str = "generic_model",
+        method_type: str = "inference",
+        initial_trust: float = 0.10,
+        machine_metadata: Optional[dict] = None,
+    ) -> ServiceResult:
+        """Register a machine actor under a verified human operator.
+
+        Validates that the operator exists, is human, and is active.
+        Machines cannot self-register — only verified humans can
+        register machines.
+        """
+        # Validate operator
+        operator = self._roster.get(operator_id)
+        if operator is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Operator not found: {operator_id}"],
+            )
+        if operator.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only human actors can register machines"],
+            )
+        if not operator.is_available():
+            return ServiceResult(
+                success=False,
+                errors=[f"Operator {operator_id} is not in an active state"],
+            )
+
+        try:
+            now = datetime.now(timezone.utc)
+            entry = RosterEntry(
+                actor_id=actor_id,
+                actor_kind=ActorKind.MACHINE,
+                trust_score=initial_trust,
+                region=region,
+                organization=organization,
+                model_family=model_family,
+                method_type=method_type,
+                registered_by=operator_id,
+                registered_utc=now,
+                machine_metadata=machine_metadata,
+            )
+            self._roster.register(entry)
+
+            aid = actor_id.strip()
+            self._trust_records[aid] = TrustRecord(
+                actor_id=aid,
+                actor_kind=ActorKind.MACHINE,
+                score=initial_trust,
+            )
+
+            # Log machine registration event
+            if self._event_log is not None:
+                try:
+                    event = EventRecord.create(
+                        event_id=self._next_event_id(),
+                        event_kind=EventKind.MACHINE_REGISTERED,
+                        actor_id=aid,
+                        payload={
+                            "actor_kind": "machine",
+                            "registered_by": operator_id,
+                            "model_family": model_family,
+                            "method_type": method_type,
+                            "region": region,
+                        },
+                    )
+                    self._event_log.append(event)
+                except (ValueError, OSError):
+                    pass  # Non-critical — roster update is the primary action
+
+            def _rollback() -> None:
+                self._roster._actors.pop(aid, None)
+                self._trust_records.pop(aid, None)
+
+            err = self._safe_persist(on_rollback=_rollback)
+            if err:
+                return ServiceResult(success=False, errors=[err])
+            return ServiceResult(success=True, data={"actor_id": aid})
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+    def get_operator_machines(self, operator_id: str) -> list[RosterEntry]:
+        """Return all machines registered under a human operator."""
+        return self._roster.machines_for_operator(operator_id)
 
     def get_actor(self, actor_id: str) -> Optional[RosterEntry]:
         """Look up an actor."""

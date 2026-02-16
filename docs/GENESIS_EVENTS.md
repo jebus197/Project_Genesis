@@ -108,10 +108,10 @@ The constitution was re-anchored after codifying creator provisions, founder leg
 
 Key additions to the constitution in this version:
 - Creator allocation (2%) — transparent, constitutional, visible in every per-transaction breakdown
-- Founder's Veto — G0-only, transparent, logged on-chain, auto-expires at First Light
+- Founder's Veto — G0-only, transparent, logged on-chain, auto-expires at G0→G1 phase transition
 - Dormancy and founder's legacy — 50-year clause with metrology-consensus time verification and supermajority-selected charitable recipients
 - PoC mode — platform marked as Proof of Concept until First Light
-- First Light — named transition event at G0→G1 (50 verified humans)
+- First Light — named transition event when platform achieves financial sustainability (revenue >= 1.5× costs AND 3-month reserve)
 - 628 tests (up from 608), 1 additional constitutional parameter (`creator_allocation_rate`)
 
 ---
@@ -145,7 +145,7 @@ Every trust chain needs a first link. George Jackson designed the constitution, 
 - Founder's Veto — G0-only, auto-expires at G1
 - Dormancy and founder's legacy — 50-year clause with metrology-consensus trigger and supermajority-selected charitable recipients
 - PoC mode — platform marked as Proof of Concept until First Light
-- First Light — named transition event at G0→G1 (50 verified humans)
+- First Light — named transition event when platform achieves financial sustainability (revenue >= 1.5× costs AND 3-month reserve)
 
 ---
 

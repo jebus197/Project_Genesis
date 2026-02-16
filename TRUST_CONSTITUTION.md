@@ -59,6 +59,12 @@ If trust can be purchased or transferred, governance becomes corruptible and the
 - Any constitutional voting configuration where `w_M_const > 0` is invalid and must be rejected.
 - Machine trust may inform operational routing and quality weighting only; it has no vote in constitutional ballots.
 
+4. Machine registration requirement:
+- Machines cannot self-register. Every machine actor must be registered by a verified human operator in ACTIVE or PROBATION status.
+- The registering human is recorded as the machine's operator in the audit trail (`registered_by` field).
+- After registration, the machine operates independently — own trust score, own skill profile, own earnings. The operator relationship creates no ongoing dependency, trust inheritance, or liability.
+- Machine registrations do not count toward any governance threshold (phase transitions, First Light, or constitutional quorum requirements). Only verified human registrations are counted.
+
 ## Anti-capture guarantees
 
 1. No single-entity constitutional control:
@@ -628,16 +634,25 @@ Time-limit overrides:
 
 ### First Light
 
-"First Light" is the named transition event marking Genesis's passage from Proof of Concept to live operations. First Light occurs at the G0→G1 threshold (50 verified human participants). At First Light:
+"First Light" is the named transition event marking Genesis's passage from Proof of Concept to live operations. First Light is a **financial sustainability trigger**, not a headcount counter. It fires when BOTH conditions are met:
+
+1. Projected monthly commission revenue >= `sustainability_ratio` × monthly operating costs (default `sustainability_ratio = 1.5`, i.e. a 50% safety buffer), sustained over the commission engine's rolling window.
+2. Reserve fund balance >= `reserve_months_required` × monthly operating costs (default `reserve_months_required = 3`).
+
+First Light is **decoupled from governance phase transitions** (G0→G1→G2→G3), which remain headcount-based. First Light could fire before or after G0→G1. In practice, revenue requires mission volume which requires verified human users, so the two will roughly correlate — but they are structurally independent events.
+
+Only verified human activity drives the mission volume that generates commission revenue. Machine registrations do not contribute to the First Light calculation.
+
+At First Light:
 
 1. The PoC mode banner is removed from all platform pages.
 2. Demonstration data is replaced with live marketplace operations.
 3. The event is logged as `EventKind.FIRST_LIGHT` in the audit trail.
 4. The event is committed to L1 as a constitutional lifecycle event.
-5. Constitutional governance activates (G1 provisional chambers).
-6. The founder's veto authority expires.
 
-First Light is irreversible — once the threshold is crossed and the event is logged, the platform cannot revert to PoC mode.
+Note: The founder's veto authority expires at the G0→G1 phase transition (a governance event), not at First Light (a financial sustainability event). Constitutional governance activation is likewise tied to G0→G1.
+
+First Light is irreversible — once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
 
 ### Dormancy and founder's legacy
 

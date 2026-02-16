@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import enum
 from dataclasses import dataclass, field
+from datetime import datetime
 from typing import Optional
 
 from genesis.models.trust import ActorKind
@@ -53,6 +54,14 @@ class RosterEntry:
     skill_profile: Optional[object] = None
     # Type: Optional[ActorSkillProfile] — untyped to avoid circular import.
     # Set via GenesisService.update_actor_skills().
+    registered_by: Optional[str] = None
+    # actor_id of the human operator who registered this actor.
+    # None for humans (self-registered). Required for machines.
+    registered_utc: Optional[datetime] = None
+    # UTC timestamp of registration.
+    machine_metadata: Optional[dict] = None
+    # Machine-specific metadata: model version, API endpoint, capabilities.
+    # None for humans.
 
     def is_available(self) -> bool:
         """An actor is available if active or on probation."""
@@ -135,3 +144,18 @@ class ActorRoster:
             1 for a in self._actors.values()
             if a.actor_kind == ActorKind.HUMAN and a.is_available()
         )
+
+    @property
+    def machine_count(self) -> int:
+        return sum(
+            1 for a in self._actors.values()
+            if a.actor_kind == ActorKind.MACHINE and a.is_available()
+        )
+
+    def machines_for_operator(self, operator_id: str) -> list[RosterEntry]:
+        """Return all machines registered by a given human operator."""
+        return [
+            a for a in self._actors.values()
+            if a.actor_kind == ActorKind.MACHINE
+            and a.registered_by == operator_id
+        ]
