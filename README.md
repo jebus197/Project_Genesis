@@ -113,15 +113,26 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works.
+The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored twice — once at founding, and once after the compensation model was added. Both anchors are independently verifiable.
+
+**Current anchor (with compensation model):**
 
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
-| SHA-256 Hash | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` |
+| SHA-256 Hash | `e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd` |
 | Chain | Ethereum Sepolia (Chain ID 11155111) |
-| Block | 10255231 |
+| Block | 10271157 |
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`fde734dd...`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
+| Anchored | 2026-02-16 |
+
+**Founding anchor:**
+
+| Field | Value |
+|---|---|
+| SHA-256 Hash | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` |
+| Block | 10255231 |
 | Transaction | [`031617e3...`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
@@ -131,23 +142,15 @@ Every field above is publicly verifiable. The sender address links to the wallet
 
 You don't need to trust this project to verify the anchor. You only need a terminal and a browser.
 
-**Step 1 — Compute the fingerprint locally:**
+**Step 1 — Check the current anchor against the blockchain:**
 
-```bash
-shasum -a 256 TRUST_CONSTITUTION.md
-```
+Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `e941df98...`. The git history preserves the exact file state that produced this hash.
 
-Expected output:
+**Step 2 — Verify the founding anchor:**
 
-```
-33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06  TRUST_CONSTITUTION.md
-```
+Open the [founding transaction on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb). The Input Data field contains `33f2b003...` — the hash of the original constitution before the compensation model was added.
 
-**Step 2 — Check it against the blockchain:**
-
-Open the [transaction on Etherscan](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb), click **"Click to see More"**, and inspect the **Input Data** field. It contains the same fingerprint.
-
-**What this proves:** The constitution existed in its exact form at the recorded time. No one — including the project owner — can alter it without the mismatch being publicly detectable.
+**What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 
 Full anchor log: [`docs/ANCHORS.md`](docs/ANCHORS.md) | Trust event record: [`docs/GENESIS_EVENTS.md`](docs/GENESIS_EVENTS.md)
 
