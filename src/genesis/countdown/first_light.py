@@ -305,8 +305,11 @@ class FirstLightEstimator:
             opt_date = opt_revenue_date
             pess_date = pess_revenue_date
             # Adjust for reserve if it's the binding constraint
-            if reserve_date is not None and reserve_date > pess_date:
-                pess_date = reserve_date
+            if reserve_date is not None:
+                if reserve_date > opt_date:
+                    opt_date = reserve_date
+                if reserve_date > pess_date:
+                    pess_date = reserve_date
             if opt_date > pess_date:
                 opt_date, pess_date = pess_date, opt_date
         else:

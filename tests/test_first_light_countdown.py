@@ -312,6 +312,25 @@ class TestFalseNowRegression:
         )
         assert result.achieved is True
 
+    def test_optimistic_date_not_before_reserve_date(
+        self, estimator: FirstLightEstimator,
+    ) -> None:
+        """When reserve is binding, optimistic_date >= projected_reserve_date."""
+        ts = _make_timestamps(100, interval_days=1.0)
+        result = estimator.estimate(
+            ts,
+            monthly_revenue=Decimal("200"),
+            monthly_costs=Decimal("500"),
+            reserve_balance=Decimal("0"),  # Reserve unmet
+            missions_per_human_per_month=2.0,
+            avg_mission_value=Decimal("100"),
+            commission_rate=Decimal("0.05"),
+            now=NOW,
+        )
+        # If both dates exist, optimistic cannot be earlier than reserve
+        if result.optimistic_date is not None and result.projected_reserve_date is not None:
+            assert result.optimistic_date >= result.projected_reserve_date
+
 
 class TestEdgeCases:
     """Numeric edge cases and robustness."""
