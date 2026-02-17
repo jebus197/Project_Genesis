@@ -487,6 +487,31 @@ Genesis constitutionally prohibits work that increases net human suffering. The 
 46. Can a prohibited-category mission pass compliance screening? If yes, reject design.
 47. Can a suspended actor post, bid, review, or vote? If yes, reject design.
 
+### Three-Tier Justice System
+
+Genesis operates a codified three-tier justice system. Every adjudication follows the same structural rights guarantees regardless of tier.
+
+**Tier 1: Automated enforcement** (existing compliance screening + penalty escalation). Keyword-based screening at mission creation. Immediate rejection for exact prohibited-category matches. Flagging for human review on soft matches. Automated penalty computation based on violation type and prior history.
+
+**Tier 2: Unified adjudication panels.** 5-member panels, blind (pseudonymised complainant and accused), diverse (≥2 organisations, ≥2 regions), minimum panelist trust 0.60. 3/5 supermajority required for UPHELD verdict. Covers: payment disputes, compliance complaints, abuse complaints, conduct complaints, normative resolution. One appeal per case, within 72 hours, heard by entirely different panel (original panelists excluded).
+
+**Tier 3: Constitutional Court.** 7-member panel of human-only justices, trust ≥ 0.70, ≥3 regions, ≥3 organisations. 5/7 supermajority required to OVERTURN a Tier 2 decision. Simple majority for UPHOLD or REMAND. Precedent is advisory only (soft precedent) — each case is decided on its own merits.
+
+**Rights of the accused (structurally enforced — code gates, not documentation):**
+1. **Right to know:** accused is notified of the complaint at case opening.
+2. **Right to respond:** 72-hour response period. No panel can form until the response period has elapsed or the accused submits a response, whichever comes first.
+3. **Right to evidence:** all evidence must be disclosed to the accused before adjudication.
+4. **Right to appeal:** one appeal per case, within 72 hours of decision.
+5. **Right to representation:** accused may designate a representative.
+6. **Presumption of good faith:** assumed until verdict.
+
+**Rehabilitation (MODERATE severity only):** Actors suspended for moderate violations enter PROBATION status when their suspension expires. They must complete 5 probation tasks within 180 days. Trust is partially restored: min(original × 0.50, 0.30). SEVERE and EGREGIOUS violations have no rehabilitation path — permanent decommission is irreversible.
+
+**Three-Tier Justice design tests:**
+48. Can an adjudication conclude without respecting the 72h response window? If yes, reject design.
+49. Can a Constitutional Court decision be reached without 5/7 supermajority? If yes, reject design.
+50. Can an appeal panel include members from the original panel? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

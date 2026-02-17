@@ -488,7 +488,7 @@ class TestSuspensionExpiry:
     """Time-limited suspensions expire automatically."""
 
     def test_suspension_expires_after_period(self, service: GenesisService):
-        """A 90-day suspension expires after 90 days."""
+        """A 90-day suspension expires → PROBATION (E-3 rehabilitation)."""
         _register_actor(service, "actor_1")
         now = _now()
 
@@ -500,10 +500,10 @@ class TestSuspensionExpiry:
         result = service.check_suspension_expiry("actor_1", now=now + timedelta(days=89))
         assert not result.data["expired"]
 
-        # Check after expiry
+        # Check after expiry — E-3: enters PROBATION, not ACTIVE
         result = service.check_suspension_expiry("actor_1", now=now + timedelta(days=91))
         assert result.data["expired"]
-        assert result.data["status"] == "active"
+        assert result.data["status"] == "probation"
         assert not service.is_actor_suspended("actor_1")
 
     def test_permanent_decommission_never_expires(self, service: GenesisService):

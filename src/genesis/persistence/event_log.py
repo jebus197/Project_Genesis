@@ -105,6 +105,17 @@ class EventKind(str, enum.Enum):
     COMPLIANCE_REVIEW_COMPLETED = "compliance_review_completed"
     ACTOR_SUSPENDED = "actor_suspended"
     ACTOR_PERMANENTLY_DECOMMISSIONED = "actor_permanently_decommissioned"
+    # Adjudication events (Phase E-3: Three-Tier Justice)
+    ADJUDICATION_OPENED = "adjudication_opened"
+    ADJUDICATION_RESPONSE_SUBMITTED = "adjudication_response_submitted"
+    ADJUDICATION_PANEL_FORMED = "adjudication_panel_formed"
+    ADJUDICATION_VOTE_CAST = "adjudication_vote_cast"
+    ADJUDICATION_DECIDED = "adjudication_decided"
+    ADJUDICATION_APPEAL_FILED = "adjudication_appeal_filed"
+    ADJUDICATION_CLOSED = "adjudication_closed"
+    CONSTITUTIONAL_COURT_OPENED = "constitutional_court_opened"
+    CONSTITUTIONAL_COURT_DECIDED = "constitutional_court_decided"
+    REHABILITATION_STARTED = "rehabilitation_started"
 
 
 @dataclass(frozen=True)

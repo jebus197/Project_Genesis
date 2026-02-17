@@ -1,6 +1,6 @@
 {
-  "version": "0.3",
-  "updated_utc": "2026-02-18T00:00:00Z",
+  "version": "0.4",
+  "updated_utc": "2026-02-18T04:00:00Z",
   "risk_tiers": {
     "R0": {
       "reviewers_required": 1,
@@ -168,6 +168,31 @@
       "pattern_lookback_days": 365
     },
     "screening_enabled": true
+  },
+  "adjudication": {
+    "panel_size": 5,
+    "panel_min_regions": 2,
+    "panel_min_organizations": 2,
+    "min_panelist_trust": 0.60,
+    "response_period_hours": 72,
+    "appeal_window_hours": 72,
+    "blind_adjudication": true,
+    "require_vote_attestation": true,
+    "supermajority_threshold": 0.60
+  },
+  "constitutional_court": {
+    "panel_size": 7,
+    "supermajority_threshold": 5,
+    "min_justice_trust": 0.70,
+    "min_regions": 3,
+    "min_organizations": 3,
+    "human_only": true
+  },
+  "rehabilitation": {
+    "probation_tasks_required": 5,
+    "trust_restoration_fraction": 0.50,
+    "max_restoration_score": 0.30,
+    "rehab_window_days": 180
   },
   "poc_mode": {
     "active": true,

@@ -616,6 +616,55 @@ def check() -> int:
         if not compliance.get("screening_enabled"):
             errors.append("compliance.screening_enabled must be true")
 
+    # --- Adjudication invariants (Phase E-3: Three-Tier Justice) ---
+    adjudication = policy.get("adjudication", {})
+    if adjudication:
+        adj_ps = adjudication.get("panel_size", 0)
+        if adj_ps < 3:
+            errors.append(
+                f"adjudication.panel_size must be >= 3, got {adj_ps}"
+            )
+        if not adjudication.get("blind_adjudication"):
+            errors.append("adjudication.blind_adjudication must be true")
+        if not adjudication.get("require_vote_attestation"):
+            errors.append("adjudication.require_vote_attestation must be true")
+        adj_rph = adjudication.get("response_period_hours", 0)
+        if adj_rph < 24:
+            errors.append(
+                f"adjudication.response_period_hours must be >= 24, got {adj_rph}"
+            )
+        adj_awh = adjudication.get("appeal_window_hours", 0)
+        if adj_awh < 24:
+            errors.append(
+                f"adjudication.appeal_window_hours must be >= 24, got {adj_awh}"
+            )
+        adj_pmo = adjudication.get("panel_min_organizations", 0)
+        if adj_pmo < 2:
+            errors.append(
+                f"adjudication.panel_min_organizations must be >= 2, got {adj_pmo}"
+            )
+
+    # --- Constitutional Court invariants (Phase E-3) ---
+    court = policy.get("constitutional_court", {})
+    if court:
+        court_ps = court.get("panel_size", 0)
+        if court_ps < 7:
+            errors.append(
+                f"constitutional_court.panel_size must be >= 7, got {court_ps}"
+            )
+        court_sm = court.get("supermajority_threshold", 0)
+        if court_sm < 5:
+            errors.append(
+                f"constitutional_court.supermajority_threshold must be >= 5, got {court_sm}"
+            )
+        if not court.get("human_only"):
+            errors.append("constitutional_court.human_only must be true")
+        court_mjt = court.get("min_justice_trust", 0)
+        if court_mjt < 0.70:
+            errors.append(
+                f"constitutional_court.min_justice_trust must be >= 0.70, got {court_mjt}"
+            )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

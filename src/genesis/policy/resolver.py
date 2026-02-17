@@ -701,6 +701,59 @@ class PolicyResolver:
         """
         return bool(self._params.get("genesis", {}).get("founder_veto_active", False))
 
+    def adjudication_config(self) -> dict[str, Any]:
+        """Return adjudication engine configuration.
+
+        Keys: panel_size, panel_min_regions, panel_min_organizations,
+              min_panelist_trust, response_period_hours, appeal_window_hours,
+              blind_adjudication, require_vote_attestation, supermajority_threshold.
+        """
+        defaults = {
+            "panel_size": 5,
+            "panel_min_regions": 2,
+            "panel_min_organizations": 2,
+            "min_panelist_trust": 0.60,
+            "response_period_hours": 72,
+            "appeal_window_hours": 72,
+            "blind_adjudication": True,
+            "require_vote_attestation": True,
+            "supermajority_threshold": 0.60,
+        }
+        config = self._policy.get("adjudication", {})
+        return {**defaults, **config}
+
+    def constitutional_court_config(self) -> dict[str, Any]:
+        """Return Constitutional Court configuration.
+
+        Keys: panel_size, supermajority_threshold, min_justice_trust,
+              min_regions, min_organizations, human_only.
+        """
+        defaults = {
+            "panel_size": 7,
+            "supermajority_threshold": 5,
+            "min_justice_trust": 0.70,
+            "min_regions": 3,
+            "min_organizations": 3,
+            "human_only": True,
+        }
+        config = self._policy.get("constitutional_court", {})
+        return {**defaults, **config}
+
+    def rehabilitation_config(self) -> dict[str, Any]:
+        """Return rehabilitation configuration.
+
+        Keys: probation_tasks_required, trust_restoration_fraction,
+              max_restoration_score, rehab_window_days.
+        """
+        defaults = {
+            "probation_tasks_required": 5,
+            "trust_restoration_fraction": 0.50,
+            "max_restoration_score": 0.30,
+            "rehab_window_days": 180,
+        }
+        config = self._policy.get("rehabilitation", {})
+        return {**defaults, **config}
+
     def poc_mode(self) -> dict[str, Any]:
         """Return PoC mode configuration.
 

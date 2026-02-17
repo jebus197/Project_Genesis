@@ -104,6 +104,14 @@ from genesis.compliance.penalties import (
     PriorViolation,
     ViolationType,
 )
+from genesis.legal.adjudication import (
+    AdjudicationEngine,
+    AdjudicationType as LegalAdjudicationType,
+    AdjudicationVerdict as LegalAdjudicationVerdict,
+)
+from genesis.legal.constitutional_court import ConstitutionalCourt
+from genesis.legal.rights import RightsEnforcer
+from genesis.legal.rehabilitation import RehabilitationEngine
 
 
 @dataclass(frozen=True)
@@ -209,6 +217,19 @@ class GenesisService:
         self._penalty_engine = PenaltyEscalationEngine()
         self._prior_violations: dict[str, list[PriorViolation]] = {}
         self._suspended_until: dict[str, datetime] = {}
+
+        # Legal framework (Phase E-3: Three-Tier Justice)
+        adj_cfg = resolver.adjudication_config()
+        self._adjudication_engine = AdjudicationEngine(adj_cfg)
+        self._constitutional_court = ConstitutionalCourt(
+            resolver.constitutional_court_config()
+        )
+        self._rights_enforcer = RightsEnforcer(
+            response_period_hours=adj_cfg.get("response_period_hours", 72)
+        )
+        self._rehabilitation_engine = RehabilitationEngine(
+            resolver.rehabilitation_config()
+        )
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -5541,16 +5562,442 @@ class GenesisService:
         # Check if suspension has elapsed
         if actor.status == ActorStatus.SUSPENDED and actor_id in self._suspended_until:
             if now >= self._suspended_until[actor_id]:
-                actor.status = ActorStatus.ACTIVE
+                suspension_end = self._suspended_until[actor_id]
                 del self._suspended_until[actor_id]
+                # E-3: Expired suspensions enter PROBATION + rehabilitation
+                actor.status = ActorStatus.PROBATION
+                # Create rehabilitation record if applicable
+                original_trust = actor.trust_score
+                try:
+                    rehab = self._rehabilitation_engine.create_rehabilitation(
+                        actor_id=actor_id,
+                        case_id=f"suspension-{actor_id}",
+                        original_trust=original_trust,
+                        severity="moderate",
+                        suspension_start=suspension_end - timedelta(days=90),
+                        suspension_end=suspension_end,
+                        now=now,
+                    )
+                    self._rehabilitation_engine.start_rehabilitation(rehab.rehab_id, now)
+                    self._record_actor_lifecycle_event(
+                        actor_id,
+                        EventKind.REHABILITATION_STARTED,
+                        {
+                            "rehab_id": rehab.rehab_id,
+                            "original_trust": original_trust,
+                            "status": "active",
+                        },
+                    )
+                except ValueError:
+                    pass  # Severe/egregious — should not happen for suspended actors
                 return ServiceResult(
                     success=True,
-                    data={"actor_id": actor_id, "status": actor.status.value, "expired": True},
+                    data={
+                        "actor_id": actor_id,
+                        "status": actor.status.value,
+                        "expired": True,
+                    },
                 )
 
         return ServiceResult(
             success=True,
             data={"actor_id": actor_id, "status": actor.status.value, "expired": False},
+        )
+
+    # ------------------------------------------------------------------
+    # Three-Tier Justice (Phase E-3)
+    # ------------------------------------------------------------------
+
+    def open_adjudication(
+        self,
+        type: str,
+        complainant_id: str,
+        accused_id: str,
+        reason: str,
+        mission_id: Optional[str] = None,
+        evidence_hashes: Optional[list[str]] = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Open a Tier 2 adjudication case.
+
+        Validates both actors exist, opens case, creates rights record,
+        discloses evidence, and emits ADJUDICATION_OPENED event.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate actors exist
+        complainant = self._roster.get(complainant_id)
+        if complainant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Complainant not found: {complainant_id}"],
+            )
+
+        accused = self._roster.get(accused_id)
+        if accused is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Accused not found: {accused_id}"],
+            )
+
+        try:
+            adj_type = LegalAdjudicationType(type)
+        except ValueError:
+            return ServiceResult(
+                success=False,
+                errors=[f"Unknown adjudication type: {type}"],
+            )
+
+        try:
+            case = self._adjudication_engine.open_case(
+                type=adj_type,
+                complainant_id=complainant_id,
+                accused_id=accused_id,
+                reason=reason,
+                now=now,
+                mission_id=mission_id,
+                evidence_hashes=evidence_hashes,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Create rights record and disclose evidence
+        self._rights_enforcer.create_rights_record(case.case_id, accused_id, now)
+        self._rights_enforcer.mark_evidence_disclosed(case.case_id)
+
+        self._record_actor_lifecycle_event(
+            complainant_id,
+            EventKind.ADJUDICATION_OPENED,
+            {
+                "case_id": case.case_id,
+                "type": type,
+                "accused_id": accused_id,
+                "reason": reason,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "case_id": case.case_id,
+                "type": type,
+                "status": case.status.value,
+                "response_deadline_utc": case.response_deadline_utc.isoformat()
+                if case.response_deadline_utc else None,
+            },
+        )
+
+    def submit_adjudication_response(
+        self,
+        case_id: str,
+        accused_id: str,
+        text: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit the accused's response to an adjudication case."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate identity: only the accused can respond
+        case = self._adjudication_engine.get_case(case_id)
+        if case is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Case not found: {case_id}"],
+            )
+
+        if case.accused_id != accused_id:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {accused_id} is not the accused in case {case_id}"],
+            )
+
+        try:
+            self._adjudication_engine.submit_accused_response(case_id, text, now)
+            self._rights_enforcer.mark_response_submitted(case_id)
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._record_actor_lifecycle_event(
+            accused_id,
+            EventKind.ADJUDICATION_RESPONSE_SUBMITTED,
+            {"case_id": case_id},
+        )
+
+        return ServiceResult(
+            success=True,
+            data={"case_id": case_id, "response_submitted": True},
+        )
+
+    def form_adjudication_panel(
+        self,
+        case_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Form an adjudication panel for a case.
+
+        Checks rights enforcer gate, builds candidates from roster,
+        forms panel, emits ADJUDICATION_PANEL_FORMED.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Check rights enforcer gate
+        rights_record = self._rights_enforcer.get_record(case_id)
+        if rights_record is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No rights record for case: {case_id}"],
+            )
+
+        violations = self._rights_enforcer.validate_panel_formation_allowed(
+            rights_record, now
+        )
+        if violations:
+            return ServiceResult(
+                success=False,
+                errors=[f"Rights violations: {'; '.join(violations)}"],
+            )
+
+        # Build candidates from roster
+        adj_cfg = self._resolver.adjudication_config()
+        min_trust = adj_cfg.get("min_panelist_trust", 0.60)
+        candidates = [
+            {
+                "actor_id": a.actor_id,
+                "trust_score": a.trust_score,
+                "organization": a.organization,
+                "region": a.region,
+            }
+            for a in self._roster.available_reviewers(min_trust=min_trust)
+        ]
+
+        try:
+            case = self._adjudication_engine.form_panel(case_id, candidates, now)
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._record_actor_lifecycle_event(
+            case.complainant_id,
+            EventKind.ADJUDICATION_PANEL_FORMED,
+            {
+                "case_id": case_id,
+                "panel_ids": case.panel_ids,
+                "panel_size": len(case.panel_ids),
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "case_id": case_id,
+                "panel_ids": case.panel_ids,
+                "status": case.status.value,
+            },
+        )
+
+    def submit_adjudication_vote(
+        self,
+        case_id: str,
+        panelist_id: str,
+        verdict: str,
+        attestation: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit a panelist's vote on an adjudication case.
+
+        Records vote, evaluates verdict. If UPHELD, calls apply_penalty().
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            self._adjudication_engine.submit_panel_vote(
+                case_id, panelist_id, verdict, attestation
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._record_actor_lifecycle_event(
+            panelist_id,
+            EventKind.ADJUDICATION_VOTE_CAST,
+            {"case_id": case_id, "verdict": verdict},
+        )
+
+        # Evaluate verdict
+        final_verdict = self._adjudication_engine.evaluate_verdict(case_id)
+        if final_verdict is not None:
+            case = self._adjudication_engine.get_case(case_id)
+            self._record_actor_lifecycle_event(
+                case.accused_id if case else panelist_id,
+                EventKind.ADJUDICATION_DECIDED,
+                {
+                    "case_id": case_id,
+                    "verdict": final_verdict.value,
+                },
+            )
+
+            # If upheld, apply penalty to the accused
+            if final_verdict == LegalAdjudicationVerdict.UPHELD and case:
+                self.apply_penalty(
+                    case.accused_id,
+                    ViolationType.COMPLAINT_UPHELD.value,
+                    now=now,
+                )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "case_id": case_id,
+                "voted": True,
+                "verdict_reached": final_verdict.value if final_verdict else None,
+            },
+        )
+
+    def file_adjudication_appeal(
+        self,
+        case_id: str,
+        appellant_id: str,
+        reason: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File an appeal against a decided adjudication case."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            appeal_case = self._adjudication_engine.file_appeal(
+                case_id, appellant_id, reason, now
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Create rights record for appeal
+        self._rights_enforcer.create_rights_record(
+            appeal_case.case_id, appeal_case.accused_id, now
+        )
+        self._rights_enforcer.mark_evidence_disclosed(appeal_case.case_id)
+
+        self._record_actor_lifecycle_event(
+            appellant_id,
+            EventKind.ADJUDICATION_APPEAL_FILED,
+            {
+                "original_case_id": case_id,
+                "appeal_case_id": appeal_case.case_id,
+                "reason": reason,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "appeal_case_id": appeal_case.case_id,
+                "original_case_id": case_id,
+            },
+        )
+
+    def escalate_to_constitutional_court(
+        self,
+        case_id: str,
+        question: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Escalate a Tier 2 case to the Constitutional Court (Tier 3).
+
+        Only cases with ESCALATED_TO_COURT verdict can be escalated.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        case = self._adjudication_engine.get_case(case_id)
+        if case is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Case not found: {case_id}"],
+            )
+
+        if case.verdict != LegalAdjudicationVerdict.ESCALATED_TO_COURT:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Case {case_id} verdict is {case.verdict}, "
+                    f"not ESCALATED_TO_COURT"
+                ],
+            )
+
+        court_case = self._constitutional_court.open_court_case(
+            source_adjudication_id=case_id,
+            question=question,
+            now=now,
+        )
+
+        self._record_actor_lifecycle_event(
+            case.complainant_id,
+            EventKind.CONSTITUTIONAL_COURT_OPENED,
+            {
+                "court_case_id": court_case.court_case_id,
+                "source_case_id": case_id,
+                "question": question,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "court_case_id": court_case.court_case_id,
+                "source_case_id": case_id,
+            },
+        )
+
+    def submit_court_vote(
+        self,
+        court_case_id: str,
+        justice_id: str,
+        verdict: str,
+        attestation: str,
+        precedent_note: Optional[str] = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit a justice's vote on a Constitutional Court case.
+
+        Records vote, evaluates verdict, records precedent.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            self._constitutional_court.submit_court_vote(
+                court_case_id, justice_id, verdict, attestation, precedent_note
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Evaluate verdict
+        court_verdict = self._constitutional_court.evaluate_court_verdict(court_case_id)
+        if court_verdict is not None:
+            # Record precedent
+            self._constitutional_court.record_precedent(court_case_id)
+
+            court_case = self._constitutional_court.get_case(court_case_id)
+            self._record_actor_lifecycle_event(
+                justice_id,
+                EventKind.CONSTITUTIONAL_COURT_DECIDED,
+                {
+                    "court_case_id": court_case_id,
+                    "verdict": court_verdict,
+                    "source_case_id": court_case.source_adjudication_id
+                    if court_case else None,
+                },
+            )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "court_case_id": court_case_id,
+                "voted": True,
+                "verdict_reached": court_verdict,
+            },
         )
 
     def _count_missions_by_state(self) -> dict[str, int]:
