@@ -601,3 +601,121 @@ class TestEscrowIntegration:
         escrow = service._escrow_manager.get_escrow(escrow_id)
         assert escrow.state == EscrowState.REFUNDED
         assert escrow.amount == Decimal("525.00")  # 500 + 5% = 525
+
+
+# =====================================================================
+# TestCXRegressions — regression tests for CX review findings
+# =====================================================================
+
+class TestCXRegressions:
+    """Regression tests for CX P1/P2 findings on Phase E-4 commit ee1da8e.
+
+    P1-1: GCF activation not durable across restart
+    P1-2: Orphan escrow leak when create_funded_listing called with duplicate listing_id
+    P2:   Hardcoded 0.05 employer fee rate bypassed policy config
+    """
+
+    def test_gcf_activation_survives_restart(self, tmp_path):
+        """P1 regression: GCF must be active after service restart when First Light was achieved."""
+        from genesis.persistence.state_store import StateStore
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = GenesisService(resolver1, event_log=log1, state_store=store1)
+        svc1.open_epoch("epoch-1")
+
+        # Register actors for First Light threshold
+        for i in range(5):
+            svc1.register_actor(
+                actor_id=f"h-{i}", actor_kind=ActorKind.HUMAN,
+                region="EU", organization="Org",
+            )
+
+        # Trigger First Light — this activates GCF
+        fl = svc1.check_first_light(
+            monthly_revenue=Decimal("2000"),
+            monthly_costs=Decimal("1000"),
+            reserve_balance=Decimal("5000"),
+        )
+        assert fl.data["first_light"] is True
+        assert svc1._gcf_tracker.is_active is True
+
+        # Restart: fresh service from same persisted state
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+        svc2.open_epoch("epoch-2")
+
+        # GCF must still be active after restart
+        assert svc2._gcf_tracker.is_active is True, \
+            "GCF tracker must be re-activated on restart when First Light was previously achieved"
+
+    def test_duplicate_listing_does_not_leak_escrow(self, service):
+        """P1 regression: duplicate create_funded_listing must not create orphan escrow."""
+        _register_actors(service)
+
+        # First call succeeds
+        r1 = service.create_funded_listing(
+            listing_id="L-DUP",
+            title="First listing",
+            description="Original listing",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+        )
+        assert r1.success
+
+        # Count escrows after first call
+        escrows_after_first = len(service._escrow_manager._escrows)
+
+        # Second call with same listing_id must fail WITHOUT creating another escrow
+        r2 = service.create_funded_listing(
+            listing_id="L-DUP",
+            title="Duplicate listing",
+            description="Should fail before escrow creation",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+        )
+        assert not r2.success
+        assert "already exists" in r2.errors[0].lower()
+
+        # Escrow count must not have increased
+        escrows_after_second = len(service._escrow_manager._escrows)
+        assert escrows_after_second == escrows_after_first, \
+            "Duplicate listing must not create orphan escrow records"
+
+    def test_employer_fee_rate_reads_from_policy(self, resolver):
+        """P2 regression: employer fee rate must come from commission policy, not hardcoded."""
+        # Save original rate
+        original_rate = resolver._commission_policy["employer_creator_fee_rate"]
+
+        # Override to 0.06 in the commission_policy config (the source commission_params reads)
+        resolver._commission_policy["employer_creator_fee_rate"] = "0.06"
+
+        svc = GenesisService(resolver, event_log=EventLog())
+        svc.open_epoch("test-epoch")
+
+        svc.register_actor(
+            "creator-1", ActorKind.HUMAN, "eu", "acme", initial_trust=0.5,
+        )
+
+        result = svc.create_funded_listing(
+            listing_id="L-FEE",
+            title="Fee rate test",
+            description="Testing fee rate from policy",
+            creator_id="creator-1",
+            mission_reward=Decimal("1000"),
+        )
+        assert result.success
+
+        # With 0.06 rate: total_escrow = 1000 + 60.00 = 1060.00
+        assert result.data["total_escrow"] == "1060.00", \
+            f"Expected 1060.00 (6% employer fee), got {result.data['total_escrow']}"
+
+        # Restore original rate
+        resolver._commission_policy["employer_creator_fee_rate"] = original_rate

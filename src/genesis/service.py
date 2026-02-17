@@ -264,9 +264,11 @@ class GenesisService:
             self._first_light_achieved = lifecycle["first_light_achieved"]
             self._founder_id = lifecycle["founder_id"]
             self._founder_last_action_utc = lifecycle["founder_last_action_utc"]
-            # Restore PoC mode override if First Light was previously achieved
+            # Restore PoC mode override and GCF activation if First Light was previously achieved
             if self._first_light_achieved:
                 self._resolver._policy.setdefault("poc_mode", {})["active"] = False
+                if not self._gcf_tracker.is_active:
+                    self._gcf_tracker.activate(now=datetime.now(timezone.utc))
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -6072,9 +6074,17 @@ class GenesisService:
         else:
             compliance_verdict = "skipped"
 
-        # Step 2: Create escrow
+        # Step 2: Preflight — check listing doesn't already exist (before creating escrow)
+        if listing_id in self._listings:
+            return ServiceResult(
+                success=False,
+                errors=[f"Listing already exists: {listing_id}"],
+            )
+
+        # Step 3: Create escrow
         reward = D(str(mission_reward)) if not isinstance(mission_reward, D) else mission_reward
-        creator_fee_rate = D("0.05")
+        comm_params = self._resolver.commission_params()
+        creator_fee_rate = D(str(comm_params.get("employer_creator_fee_rate", "0.05")))
         employer_fee = (reward * creator_fee_rate).quantize(D("0.01"))
         total_escrow = reward + employer_fee
 
@@ -6085,7 +6095,7 @@ class GenesisService:
             now=now,
         )
 
-        # Step 3: Create listing
+        # Step 4: Create listing
         listing_result = self.create_listing(
             listing_id=listing_id,
             title=title,
@@ -6103,7 +6113,7 @@ class GenesisService:
         listing.escrow_id = escrow_record.escrow_id
         listing.deadline_days = deadline_days or wf_cfg.get("default_deadline_days", 30)
 
-        # Step 4: Create workflow state
+        # Step 5: Create workflow state
         wf = self._workflow_orchestrator.create_workflow(
             listing_id=listing_id,
             creator_id=creator_id,
