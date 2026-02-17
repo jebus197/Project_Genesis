@@ -84,6 +84,15 @@ class WorkflowOrchestrator:
         self._workflows: dict[str, WorkflowState] = {}
         self._default_deadline_days = config.get("default_deadline_days", 30)
 
+    @classmethod
+    def from_records(
+        cls, config: dict[str, Any], workflows: dict[str, WorkflowState],
+    ) -> "WorkflowOrchestrator":
+        """Restore a WorkflowOrchestrator from persisted workflow states."""
+        orch = cls(config)
+        orch._workflows = dict(workflows)
+        return orch
+
     def create_workflow(
         self,
         listing_id: str,

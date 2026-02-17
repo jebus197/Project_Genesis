@@ -719,3 +719,176 @@ class TestCXRegressions:
 
         # Restore original rate
         resolver._commission_policy["employer_creator_fee_rate"] = original_rate
+
+
+# =====================================================================
+# TestWorkflowEscrowPersistence — restart durability for escrow + workflow
+# =====================================================================
+
+class TestWorkflowEscrowPersistence:
+    """Regression tests for CX P1: workflow/escrow state must survive restart.
+
+    Covers:
+    - Workflow state persisted and restored via StateStore
+    - Escrow records persisted and restored via StateStore
+    - Listing workflow fields (mission_reward, escrow_id, deadline_days) survive restart
+    - open_listing blocked when escrow record missing (escrow-first guard)
+    """
+
+    def _make_service(self, resolver, store, log):
+        """Create a GenesisService with actors registered."""
+        svc = GenesisService(resolver, event_log=log, state_store=store)
+        svc.open_epoch("epoch-1")
+        svc.register_actor(
+            "creator-1", ActorKind.HUMAN, "eu", "acme", initial_trust=0.5,
+        )
+        svc.register_actor(
+            "worker-1", ActorKind.HUMAN, "us", "beta", initial_trust=0.6,
+        )
+        return svc
+
+    def test_workflow_survives_restart(self, tmp_path):
+        """Workflow state must be present after service restart."""
+        from genesis.persistence.state_store import StateStore
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        # Create a funded listing (creates workflow + escrow)
+        result = svc1.create_funded_listing(
+            listing_id="L-RESTART-WF",
+            title="Workflow restart test",
+            description="Testing workflow persistence",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+        )
+        assert result.success
+        wf_id = result.data["workflow_id"]
+
+        # Restart: fresh service from same persisted state
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+        svc2.open_epoch("epoch-2")
+
+        # Workflow must exist after restart
+        wf = svc2._workflow_orchestrator.get_workflow(wf_id)
+        assert wf is not None, "Workflow must survive restart"
+        assert wf.listing_id == "L-RESTART-WF"
+        assert wf.mission_reward == Decimal("500")
+
+        # fund_and_publish must succeed (requires both workflow and escrow)
+        pub = svc2.fund_and_publish_listing(wf_id)
+        assert pub.success, f"fund_and_publish failed after restart: {pub.errors}"
+
+    def test_escrow_survives_restart(self, tmp_path):
+        """Escrow records must be present with correct state after restart."""
+        from genesis.persistence.state_store import StateStore
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        result = svc1.create_funded_listing(
+            listing_id="L-RESTART-ESC",
+            title="Escrow restart test",
+            description="Testing escrow persistence",
+            creator_id="creator-1",
+            mission_reward=Decimal("1000"),
+        )
+        assert result.success
+        escrow_id = result.data["escrow_id"]
+
+        # Fund and publish (locks escrow: PENDING → LOCKED)
+        wf_id = result.data["workflow_id"]
+        pub = svc1.fund_and_publish_listing(wf_id)
+        assert pub.success
+
+        # Restart
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+
+        # Escrow must exist with correct state and amount
+        escrow = svc2._escrow_manager.get_escrow(escrow_id)
+        assert escrow is not None, "Escrow must survive restart"
+        assert escrow.state == EscrowState.LOCKED, \
+            f"Escrow state should be LOCKED after restart, got {escrow.state}"
+        assert escrow.amount == Decimal("1050.00"), \
+            f"Escrow amount should be 1050.00 (1000 + 5%), got {escrow.amount}"
+
+    def test_open_listing_blocked_without_escrow(self, service):
+        """open_listing must fail when listing has escrow_id but escrow record is missing."""
+        _register_actors(service)
+
+        # Create a funded listing (links escrow_id to listing)
+        result = service.create_funded_listing(
+            listing_id="L-GUARD",
+            title="Escrow guard test",
+            description="Testing escrow-first guard",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+        )
+        assert result.success
+        escrow_id = result.data["escrow_id"]
+
+        # Simulate escrow loss (e.g. restart without persistence)
+        del service._escrow_manager._escrows[escrow_id]
+
+        # open_listing must fail because escrow is gone
+        open_result = service.open_listing("L-GUARD")
+        assert not open_result.success, \
+            "open_listing must fail when escrow record is missing"
+        assert "escrow record missing" in open_result.errors[0].lower()
+
+    def test_listing_fields_survive_restart(self, tmp_path):
+        """Listing mission_reward, escrow_id, deadline_days must persist across restart."""
+        from genesis.persistence.state_store import StateStore
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        result = svc1.create_funded_listing(
+            listing_id="L-FIELDS",
+            title="Fields persistence test",
+            description="Testing listing field persistence",
+            creator_id="creator-1",
+            mission_reward=Decimal("750"),
+            deadline_days=14,
+        )
+        assert result.success
+        escrow_id = result.data["escrow_id"]
+
+        # Restart
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+
+        listing = svc2._listings.get("L-FIELDS")
+        assert listing is not None, "Listing must survive restart"
+        assert listing.mission_reward == Decimal("750"), \
+            f"mission_reward should be 750, got {listing.mission_reward}"
+        assert listing.escrow_id == escrow_id, \
+            f"escrow_id should be {escrow_id}, got {listing.escrow_id}"
+        assert listing.deadline_days == 14, \
+            f"deadline_days should be 14, got {listing.deadline_days}"

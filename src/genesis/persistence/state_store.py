@@ -18,6 +18,7 @@ from __future__ import annotations
 import json
 from dataclasses import asdict
 from datetime import datetime, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Optional
 
@@ -54,6 +55,7 @@ from genesis.models.leave import (
     LeaveRecord,
     LeaveState,
 )
+from genesis.models.compensation import EscrowRecord, EscrowState
 from genesis.models.trust import ActorKind, TrustRecord
 from genesis.review.roster import (
     ActorRoster,
@@ -61,6 +63,7 @@ from genesis.review.roster import (
     IdentityVerificationStatus,
     RosterEntry,
 )
+from genesis.workflow.orchestrator import WorkflowState, WorkflowStatus
 
 
 class StateStore:
@@ -586,6 +589,9 @@ class StateStore:
                 "allocated_mission_id": listing.allocated_mission_id,
                 "domain_tags": listing.domain_tags,
                 "preferences": listing.preferences,
+                "mission_reward": str(listing.mission_reward) if listing.mission_reward is not None else None,
+                "escrow_id": listing.escrow_id,
+                "deadline_days": listing.deadline_days,
             }
 
         bid_entries: dict[str, list[dict[str, Any]]] = {}
@@ -659,6 +665,9 @@ class StateStore:
                 allocated_mission_id=data.get("allocated_mission_id"),
                 domain_tags=data.get("domain_tags", []),
                 preferences=data.get("preferences", {}),
+                mission_reward=Decimal(data["mission_reward"]) if data.get("mission_reward") else None,
+                escrow_id=data.get("escrow_id"),
+                deadline_days=data.get("deadline_days"),
             )
 
         bids: dict[str, list[Bid]] = {}
@@ -986,3 +995,152 @@ class StateStore:
                 ts, "%Y-%m-%dT%H:%M:%SZ",
             ).replace(tzinfo=timezone.utc)
         return result
+
+    # ------------------------------------------------------------------
+    # Escrow state persistence
+    # ------------------------------------------------------------------
+
+    def save_escrows(self, escrows: dict[str, EscrowRecord]) -> None:
+        """Serialize escrow records to state."""
+        entries: dict[str, dict[str, Any]] = {}
+        for eid, rec in escrows.items():
+            entries[eid] = {
+                "escrow_id": rec.escrow_id,
+                "mission_id": rec.mission_id,
+                "staker_id": rec.staker_id,
+                "amount": str(rec.amount),
+                "state": rec.state.value,
+                "created_utc": (
+                    rec.created_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if rec.created_utc else None
+                ),
+                "locked_utc": (
+                    rec.locked_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if rec.locked_utc else None
+                ),
+                "released_utc": (
+                    rec.released_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if rec.released_utc else None
+                ),
+                "disputed_utc": (
+                    rec.disputed_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if rec.disputed_utc else None
+                ),
+                "refunded_utc": (
+                    rec.refunded_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if rec.refunded_utc else None
+                ),
+                "commission_amount": str(rec.commission_amount) if rec.commission_amount is not None else None,
+                "worker_payout": str(rec.worker_payout) if rec.worker_payout is not None else None,
+            }
+        self._state["escrows"] = entries
+        self._save()
+
+    def load_escrows(self) -> dict[str, EscrowRecord]:
+        """Deserialize escrow records from state."""
+        escrows: dict[str, EscrowRecord] = {}
+        for eid, data in self._state.get("escrows", {}).items():
+            def _parse_ts(key: str) -> Optional[datetime]:
+                v = data.get(key)
+                if v is None:
+                    return None
+                return datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+            escrows[eid] = EscrowRecord(
+                escrow_id=data["escrow_id"],
+                mission_id=data["mission_id"],
+                staker_id=data["staker_id"],
+                amount=Decimal(data["amount"]),
+                state=EscrowState(data["state"]),
+                created_utc=_parse_ts("created_utc"),
+                locked_utc=_parse_ts("locked_utc"),
+                released_utc=_parse_ts("released_utc"),
+                disputed_utc=_parse_ts("disputed_utc"),
+                refunded_utc=_parse_ts("refunded_utc"),
+                commission_amount=Decimal(data["commission_amount"]) if data.get("commission_amount") else None,
+                worker_payout=Decimal(data["worker_payout"]) if data.get("worker_payout") else None,
+            )
+        return escrows
+
+    # ------------------------------------------------------------------
+    # Workflow state persistence
+    # ------------------------------------------------------------------
+
+    def save_workflows(self, workflows: dict[str, WorkflowState]) -> None:
+        """Serialize workflow states to state."""
+        entries: dict[str, dict[str, Any]] = {}
+        for wid, wf in workflows.items():
+            entries[wid] = {
+                "workflow_id": wf.workflow_id,
+                "listing_id": wf.listing_id,
+                "creator_id": wf.creator_id,
+                "mission_reward": str(wf.mission_reward),
+                "status": wf.status.value,
+                "mission_id": wf.mission_id,
+                "escrow_id": wf.escrow_id,
+                "worker_id": wf.worker_id,
+                "mission_class": wf.mission_class,
+                "domain_type": wf.domain_type,
+                "compliance_verdict": wf.compliance_verdict,
+                "compliance_screened_utc": (
+                    wf.compliance_screened_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.compliance_screened_utc else None
+                ),
+                "work_submitted_utc": (
+                    wf.work_submitted_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.work_submitted_utc else None
+                ),
+                "work_evidence_hashes": wf.work_evidence_hashes,
+                "deadline_utc": (
+                    wf.deadline_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.deadline_utc else None
+                ),
+                "dispute_case_id": wf.dispute_case_id,
+                "created_utc": (
+                    wf.created_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.created_utc else None
+                ),
+                "cancelled_utc": (
+                    wf.cancelled_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.cancelled_utc else None
+                ),
+                "completed_utc": (
+                    wf.completed_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.completed_utc else None
+                ),
+            }
+        self._state["workflows"] = entries
+        self._save()
+
+    def load_workflows(self) -> dict[str, WorkflowState]:
+        """Deserialize workflow states from state."""
+        workflows: dict[str, WorkflowState] = {}
+        for wid, data in self._state.get("workflows", {}).items():
+            def _parse_ts(key: str) -> Optional[datetime]:
+                v = data.get(key)
+                if v is None:
+                    return None
+                return datetime.strptime(v, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+            workflows[wid] = WorkflowState(
+                workflow_id=data["workflow_id"],
+                listing_id=data["listing_id"],
+                creator_id=data["creator_id"],
+                mission_reward=Decimal(data["mission_reward"]),
+                status=WorkflowStatus(data["status"]),
+                mission_id=data.get("mission_id"),
+                escrow_id=data.get("escrow_id"),
+                worker_id=data.get("worker_id"),
+                mission_class=data.get("mission_class"),
+                domain_type=data.get("domain_type"),
+                compliance_verdict=data.get("compliance_verdict"),
+                compliance_screened_utc=_parse_ts("compliance_screened_utc"),
+                work_submitted_utc=_parse_ts("work_submitted_utc"),
+                work_evidence_hashes=data.get("work_evidence_hashes", []),
+                deadline_utc=_parse_ts("deadline_utc"),
+                dispute_case_id=data.get("dispute_case_id"),
+                created_utc=_parse_ts("created_utc"),
+                cancelled_utc=_parse_ts("cancelled_utc"),
+                completed_utc=_parse_ts("completed_utc"),
+            )
+        return workflows

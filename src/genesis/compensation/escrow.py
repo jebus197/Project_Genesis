@@ -56,6 +56,13 @@ class EscrowManager:
     def __init__(self) -> None:
         self._escrows: Dict[str, EscrowRecord] = {}
 
+    @classmethod
+    def from_records(cls, escrows: Dict[str, EscrowRecord]) -> "EscrowManager":
+        """Restore an EscrowManager from persisted records."""
+        mgr = cls()
+        mgr._escrows = dict(escrows)
+        return mgr
+
     def create_escrow(
         self,
         mission_id: str,

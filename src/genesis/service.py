@@ -269,6 +269,15 @@ class GenesisService:
                 self._resolver._policy.setdefault("poc_mode", {})["active"] = False
                 if not self._gcf_tracker.is_active:
                     self._gcf_tracker.activate(now=datetime.now(timezone.utc))
+            # Restore escrow and workflow state
+            escrow_records = state_store.load_escrows()
+            if escrow_records:
+                self._escrow_manager = EscrowManager.from_records(escrow_records)
+            workflow_records = state_store.load_workflows()
+            if workflow_records:
+                self._workflow_orchestrator = WorkflowOrchestrator.from_records(
+                    resolver.workflow_config(), workflow_records,
+                )
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -2305,7 +2314,30 @@ class GenesisService:
         return ServiceResult(success=True, data=data)
 
     def open_listing(self, listing_id: str) -> ServiceResult:
-        """Transition listing from DRAFT → OPEN."""
+        """Transition listing from DRAFT → OPEN.
+
+        If the listing has an escrow_id linked (from create_funded_listing),
+        the escrow record must still exist. This enforces the escrow-first
+        structural guarantee after service restart.
+        """
+        listing = self._listings.get(listing_id)
+        if listing is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Listing not found: {listing_id}"],
+            )
+        if listing.escrow_id is not None:
+            try:
+                self._escrow_manager.get_escrow(listing.escrow_id)
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[
+                        f"Escrow record missing for listing {listing_id} "
+                        f"(escrow_id={listing.escrow_id}). "
+                        f"Cannot open listing without valid escrow linkage."
+                    ],
+                )
         return self._transition_listing(listing_id, ListingState.OPEN)
 
     def start_accepting_bids(self, listing_id: str) -> ServiceResult:
@@ -5292,6 +5324,8 @@ class GenesisService:
             self._founder_id,
             self._founder_last_action_utc,
         )
+        self._state_store.save_escrows(self._escrow_manager._escrows)
+        self._state_store.save_workflows(self._workflow_orchestrator._workflows)
 
     def _safe_persist(
         self,
@@ -6142,6 +6176,9 @@ class GenesisService:
             },
         )
 
+        # Persist workflow + escrow state (listing already persisted by create_listing)
+        self._safe_persist_post_audit()
+
         return ServiceResult(
             success=True,
             data={
@@ -6210,6 +6247,9 @@ class GenesisService:
             },
         )
 
+        # Persist escrow lock + workflow progression
+        self._safe_persist_post_audit()
+
         return ServiceResult(
             success=True,
             data={
@@ -6256,6 +6296,9 @@ class GenesisService:
         self._workflow_orchestrator.record_worker_allocated(
             workflow_id, mission_id, worker_id, now,
         )
+
+        # Persist workflow progression
+        self._safe_persist_post_audit()
 
         result.data["workflow_id"] = workflow_id
         result.data["status"] = wf.status.value
@@ -6312,6 +6355,9 @@ class GenesisService:
                 "evidence_count": len(evidence_hashes),
             },
         )
+
+        # Persist workflow + evidence state
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -6373,6 +6419,9 @@ class GenesisService:
 
         self._workflow_orchestrator.record_completed(workflow_id, now)
 
+        # Persist final workflow + escrow state
+        self._safe_persist_post_audit()
+
         payment_result.data["workflow_id"] = workflow_id
         payment_result.data["status"] = wf.status.value
         payment_result.data["escrow_released"] = True
@@ -6421,6 +6470,9 @@ class GenesisService:
                 "reason": reason,
             },
         )
+
+        # Persist cancellation + escrow refund
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -6491,6 +6543,9 @@ class GenesisService:
                 "accused_id": accused_id,
             },
         )
+
+        # Persist dispute state
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -6567,6 +6622,9 @@ class GenesisService:
                 "case_id": wf.dispute_case_id,
             },
         )
+
+        # Persist dispute resolution
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
