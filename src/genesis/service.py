@@ -3121,19 +3121,24 @@ class GenesisService:
         self,
         mission_id: str,
         creator_allocation: "Decimal",
+        employer_creator_fee: "Decimal",
         mission_reward: "Decimal",
         worker_id: str,
     ) -> ServiceResult:
-        """Record a creator allocation disbursement event.
+        """Record creator allocation disbursement events (both sides).
 
         Called after commission computation to emit the constitutional
-        CREATOR_ALLOCATION_DISBURSED event. The allocation itself is
-        computed by the CommissionEngine — this method logs the audit
-        trail.
+        CREATOR_ALLOCATION_DISBURSED event. Both the worker-side (5% of
+        worker payment) and employer-side (5% of mission reward) are
+        recorded as a single audit event with full breakdown.
+
+        The allocation itself is computed by the CommissionEngine — this
+        method logs the audit trail.
         """
         from decimal import Decimal
 
-        if creator_allocation <= Decimal("0"):
+        total_creator = creator_allocation + employer_creator_fee
+        if total_creator <= Decimal("0"):
             return ServiceResult(
                 success=True,
                 data={"recorded": False, "reason": "zero_allocation"},
@@ -3147,10 +3152,13 @@ class GenesisService:
                     actor_id="founder",
                     payload={
                         "mission_id": mission_id,
-                        "creator_allocation": str(creator_allocation),
+                        "worker_side_allocation": str(creator_allocation),
+                        "employer_side_fee": str(employer_creator_fee),
+                        "total_creator_income": str(total_creator),
                         "mission_reward": str(mission_reward),
                         "worker_id": worker_id,
-                        "rate": "0.02",
+                        "worker_side_rate": "0.05",
+                        "employer_side_rate": "0.05",
                     },
                 )
                 self._event_log.append(event)
@@ -3165,7 +3173,9 @@ class GenesisService:
         data: dict[str, Any] = {
             "recorded": True,
             "mission_id": mission_id,
-            "creator_allocation": str(creator_allocation),
+            "worker_side_allocation": str(creator_allocation),
+            "employer_side_fee": str(employer_creator_fee),
+            "total_creator_income": str(total_creator),
         }
         if warning:
             data["warning"] = warning
@@ -3309,11 +3319,12 @@ class GenesisService:
             reserve=reserve,
         )
 
-        # Wire: record creator allocation event in the audit trail
-        if breakdown.creator_allocation > Decimal("0"):
+        # Wire: record both-sides creator allocation event in the audit trail
+        if breakdown.total_creator_income > Decimal("0"):
             alloc_result = self.record_creator_allocation(
                 mission_id=mission_id,
                 creator_allocation=breakdown.creator_allocation,
+                employer_creator_fee=breakdown.employer_creator_fee,
                 mission_reward=mission_reward,
                 worker_id=mission.worker_id or "unknown",
             )
@@ -3325,8 +3336,11 @@ class GenesisService:
             "commission_rate": str(breakdown.rate),
             "commission_amount": str(breakdown.commission_amount),
             "creator_allocation": str(breakdown.creator_allocation),
+            "employer_creator_fee": str(breakdown.employer_creator_fee),
+            "total_creator_income": str(breakdown.total_creator_income),
             "worker_payout": str(breakdown.worker_payout),
             "mission_reward": str(mission_reward),
+            "total_escrow": str(breakdown.total_escrow),
         }
         return ServiceResult(success=True, data=data)
 

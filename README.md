@@ -209,9 +209,9 @@ Trust without compensation is volunteerism. Genesis has not disinvented money �
 
 Genesis operates exclusively in cryptocurrency — specifically, long-established, institutionally adopted cryptocurrencies like Bitcoin, Ethereum, and major stablecoins (USDC, USDT). There is no Genesis-branded token. Creating one would contradict the foundational rule: trust cannot be bought.
 
-Before any mission begins, the work poster must stake the full reward amount into escrow. The listing does not go live until escrow is confirmed. This eliminates "work done, never paid" — the most common exploitation pattern in freelance markets — by structural design, not by policy.
+Before any mission begins, the work poster must stake the mission reward plus a 5% creator allocation into escrow. The listing does not go live until escrow is confirmed. This eliminates "work done, never paid" — the most common exploitation pattern in freelance markets — by structural design, not by policy.
 
-When work is completed and approved, a commission is deducted and the remainder is paid to the worker. The worker can exchange immediately to stablecoin or hold on the platform.
+When work is completed and approved, a commission is deducted from the mission reward, a 5% creator allocation is deducted from the worker's payment, and the remainder is paid to the worker. On cancel or refund, the full escrow (including the employer's creator allocation) is returned. Both parties see "5% creator allocation" as a transparent, named line item in every published breakdown.
 
 ### The dynamic commission
 
@@ -338,7 +338,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (902 tests):**
+**Validation (904 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

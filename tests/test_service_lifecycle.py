@@ -145,11 +145,15 @@ class TestCreatorAllocationEvent:
         result = service.record_creator_allocation(
             mission_id="M-001",
             creator_allocation=Decimal("10.00"),
+            employer_creator_fee=Decimal("25.00"),
             mission_reward=Decimal("500.00"),
             worker_id="worker-1",
         )
         assert result.success
         assert result.data["recorded"] is True
+        assert result.data["worker_side_allocation"] == "10.00"
+        assert result.data["employer_side_fee"] == "25.00"
+        assert result.data["total_creator_income"] == "35.00"
 
         events = service._event_log.events(
             EventKind.CREATOR_ALLOCATION_DISBURSED,
@@ -157,8 +161,10 @@ class TestCreatorAllocationEvent:
         assert len(events) == 1
         assert events[0].actor_id == "founder"
         assert events[0].payload["mission_id"] == "M-001"
-        assert events[0].payload["creator_allocation"] == "10.00"
-        assert events[0].payload["rate"] == "0.02"
+        assert events[0].payload["worker_side_allocation"] == "10.00"
+        assert events[0].payload["employer_side_fee"] == "25.00"
+        assert events[0].payload["worker_side_rate"] == "0.05"
+        assert events[0].payload["employer_side_rate"] == "0.05"
 
     def test_skips_zero_allocation(
         self, service: GenesisService,
@@ -166,6 +172,7 @@ class TestCreatorAllocationEvent:
         result = service.record_creator_allocation(
             mission_id="M-002",
             creator_allocation=Decimal("0"),
+            employer_creator_fee=Decimal("0"),
             mission_reward=Decimal("500.00"),
             worker_id="worker-1",
         )
@@ -180,6 +187,7 @@ class TestCreatorAllocationEvent:
             service.record_creator_allocation(
                 mission_id=f"M-{i:03d}",
                 creator_allocation=Decimal("20.00"),
+                employer_creator_fee=Decimal("50.00"),
                 mission_reward=Decimal("1000.00"),
                 worker_id=f"worker-{i}",
             )
@@ -471,7 +479,7 @@ class TestProductionCallPaths:
             is_below_target=False,
         )
 
-        # Process payment — should auto-emit creator allocation
+        # Process payment — should auto-emit both-sides creator allocation
         result = service.process_mission_payment(
             mission_id="M-PAY-001",
             mission_reward=Decimal("500.00"),
@@ -479,7 +487,14 @@ class TestProductionCallPaths:
             reserve=reserve,
         )
         assert result.success
-        assert Decimal(result.data["creator_allocation"]) == Decimal("10.00")
+        # Worker-side: 5% of worker payout (after commission)
+        assert Decimal(result.data["creator_allocation"]) > Decimal("0")
+        # Employer-side: 5% of mission reward = 25.00
+        assert Decimal(result.data["employer_creator_fee"]) == Decimal("25.00")
+        # Total creator income = worker-side + employer-side
+        assert Decimal(result.data["total_creator_income"]) > Decimal("25.00")
+        # Total escrow = mission_reward + employer_creator_fee
+        assert Decimal(result.data["total_escrow"]) == Decimal("525.00")
 
         # Creator allocation event was emitted through the payment path
         events = service._event_log.events(
@@ -487,6 +502,8 @@ class TestProductionCallPaths:
         )
         assert len(events) >= 1
         assert events[-1].payload["mission_id"] == "M-PAY-001"
+        assert "worker_side_allocation" in events[-1].payload
+        assert "employer_side_fee" in events[-1].payload
 
     def test_process_mission_payment_rejects_unapproved(
         self, service: GenesisService,
@@ -646,6 +663,7 @@ class TestNoEpochCrashRegression:
         result = svc.record_creator_allocation(
             mission_id="test-mission",
             creator_allocation=Decimal("10.00"),
+            employer_creator_fee=Decimal("25.00"),
             mission_reward=Decimal("500.00"),
             worker_id="worker-1",
         )

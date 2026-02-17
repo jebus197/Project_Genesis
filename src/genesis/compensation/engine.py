@@ -8,6 +8,11 @@ of operational data. The formula is fully deterministic:
     rate = clamp(raw_rate, FLOOR, CEILING)
     commission = max(rate × mission_reward, MIN_FEE)
 
+Both-sides creator allocation (5%):
+    worker_side = (mission_reward - commission) × 0.05
+    employer_side = mission_reward × 0.05
+    total_escrow = mission_reward + employer_side
+
 No human votes on the rate. No ballot sets the margin. The formula IS the rate.
 
 Constitutional invariants:
@@ -15,6 +20,8 @@ Constitutional invariants:
 - Every computation produces a full published breakdown
 - Bootstrap mode applies BOOTSTRAP_MIN_RATE when < MIN_MISSIONS completed
 - Reserve fund is self-managing (gap contribution raises rate automatically)
+- commission + creator_allocation + worker_payout == mission_reward
+- total_escrow == mission_reward + employer_creator_fee
 """
 
 from __future__ import annotations
@@ -144,23 +151,49 @@ class CommissionEngine:
         # Cannot exceed the mission reward
         commission_amount = min(commission_amount, mission_reward)
 
-        # Creator allocation — 2% of mission reward (platform revenue),
-        # per constitution. Separate constitutional deduction alongside
-        # commission. Total worker deduction = commission + creator allocation.
+        # --- Both-sides creator allocation (constitutional) ---
+        #
+        # Worker-side: 5% of worker's payment (after commission, before creator).
+        #   worker_payout_before_creator = mission_reward - commission
+        #   creator_allocation = worker_payout_before_creator × creator_rate
+        #   worker_payout = worker_payout_before_creator - creator_allocation
+        #
+        # Employer-side: 5% of mission_reward, staked on top in escrow.
+        #   employer_creator_fee = mission_reward × employer_fee_rate
+        #   Total escrow = mission_reward + employer_creator_fee
+        #   Returned in full on cancel/refund.
+        #
+        # To each party it reads as "5% creator allocation".
+        # Invariant: commission + creator_allocation + worker_payout == mission_reward
+        # Invariant: total_escrow == mission_reward + employer_creator_fee
+
         creator_rate = params.get("creator_allocation_rate", Decimal("0"))
-        if creator_rate > Decimal("0") and mission_reward > Decimal("0"):
-            creator_amount = (mission_reward * creator_rate).quantize(
+        employer_fee_rate = params.get("employer_creator_fee_rate", Decimal("0"))
+
+        worker_payout_before_creator = mission_reward - commission_amount
+
+        if creator_rate > Decimal("0") and worker_payout_before_creator > Decimal("0"):
+            creator_amount = (worker_payout_before_creator * creator_rate).quantize(
                 Decimal("0.01"), rounding=ROUND_HALF_UP,
             )
         else:
             creator_amount = Decimal("0")
 
-        worker_payout = mission_reward - commission_amount - creator_amount
+        worker_payout = worker_payout_before_creator - creator_amount
+
+        if employer_fee_rate > Decimal("0") and mission_reward > Decimal("0"):
+            employer_creator_fee = (mission_reward * employer_fee_rate).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP,
+            )
+        else:
+            employer_creator_fee = Decimal("0")
 
         # Build cost breakdown by category
         cost_breakdown = self._build_cost_breakdown(window_costs, reserve_contribution)
         if creator_amount > Decimal("0"):
             cost_breakdown["creator_allocation"] = creator_amount
+        if employer_creator_fee > Decimal("0"):
+            cost_breakdown["employer_creator_fee"] = employer_creator_fee
 
         return CommissionBreakdown(
             rate=rate,
@@ -168,6 +201,7 @@ class CommissionEngine:
             cost_ratio=cost_ratio,
             commission_amount=commission_amount,
             creator_allocation=creator_amount,
+            employer_creator_fee=employer_creator_fee,
             worker_payout=worker_payout,
             mission_reward=mission_reward,
             cost_breakdown=cost_breakdown,

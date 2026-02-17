@@ -1,8 +1,17 @@
 """Escrow manager — manages the escrow lifecycle for mission payments.
 
-Before any mission begins, the work poster must stake the full reward
-amount into escrow. The listing does not go live until escrow is confirmed.
+Before any mission begins, the work poster must stake the full amount
+into escrow: mission_reward + employer_creator_fee (5% of mission_reward).
+The listing does not go live until escrow is confirmed.
 This eliminates "work done, never paid" by structural design.
+
+On successful completion, the escrow settles as:
+    employer_creator_fee → creator (5% of mission_reward)
+    commission → platform operations
+    creator_allocation → creator (5% of worker's payment)
+    worker_payout → worker
+
+On cancel/refund, the FULL escrow (including employer fee) is returned.
 
 The escrow manager is a pure state machine — no side effects. Event
 logging is handled by the service layer.
@@ -59,7 +68,7 @@ class EscrowManager:
         Args:
             mission_id: The mission this escrow funds.
             staker_id: The actor staking the funds.
-            amount: The full reward amount to stake.
+            amount: The total escrow amount (mission_reward + employer_creator_fee).
             escrow_id: Optional explicit ID (auto-generated if absent).
             now: Current time (defaults to UTC now).
 
@@ -120,23 +129,27 @@ class EscrowManager:
         if now is None:
             now = datetime.now(timezone.utc)
 
-        # Validate breakdown matches escrowed amount
-        if commission.mission_reward != record.amount:
+        # Validate breakdown matches escrowed amount.
+        # Escrow = mission_reward + employer_creator_fee (both-sides model).
+        if commission.total_escrow != record.amount:
             raise ValueError(
-                f"Commission breakdown mission_reward ({commission.mission_reward}) "
-                f"does not match escrowed amount ({record.amount})"
+                f"Commission breakdown total_escrow ({commission.total_escrow}) "
+                f"does not match escrowed amount ({record.amount}). "
+                f"Expected mission_reward ({commission.mission_reward}) + "
+                f"employer_creator_fee ({commission.employer_creator_fee})."
             )
-        total_deductions = (
+        # Worker-side invariant: commission + creator + worker = mission_reward
+        worker_side_total = (
             commission.commission_amount
             + commission.creator_allocation
             + commission.worker_payout
         )
-        if total_deductions != record.amount:
+        if worker_side_total != commission.mission_reward:
             raise ValueError(
                 f"Commission ({commission.commission_amount}) + creator allocation "
                 f"({commission.creator_allocation}) + worker payout "
-                f"({commission.worker_payout}) does not equal escrowed amount "
-                f"({record.amount})"
+                f"({commission.worker_payout}) does not equal mission_reward "
+                f"({commission.mission_reward})"
             )
 
         if record.state == EscrowState.LOCKED:

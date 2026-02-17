@@ -111,13 +111,21 @@ class CommissionBreakdown:
     Published with every transaction — there is nowhere for
     profit extraction to hide.
 
-    Invariant: commission_amount + creator_allocation + worker_payout == mission_reward
+    Both-sides creator allocation model:
+    - Employer-side: employer_creator_fee = mission_reward × 5%
+    - Worker-side: creator_allocation = worker_payout_before_creator × 5%
+
+    Invariants:
+    - commission_amount + creator_allocation + worker_payout == mission_reward
+    - total_escrow == mission_reward + employer_creator_fee
+    - On cancel/refund: full escrow (including employer fee) returned
     """
     rate: Decimal
     raw_rate: Decimal
     cost_ratio: Decimal
     commission_amount: Decimal
     creator_allocation: Decimal
+    employer_creator_fee: Decimal
     worker_payout: Decimal
     mission_reward: Decimal
     cost_breakdown: Dict[str, Decimal]
@@ -125,6 +133,16 @@ class CommissionBreakdown:
     window_stats: WindowStats
     reserve_contribution: Decimal
     safety_margin: Decimal
+
+    @property
+    def total_escrow(self) -> Decimal:
+        """Total amount staked in escrow (mission reward + employer fee)."""
+        return self.mission_reward + self.employer_creator_fee
+
+    @property
+    def total_creator_income(self) -> Decimal:
+        """Total creator income from both sides of this transaction."""
+        return self.creator_allocation + self.employer_creator_fee
 
 
 @dataclass(frozen=True)

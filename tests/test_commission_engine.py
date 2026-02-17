@@ -308,6 +308,7 @@ class TestDecimalArithmetic:
         assert isinstance(result.cost_ratio, Decimal)
         assert isinstance(result.commission_amount, Decimal)
         assert isinstance(result.creator_allocation, Decimal)
+        assert isinstance(result.employer_creator_fee, Decimal)
         assert isinstance(result.worker_payout, Decimal)
         assert isinstance(result.mission_reward, Decimal)
         assert isinstance(result.reserve_contribution, Decimal)
@@ -353,7 +354,7 @@ class TestCostBreakdown:
         assert result.is_bootstrap is True
 
     def test_creator_allocation_in_every_breakdown(self, engine: CommissionEngine) -> None:
-        """Creator allocation must appear in cost_breakdown as 2% of mission reward."""
+        """Both-sides creator allocation appears in cost_breakdown."""
         ledger = OperationalLedger()
         now = _now()
         for i in range(60):
@@ -366,15 +367,21 @@ class TestCostBreakdown:
         result = engine.compute_commission(
             Decimal("500"), ledger, _healthy_reserve(), now=now
         )
+        # Worker-side: 5% of (500 - commission)
         assert "creator_allocation" in result.cost_breakdown
-        # 2% of 500 mission reward = 10.00
-        assert result.cost_breakdown["creator_allocation"] == Decimal("10.00")
-        assert result.creator_allocation == Decimal("10.00")
+        assert result.creator_allocation > Decimal("0")
+        assert result.creator_allocation == result.cost_breakdown["creator_allocation"]
+        # Employer-side: 5% of 500 = 25.00
+        assert "employer_creator_fee" in result.cost_breakdown
+        assert result.employer_creator_fee == Decimal("25.00")
+        assert result.employer_creator_fee == result.cost_breakdown["employer_creator_fee"]
+        # Total creator income = both sides
+        assert result.total_creator_income == result.creator_allocation + result.employer_creator_fee
 
-    def test_creator_allocation_scales_with_revenue_not_commission(
+    def test_employer_fee_scales_with_mission_reward(
         self, engine: CommissionEngine
     ) -> None:
-        """Same mission reward at different commission rates produces same creator allocation."""
+        """Employer creator fee is always 5% of mission_reward, regardless of commission rate."""
         now = _now()
         # Scenario 1: low costs → low commission rate
         ledger_low = OperationalLedger()
@@ -404,6 +411,25 @@ class TestCostBreakdown:
 
         # Different commission rates
         assert result_low.rate != result_high.rate
-        # Same creator allocation: both are 2% of 1000 = 20.00
-        assert result_low.creator_allocation == Decimal("20.00")
-        assert result_high.creator_allocation == Decimal("20.00")
+        # Same employer fee: both are 5% of 1000 = 50.00
+        assert result_low.employer_creator_fee == Decimal("50.00")
+        assert result_high.employer_creator_fee == Decimal("50.00")
+        # Worker-side creator allocation DIFFERS because commission amounts differ
+        assert result_low.creator_allocation != result_high.creator_allocation
+        # Lower commission → more for worker → more for creator (worker-side)
+        assert result_low.creator_allocation > result_high.creator_allocation
+
+    def test_both_sides_invariants(self, engine: CommissionEngine) -> None:
+        """Commission + creator_allocation + worker_payout == mission_reward.
+        total_escrow == mission_reward + employer_creator_fee.
+        """
+        ledger = OperationalLedger()
+        _populate_ledger(ledger)
+        result = engine.compute_commission(
+            Decimal("1000"), ledger, _healthy_reserve(), now=_now()
+        )
+        # Worker-side invariant
+        worker_total = result.commission_amount + result.creator_allocation + result.worker_payout
+        assert worker_total == result.mission_reward
+        # Escrow invariant
+        assert result.total_escrow == result.mission_reward + result.employer_creator_fee

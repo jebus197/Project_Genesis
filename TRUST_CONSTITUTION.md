@@ -408,17 +408,23 @@ The constitutional amendment process provides the safety valve: if real-world ev
 
 ### Creator allocation
 
-A constitutional allocation of 2% of platform revenue (`CREATOR_ALLOCATION_RATE = 0.02`) is reserved for the project founder. This is a separate constitutional deduction computed alongside the commission. The total worker deduction for any mission is: commission (operational costs) + creator allocation (2% of mission reward). Both appear as distinct, visible line items in the same per-transaction published cost breakdown.
+A constitutional creator allocation of 5% is applied on both sides of every successfully completed mission. Both employer and worker see "5% creator allocation" as a transparent, named line item in every published breakdown.
+
+**Employer side:** On successful mission completion, 5% of the mission reward (`EMPLOYER_CREATOR_FEE_RATE = 0.05`) is deducted from the escrow. The employer stakes `mission_reward + employer_creator_fee` into escrow at listing time. On cancel or refund, the full escrow (including the employer fee) is returned in full.
+
+**Worker side:** On successful mission completion, 5% of the worker's payment after commission (`CREATOR_ALLOCATION_RATE = 0.05`) is deducted from the worker's payout. The total worker deduction for any mission is: commission (operational costs) + creator allocation (5% of post-commission payout). Both appear as distinct, visible line items in the same per-transaction published cost breakdown.
+
+**Both fees are only deducted on successful completion.** Cancel or refund returns everything to the employer; the worker owes nothing.
 
 This allocation:
 
-1. Is computed as `mission_reward × CREATOR_ALLOCATION_RATE` — based on total mission reward (platform revenue), not on the commission amount. This ensures the founder's allocation is independent of operational cost fluctuations and that the self-sustaining commission model remains unimpaired.
-2. Appears as a visible, named line item in every per-transaction published cost breakdown. There is no hidden margin.
+1. Is computed deterministically: worker-side as `(mission_reward - commission) × CREATOR_ALLOCATION_RATE`, employer-side as `mission_reward × EMPLOYER_CREATOR_FEE_RATE`. Both rates are constitutional constants.
+2. Appears as visible, named line items in every per-transaction published cost breakdown. There is no hidden margin. Each party sees "Creator allocation: 5%".
 3. Is a constitutional constant — changeable only by 3-chamber supermajority amendment, like all other commission parameters.
 4. Is computed and disbursed through the same deterministic, auditable pipeline as all other operational costs.
 5. Cannot influence trust scores, allocation ranking, or governance weight (per the separation of trust from finance rule in §6).
 
-The creator allocation exists because building and maintaining a governance platform is itself productive work. The allocation is transparent by design: every participant sees it in every breakdown, and the rate is anchored in the constitution alongside every other commission parameter.
+The creator allocation exists because building and maintaining a governance platform is itself productive work. The allocation is transparent by design: every participant sees it in every breakdown, and both rates are anchored in the constitution alongside every other commission parameter.
 
 ### Commission design tests
 
@@ -532,7 +538,8 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `COMMISSION_WINDOW_MIN_MISSIONS` | `50` | Constitutional amendment only | Minimum sample size for statistical reliability |
 | `COMMISSION_BOOTSTRAP_MIN_RATE` | `0.05` (5%) | Constitutional amendment only | Bootstrap period minimum rate — auto-expires when window fills |
 | `COMMISSION_RESERVE_MAINTENANCE_RATE` | `0.005` (0.5%) | Constitutional amendment only | Reserve maintenance rate when target is met |
-| `CREATOR_ALLOCATION_RATE` | `0.02` (2%) | Constitutional amendment only | Founder creator allocation — transparent, visible in every breakdown |
+| `CREATOR_ALLOCATION_RATE` | `0.05` (5%) | Constitutional amendment only | Worker-side creator allocation — 5% of worker's post-commission payment |
+| `EMPLOYER_CREATOR_FEE_RATE` | `0.05` (5%) | Constitutional amendment only | Employer-side creator allocation — 5% of mission reward, staked in escrow |
 | `ACCEPTED_CURRENCIES` | `BTC, ETH, USDC, USDT` | Governance ballot | Accepted settlement currencies |
 | `VOLATILITY_TOPUP_THRESHOLD` | `0.20` (20%) | Governance ballot | Volatile-stake top-up trigger |
 | `ESCROW_HOLD_PERIOD` | `48 hours` | Governance ballot | Post-completion dispute window |

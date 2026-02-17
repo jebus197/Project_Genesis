@@ -107,7 +107,7 @@ The constitution was re-anchored after codifying creator provisions, founder leg
 | Transaction | [`eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896`](https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896) |
 
 Key additions to the constitution in this version:
-- Creator allocation (2%) — transparent, constitutional, visible in every per-transaction breakdown
+- Creator allocation (5% both-sides) — transparent, constitutional, visible in every per-transaction breakdown
 - Founder's Veto — G0-only, transparent, logged on-chain, auto-expires at G0→G1 phase transition
 - Dormancy and founder's legacy — 50-year clause with metrology-consensus time verification and supermajority-selected charitable recipients
 - PoC mode — platform marked as Proof of Concept until First Light
@@ -141,7 +141,7 @@ Every trust chain needs a first link. George Jackson designed the constitution, 
 
 ### Constitutional provisions anchored with this minting
 
-- Creator allocation (2%) — transparent, constitutional, visible in every breakdown
+- Creator allocation (5% both-sides) — transparent, constitutional, visible in every breakdown
 - Founder's Veto — G0-only, auto-expires at G1
 - Dormancy and founder's legacy — 50-year clause with metrology-consensus trigger and supermajority-selected charitable recipients
 - PoC mode — platform marked as Proof of Concept until First Light

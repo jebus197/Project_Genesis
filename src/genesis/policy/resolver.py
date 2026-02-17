@@ -636,6 +636,7 @@ class PolicyResolver:
             "commission_bootstrap_min_rate": Decimal(cp["commission_bootstrap_min_rate"]),
             "commission_reserve_maintenance_rate": Decimal(cp["commission_reserve_maintenance_rate"]),
             "creator_allocation_rate": Decimal(cp["creator_allocation_rate"]),
+            "employer_creator_fee_rate": Decimal(cp.get("employer_creator_fee_rate", "0")),
         }
 
     def founder_veto_active(self) -> bool:
