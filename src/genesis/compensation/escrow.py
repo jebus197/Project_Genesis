@@ -9,6 +9,7 @@ On successful completion, the escrow settles as:
     employer_creator_fee → creator (5% of mission_reward)
     commission → platform operations
     creator_allocation → creator (5% of worker's payment)
+    gcf_contribution → Genesis Common Fund (1% of mission_reward)
     worker_payout → worker
 
 On cancel/refund, the FULL escrow (including employer fee) is returned.
@@ -138,17 +139,19 @@ class EscrowManager:
                 f"Expected mission_reward ({commission.mission_reward}) + "
                 f"employer_creator_fee ({commission.employer_creator_fee})."
             )
-        # Worker-side invariant: commission + creator + worker = mission_reward
+        # Worker-side invariant: commission + creator + worker + gcf = mission_reward
         worker_side_total = (
             commission.commission_amount
             + commission.creator_allocation
             + commission.worker_payout
+            + commission.gcf_contribution
         )
         if worker_side_total != commission.mission_reward:
             raise ValueError(
                 f"Commission ({commission.commission_amount}) + creator allocation "
                 f"({commission.creator_allocation}) + worker payout "
-                f"({commission.worker_payout}) does not equal mission_reward "
+                f"({commission.worker_payout}) + GCF contribution "
+                f"({commission.gcf_contribution}) does not equal mission_reward "
                 f"({commission.mission_reward})"
             )
 

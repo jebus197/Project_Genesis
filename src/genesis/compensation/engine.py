@@ -20,7 +20,7 @@ Constitutional invariants:
 - Every computation produces a full published breakdown
 - Bootstrap mode applies BOOTSTRAP_MIN_RATE when < MIN_MISSIONS completed
 - Reserve fund is self-managing (gap contribution raises rate automatically)
-- commission + creator_allocation + worker_payout == mission_reward
+- commission + creator_allocation + worker_payout + gcf_contribution == mission_reward
 - total_escrow == mission_reward + employer_creator_fee
 """
 
@@ -164,7 +164,7 @@ class CommissionEngine:
         #   Returned in full on cancel/refund.
         #
         # To each party it reads as "5% creator allocation".
-        # Invariant: commission + creator_allocation + worker_payout == mission_reward
+        # Invariant: commission + creator_allocation + worker_payout + gcf_contribution == mission_reward
         # Invariant: total_escrow == mission_reward + employer_creator_fee
 
         creator_rate = params.get("creator_allocation_rate", Decimal("0"))
@@ -188,12 +188,34 @@ class CommissionEngine:
         else:
             employer_creator_fee = Decimal("0")
 
+        # --- Genesis Common Fund (GCF) contribution (constitutional) ---
+        #
+        # 1% of mission_reward, deducted from worker_payout AFTER commission
+        # and creator allocation. The GCF rate is entrenched — changing it
+        # requires supermajority + high participation + cooling-off +
+        # confirmation vote.
+        #
+        # Invariant: commission + creator + worker + gcf == mission_reward
+
+        gcf_rate = params.get("gcf_contribution_rate", Decimal("0"))
+        if gcf_rate > Decimal("0") and mission_reward > Decimal("0"):
+            gcf_contribution = (mission_reward * gcf_rate).quantize(
+                Decimal("0.01"), rounding=ROUND_HALF_UP,
+            )
+        else:
+            gcf_contribution = Decimal("0")
+
+        # Deduct GCF from worker payout
+        worker_payout = worker_payout - gcf_contribution
+
         # Build cost breakdown by category
         cost_breakdown = self._build_cost_breakdown(window_costs, reserve_contribution)
         if creator_amount > Decimal("0"):
             cost_breakdown["creator_allocation"] = creator_amount
         if employer_creator_fee > Decimal("0"):
             cost_breakdown["employer_creator_fee"] = employer_creator_fee
+        if gcf_contribution > Decimal("0"):
+            cost_breakdown["gcf_contribution"] = gcf_contribution
 
         return CommissionBreakdown(
             rate=rate,
@@ -209,6 +231,7 @@ class CommissionEngine:
             window_stats=window_stats,
             reserve_contribution=reserve_contribution,
             safety_margin=safety_margin,
+            gcf_contribution=gcf_contribution,
         )
 
     def _reserve_contribution(

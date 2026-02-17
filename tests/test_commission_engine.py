@@ -196,13 +196,18 @@ class TestRateComputation:
     def test_worker_payout_plus_deductions_equals_reward(
         self, engine: CommissionEngine
     ) -> None:
-        """Worker payout + commission + creator allocation = mission reward."""
+        """Worker payout + commission + creator allocation + gcf = mission reward."""
         ledger = OperationalLedger()
         _populate_ledger(ledger)
         result = engine.compute_commission(
             Decimal("500"), ledger, _healthy_reserve(), now=_now()
         )
-        total = result.worker_payout + result.commission_amount + result.creator_allocation
+        total = (
+            result.worker_payout
+            + result.commission_amount
+            + result.creator_allocation
+            + result.gcf_contribution
+        )
         assert total == result.mission_reward
 
 
@@ -420,7 +425,7 @@ class TestCostBreakdown:
         assert result_low.creator_allocation > result_high.creator_allocation
 
     def test_both_sides_invariants(self, engine: CommissionEngine) -> None:
-        """Commission + creator_allocation + worker_payout == mission_reward.
+        """Commission + creator_allocation + worker_payout + gcf == mission_reward.
         total_escrow == mission_reward + employer_creator_fee.
         """
         ledger = OperationalLedger()
@@ -428,8 +433,13 @@ class TestCostBreakdown:
         result = engine.compute_commission(
             Decimal("1000"), ledger, _healthy_reserve(), now=_now()
         )
-        # Worker-side invariant
-        worker_total = result.commission_amount + result.creator_allocation + result.worker_payout
+        # Worker-side invariant (updated for GCF)
+        worker_total = (
+            result.commission_amount
+            + result.creator_allocation
+            + result.worker_payout
+            + result.gcf_contribution
+        )
         assert worker_total == result.mission_reward
         # Escrow invariant
         assert result.total_escrow == result.mission_reward + result.employer_creator_fee

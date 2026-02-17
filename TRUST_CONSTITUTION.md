@@ -426,6 +426,33 @@ This allocation:
 
 The creator allocation exists because building and maintaining a governance platform is itself productive work. The allocation is transparent by design: every participant sees it in every breakdown, and both rates are anchored in the constitution alongside every other commission parameter.
 
+### Genesis Common Fund (GCF)
+
+The Genesis Common Fund is a constitutional 1% contribution on ALL gross transaction value (mission_reward). It is the only compulsory 'tax' in the system. It exists to benefit society through the funding of any activity that does not increase net human suffering.
+
+**Structure:**
+- **Rate:** 1% of mission_reward, deducted from worker_payout after commission and creator allocation.
+- **Activation:** Automatic at First Light. No human decision triggers it — it is a function of the system architecture.
+- **Distribution:** Trust-proportional but individually non-extractable. No per-actor balance query exists. The distributed ledger state IS the fund. No bank. No custodian.
+- **Updated invariant:** `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`
+
+**Total take rate (worker perspective):**
+- Minimum: 2% commission + 5% creator + 1% GCF = ~8% total deduction
+- Maximum: 10% commission + 5% creator + 1% GCF = ~16% total deduction
+- Comparison: freelancers on traditional platforms pay 10-20% platform fee, then 20-40% income tax, then national insurance. Genesis at 8-16% total is genuinely competitive.
+
+**Scope:** All meaningful areas of human activity — STEM, medical research, arts, sport, community improvement, infrastructure, clean water, vaccination, education, and any other activity that serves the common good. The only exclusion is any activity that increases the net pool of human suffering.
+
+**Founder legacy caveat:** The creator allocation, after the 50-year dormancy period (and then in perpetuity thereafter), remains fully pegged to STEM and medical research only.
+
+**Entrenched provision:** The GCF contribution rate is constitutionally entrenched. Changing it requires:
+1. Supermajority (80%) approval across all three chambers
+2. Minimum 50% participation of eligible voters
+3. 90-day cooling-off period
+4. Confirmation vote after the cooling-off period
+
+This is the highest amendment threshold in the constitution. It exists because the GCF rate should only change under extraordinary circumstances.
+
 ### Commission design tests
 
 1. Can the commission rate exceed `COMMISSION_CEILING`? If yes, reject design.
@@ -871,6 +898,7 @@ For R2 normative disputes:
 42. Can a mission listing go live without confirmed escrow? If yes, reject design.
 43. Can a Genesis-branded token be created? If yes, reject design.
 44. Can a work poster avoid legal compliance screening? If yes, reject design.
+45. Can the GCF contribution rate be changed without 4/5 supermajority + 50% participation + 90-day cooling-off + confirmation vote? If yes, reject design.
 
 ## Working interpretation for all future specs
 

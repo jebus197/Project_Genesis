@@ -96,6 +96,7 @@ from genesis.identity.voice_verifier import VoiceVerifier
 from genesis.identity.session import SessionManager, SessionState
 from genesis.identity.quorum_verifier import QuorumVerifier
 from genesis.trust.engine import TrustEngine
+from genesis.compensation.gcf import GCFTracker
 
 
 @dataclass(frozen=True)
@@ -192,6 +193,9 @@ class GenesisService:
             min_rate_floor=fl_cfg.get("min_rate_floor_per_day", 0.01),
         )
         self._first_light_achieved: bool = False
+
+        # Genesis Common Fund tracker — activates at First Light
+        self._gcf_tracker = GCFTracker()
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -4477,11 +4481,34 @@ class GenesisService:
         # 2. Disable PoC mode — First Light is irreversible
         self._resolver._policy.setdefault("poc_mode", {})["active"] = False
 
+        # 3. Activate Genesis Common Fund — constitutional, non-discretionary
+        now = datetime.now(timezone.utc)
+        if not self._gcf_tracker.is_active:
+            self._gcf_tracker.activate(now)
+            # Log the GCF activation event
+            if self._event_log is not None:
+                try:
+                    gcf_event = EventRecord.create(
+                        event_id=self._next_event_id(),
+                        event_kind=EventKind.GCF_ACTIVATED,
+                        actor_id="system",
+                        payload={
+                            "activated_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                            "gcf_contribution_rate": "0.01",
+                            "trigger": "first_light",
+                        },
+                    )
+                    self._epoch_service.record_mission_event(gcf_event.event_hash)
+                    self._event_log.append(gcf_event)
+                except (ValueError, OSError, RuntimeError):
+                    pass  # Best-effort for lifecycle events
+
         warning = self._safe_persist_post_audit()
         data: dict[str, Any] = {
             "first_light": True,
             "achieved_now": True,
             "poc_mode_disabled": True,
+            "gcf_activated": True,
             "human_count": estimate.current_humans,
             "sustainability_ratio": estimate.current_sustainability_ratio,
         }
@@ -4705,6 +4732,36 @@ class GenesisService:
             if not alloc_result.success:
                 return alloc_result
 
+        # Wire: record GCF contribution if active and non-zero
+        gcf_recorded = False
+        if (
+            self._gcf_tracker.is_active
+            and breakdown.gcf_contribution > Decimal("0")
+        ):
+            self._gcf_tracker.record_contribution(
+                amount=breakdown.gcf_contribution,
+                mission_id=mission_id,
+            )
+            gcf_recorded = True
+            # Log the GCF contribution event
+            if self._event_log is not None:
+                try:
+                    gcf_event = EventRecord.create(
+                        event_id=self._next_event_id(),
+                        event_kind=EventKind.GCF_CONTRIBUTION_RECORDED,
+                        actor_id="system",
+                        payload={
+                            "mission_id": mission_id,
+                            "gcf_contribution": str(breakdown.gcf_contribution),
+                            "gcf_balance": str(self._gcf_tracker.get_state().balance),
+                            "mission_reward": str(mission_reward),
+                        },
+                    )
+                    self._epoch_service.record_mission_event(gcf_event.event_hash)
+                    self._event_log.append(gcf_event)
+                except (ValueError, OSError, RuntimeError):
+                    pass  # Best-effort for audit trail
+
         data: dict[str, Any] = {
             "mission_id": mission_id,
             "commission_rate": str(breakdown.rate),
@@ -4715,6 +4772,8 @@ class GenesisService:
             "worker_payout": str(breakdown.worker_payout),
             "mission_reward": str(mission_reward),
             "total_escrow": str(breakdown.total_escrow),
+            "gcf_contribution": str(breakdown.gcf_contribution),
+            "gcf_recorded": gcf_recorded,
         }
         return ServiceResult(success=True, data=data)
 

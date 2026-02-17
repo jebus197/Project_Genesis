@@ -30,6 +30,7 @@ class CostCategory(str, enum.Enum):
     RESERVE_GAP = "reserve_gap"
     RESERVE_MAINTENANCE = "reserve_maintenance"
     CREATOR_ALLOCATION = "creator_allocation"
+    GCF_CONTRIBUTION = "gcf_contribution"
 
 
 class EscrowState(str, enum.Enum):
@@ -116,7 +117,7 @@ class CommissionBreakdown:
     - Worker-side: creator_allocation = worker_payout_before_creator × 5%
 
     Invariants:
-    - commission_amount + creator_allocation + worker_payout == mission_reward
+    - commission_amount + creator_allocation + worker_payout + gcf_contribution == mission_reward
     - total_escrow == mission_reward + employer_creator_fee
     - On cancel/refund: full escrow (including employer fee) returned
     """
@@ -133,6 +134,7 @@ class CommissionBreakdown:
     window_stats: WindowStats
     reserve_contribution: Decimal
     safety_margin: Decimal
+    gcf_contribution: Decimal = Decimal("0")
 
     @property
     def total_escrow(self) -> Decimal:

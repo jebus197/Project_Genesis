@@ -1,6 +1,6 @@
 {
-  "version": "0.3",
-  "updated_utc": "2026-02-14T01:00:00Z",
+  "version": "0.4",
+  "updated_utc": "2026-02-18T00:00:00Z",
   "constitutional_voting": {
     "w_H_const": 1.0,
     "w_M_const": 0.0
@@ -171,5 +171,15 @@
     },
     "calibration_min_history": 5,
     "calibration_window_size": 20
+  },
+  "entrenched_provisions": {
+    "GCF_CONTRIBUTION_RATE": "0.01",
+    "TRUST_FLOOR_H_POSITIVE": true,
+    "NO_BUY_TRUST": true,
+    "MACHINE_VOTING_EXCLUSION": true,
+    "entrenched_amendment_threshold": 0.80,
+    "entrenched_participation_minimum": 0.50,
+    "entrenched_cooling_off_days": 90,
+    "entrenched_confirmation_vote_required": true
   }
 }

@@ -82,9 +82,9 @@ class TestCreatorAllocationPolicy:
         assert isinstance(rate, Decimal)
         assert rate == Decimal("0.05")
 
-    def test_params_count_is_eleven(self, resolver) -> None:
+    def test_params_count_is_twelve(self, resolver) -> None:
         params = resolver.commission_params()
-        assert len(params) == 11
+        assert len(params) == 12
 
 
 class TestCreatorAllocationInBreakdown:
@@ -150,8 +150,13 @@ class TestCreatorAllocationInBreakdown:
         # Employer-side creator fee = 5% of mission_reward = 25.00
         assert "employer_creator_fee" in breakdown.cost_breakdown
         assert breakdown.employer_creator_fee == Decimal("25.00")
-        # Worker-side invariant: commission + creator + worker = reward
-        total = breakdown.commission_amount + breakdown.creator_allocation + breakdown.worker_payout
+        # Worker-side invariant: commission + creator + worker + gcf = reward
+        total = (
+            breakdown.commission_amount
+            + breakdown.creator_allocation
+            + breakdown.worker_payout
+            + breakdown.gcf_contribution
+        )
         assert total == breakdown.mission_reward
         # Escrow invariant: total_escrow = mission_reward + employer_fee
         assert breakdown.total_escrow == breakdown.mission_reward + breakdown.employer_creator_fee

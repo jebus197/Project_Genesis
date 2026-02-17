@@ -669,7 +669,7 @@ class PolicyResolver:
     def commission_params(self) -> dict[str, Any]:
         """Return all commission parameters with Decimal values.
 
-        Returns a dict with all 10 constitutional commission parameters.
+        Returns a dict with all 11 constitutional commission parameters.
         Numeric string values are converted to Decimal for exact arithmetic.
 
         Raises ValueError if no commission config is loaded.
@@ -690,6 +690,7 @@ class PolicyResolver:
             "commission_reserve_maintenance_rate": Decimal(cp["commission_reserve_maintenance_rate"]),
             "creator_allocation_rate": Decimal(cp["creator_allocation_rate"]),
             "employer_creator_fee_rate": Decimal(cp.get("employer_creator_fee_rate", "0")),
+            "gcf_contribution_rate": Decimal(cp.get("gcf_contribution_rate", "0")),
         }
 
     def founder_veto_active(self) -> bool:

@@ -95,6 +95,9 @@ class EventKind(str, enum.Enum):
     QUORUM_ABUSE_CONFIRMED = "quorum_abuse_confirmed"
     QUORUM_NUKE_APPEAL_FILED = "quorum_nuke_appeal_filed"
     QUORUM_NUKE_APPEAL_RESOLVED = "quorum_nuke_appeal_resolved"
+    # Genesis Common Fund (GCF) events
+    GCF_ACTIVATED = "gcf_activated"
+    GCF_CONTRIBUTION_RECORDED = "gcf_contribution_recorded"
 
 
 @dataclass(frozen=True)

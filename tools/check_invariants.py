@@ -484,6 +484,76 @@ def check() -> int:
                 f"got {narmt}"
             )
 
+    # --- Entrenched provisions invariants (Phase E-1: GCF) ---
+    entrenched = params.get("entrenched_provisions", {})
+    if not entrenched:
+        errors.append("entrenched_provisions section must exist in constitutional_params.json")
+    else:
+        # GCF contribution rate must exist and be in (0, 0.05]
+        gcf_rate_str = entrenched.get("GCF_CONTRIBUTION_RATE")
+        if gcf_rate_str is None:
+            errors.append("entrenched_provisions.GCF_CONTRIBUTION_RATE must be defined")
+        else:
+            gcf_rate = float(gcf_rate_str)
+            if not (0 < gcf_rate <= 0.05):
+                errors.append(
+                    f"entrenched_provisions.GCF_CONTRIBUTION_RATE must be in (0, 0.05], got {gcf_rate}"
+                )
+
+        # Amendment threshold must be >= 0.80 (supermajority)
+        amend_thresh = entrenched.get("entrenched_amendment_threshold", 0)
+        if amend_thresh < 0.80:
+            errors.append(
+                f"entrenched_provisions.entrenched_amendment_threshold must be >= 0.80, got {amend_thresh}"
+            )
+
+        # Participation minimum must be >= 0.50
+        part_min = entrenched.get("entrenched_participation_minimum", 0)
+        if part_min < 0.50:
+            errors.append(
+                f"entrenched_provisions.entrenched_participation_minimum must be >= 0.50, got {part_min}"
+            )
+
+        # Cooling-off must be >= 90 days
+        cool_off = entrenched.get("entrenched_cooling_off_days", 0)
+        if cool_off < 90:
+            errors.append(
+                f"entrenched_provisions.entrenched_cooling_off_days must be >= 90, got {cool_off}"
+            )
+
+        # Confirmation vote must be required
+        if not entrenched.get("entrenched_confirmation_vote_required"):
+            errors.append(
+                "entrenched_provisions.entrenched_confirmation_vote_required must be true"
+            )
+
+        # Core entrenched provisions must exist
+        if not entrenched.get("TRUST_FLOOR_H_POSITIVE"):
+            errors.append("entrenched_provisions.TRUST_FLOOR_H_POSITIVE must be true")
+        if not entrenched.get("NO_BUY_TRUST"):
+            errors.append("entrenched_provisions.NO_BUY_TRUST must be true")
+        if not entrenched.get("MACHINE_VOTING_EXCLUSION"):
+            errors.append("entrenched_provisions.MACHINE_VOTING_EXCLUSION must be true")
+
+    # --- GCF rate in commission policy invariant ---
+    commission_path = ROOT / "config" / "commission_policy.json"
+    if commission_path.exists():
+        commission = load_json(commission_path)
+        gcf_cp_rate = commission.get("gcf_contribution_rate")
+        if gcf_cp_rate is not None:
+            gcf_cp_val = float(gcf_cp_rate)
+            if not (0 < gcf_cp_val <= 0.05):
+                errors.append(
+                    f"commission_policy.gcf_contribution_rate must be in (0, 0.05], got {gcf_cp_val}"
+                )
+            # Cross-check: commission policy rate must match entrenched rate
+            if entrenched and gcf_rate_str is not None:
+                if float(gcf_cp_rate) != float(gcf_rate_str):
+                    errors.append(
+                        f"commission_policy.gcf_contribution_rate ({gcf_cp_rate}) must match "
+                        f"entrenched_provisions.GCF_CONTRIBUTION_RATE ({gcf_rate_str})"
+                    )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:
