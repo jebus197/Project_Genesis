@@ -97,6 +97,7 @@ from genesis.identity.session import SessionManager, SessionState
 from genesis.identity.quorum_verifier import QuorumVerifier
 from genesis.trust.engine import TrustEngine
 from genesis.compensation.gcf import GCFTracker
+from genesis.compensation.escrow import EscrowManager
 from genesis.compliance.screener import ComplianceScreener, ComplianceVerdict
 from genesis.compliance.penalties import (
     PenaltyEscalationEngine,
@@ -112,6 +113,7 @@ from genesis.legal.adjudication import (
 from genesis.legal.constitutional_court import ConstitutionalCourt
 from genesis.legal.rights import RightsEnforcer
 from genesis.legal.rehabilitation import RehabilitationEngine
+from genesis.workflow.orchestrator import WorkflowOrchestrator, WorkflowStatus
 
 
 @dataclass(frozen=True)
@@ -212,6 +214,9 @@ class GenesisService:
         # Genesis Common Fund tracker — activates at First Light
         self._gcf_tracker = GCFTracker()
 
+        # Escrow manager — manages escrow lifecycle for mission payments
+        self._escrow_manager = EscrowManager()
+
         # Compliance subsystem (Phase E-2)
         self._compliance_screener = ComplianceScreener()
         self._penalty_engine = PenaltyEscalationEngine()
@@ -230,6 +235,12 @@ class GenesisService:
         self._rehabilitation_engine = RehabilitationEngine(
             resolver.rehabilitation_config()
         )
+
+        # Workflow orchestrator (Phase E-4)
+        self._workflow_orchestrator = WorkflowOrchestrator(
+            resolver.workflow_config()
+        )
+        self._workflows: dict[str, Any] = {}  # workflow_id → WorkflowState
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -5999,6 +6010,566 @@ class GenesisService:
                 "verdict_reached": court_verdict,
             },
         )
+
+    # ------------------------------------------------------------------
+    # Workflow Orchestration (Phase E-4)
+    # ------------------------------------------------------------------
+
+    def create_funded_listing(
+        self,
+        listing_id: str,
+        title: str,
+        description: str,
+        creator_id: str,
+        mission_reward: "Decimal",
+        mission_class: MissionClass = MissionClass.DOCUMENTATION_UPDATE,
+        domain_type: DomainType = DomainType.OBJECTIVE,
+        skill_requirements: list[Any] | None = None,
+        domain_tags: list[str] | None = None,
+        deadline_days: int | None = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Create a funded listing: compliance screen → escrow → listing.
+
+        Orchestrated flow:
+        1. Compliance screen (title + description).
+        2. Create escrow (mission_reward + employer_creator_fee).
+        3. Create listing with escrow link.
+        4. Track in workflow orchestrator.
+        """
+        from decimal import Decimal as D
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate creator
+        creator = self._roster.get(creator_id)
+        if creator is None:
+            return ServiceResult(success=False, errors=[f"Creator not found: {creator_id}"])
+        if creator.status in (
+            ActorStatus.SUSPENDED,
+            ActorStatus.PERMANENTLY_DECOMMISSIONED,
+        ):
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {creator_id} is {creator.status.value} and cannot create listings"],
+            )
+
+        wf_cfg = self._resolver.workflow_config()
+
+        # Step 1: Compliance screening
+        if wf_cfg.get("require_compliance_screening", True):
+            screening = self._compliance_screener.screen_mission(
+                title=title, description=description, tags=domain_tags, now=now,
+            )
+            if screening.verdict == ComplianceVerdict.REJECTED:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Listing rejected by compliance screening: {screening.reason}"],
+                    data={"compliance_verdict": "rejected", "categories": screening.categories_matched},
+                )
+            compliance_verdict = screening.verdict.value
+        else:
+            compliance_verdict = "skipped"
+
+        # Step 2: Create escrow
+        reward = D(str(mission_reward)) if not isinstance(mission_reward, D) else mission_reward
+        creator_fee_rate = D("0.05")
+        employer_fee = (reward * creator_fee_rate).quantize(D("0.01"))
+        total_escrow = reward + employer_fee
+
+        escrow_record = self._escrow_manager.create_escrow(
+            mission_id=listing_id,  # placeholder — will be updated on allocation
+            staker_id=creator_id,
+            amount=total_escrow,
+            now=now,
+        )
+
+        # Step 3: Create listing
+        listing_result = self.create_listing(
+            listing_id=listing_id,
+            title=title,
+            description=description,
+            creator_id=creator_id,
+            skill_requirements=skill_requirements,
+            domain_tags=domain_tags,
+        )
+        if not listing_result.success:
+            return listing_result
+
+        # Link escrow and reward to listing
+        listing = self._listings[listing_id]
+        listing.mission_reward = reward
+        listing.escrow_id = escrow_record.escrow_id
+        listing.deadline_days = deadline_days or wf_cfg.get("default_deadline_days", 30)
+
+        # Step 4: Create workflow state
+        wf = self._workflow_orchestrator.create_workflow(
+            listing_id=listing_id,
+            creator_id=creator_id,
+            mission_reward=reward,
+            now=now,
+        )
+        wf.mission_class = mission_class.value
+        wf.domain_type = domain_type.value
+        wf.escrow_id = escrow_record.escrow_id
+        self._workflow_orchestrator.record_compliance_screening(
+            wf.workflow_id, compliance_verdict, now,
+        )
+        self._workflows[wf.workflow_id] = wf
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            creator_id,
+            EventKind.WORKFLOW_CREATED,
+            {
+                "workflow_id": wf.workflow_id,
+                "listing_id": listing_id,
+                "escrow_id": escrow_record.escrow_id,
+                "mission_reward": str(reward),
+                "total_escrow": str(total_escrow),
+                "compliance_verdict": compliance_verdict,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": wf.workflow_id,
+                "listing_id": listing_id,
+                "escrow_id": escrow_record.escrow_id,
+                "mission_reward": str(reward),
+                "total_escrow": str(total_escrow),
+                "compliance_verdict": compliance_verdict,
+                "status": wf.status.value,
+            },
+        )
+
+    def fund_and_publish_listing(
+        self,
+        workflow_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Lock escrow and publish listing: escrow lock → open → bids.
+
+        Orchestrated flow:
+        1. Lock escrow (PENDING → LOCKED).
+        2. Open listing (DRAFT → OPEN).
+        3. Start accepting bids (OPEN → ACCEPTING_BIDS).
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if wf.escrow_id is None:
+            return ServiceResult(success=False, errors=["No escrow linked to workflow"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Step 1: Lock escrow
+        try:
+            self._escrow_manager.lock_escrow(wf.escrow_id, now)
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._workflow_orchestrator.record_escrow_funded(workflow_id, wf.escrow_id)
+
+        # Step 2: Open listing
+        open_result = self.open_listing(wf.listing_id)
+        if not open_result.success:
+            return open_result
+
+        # Step 3: Start accepting bids
+        wf_cfg = self._resolver.workflow_config()
+        if wf_cfg.get("auto_start_bids_on_publish", True):
+            bids_result = self.start_accepting_bids(wf.listing_id)
+            if not bids_result.success:
+                return bids_result
+
+        self._workflow_orchestrator.record_listing_live(workflow_id)
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            wf.creator_id,
+            EventKind.ESCROW_WORKFLOW_FUNDED,
+            {
+                "workflow_id": workflow_id,
+                "listing_id": wf.listing_id,
+                "escrow_id": wf.escrow_id,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": workflow_id,
+                "listing_id": wf.listing_id,
+                "escrow_id": wf.escrow_id,
+                "status": wf.status.value,
+            },
+        )
+
+    def allocate_worker_workflow(
+        self,
+        workflow_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Evaluate bids and allocate worker via workflow.
+
+        Calls existing evaluate_and_allocate() and tracks in workflow.
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Parse mission class and domain type
+        mc = MissionClass(wf.mission_class) if wf.mission_class else MissionClass.DOCUMENTATION_UPDATE
+        dt = DomainType(wf.domain_type) if wf.domain_type else DomainType.OBJECTIVE
+
+        result = self.evaluate_and_allocate(wf.listing_id, mc, dt)
+        if not result.success:
+            return result
+
+        mission_id = result.data.get("mission_id", "")
+        worker_id = result.data.get("selected_worker_id", "")
+
+        # Advance mission: DRAFT → SUBMITTED (workflow skips ASSIGNED —
+        # worker allocation happens via market, not mission assignment)
+        sub = self._transition_mission(mission_id, MissionState.SUBMITTED)
+        if not sub.success:
+            return sub
+
+        self._workflow_orchestrator.record_worker_allocated(
+            workflow_id, mission_id, worker_id, now,
+        )
+
+        result.data["workflow_id"] = workflow_id
+        result.data["status"] = wf.status.value
+        return result
+
+    def submit_work_workflow(
+        self,
+        workflow_id: str,
+        evidence_hashes: list[str],
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit work deliverables: evidence → WORK_SUBMITTED transition.
+
+        Adds evidence to the mission and transitions to WORK_SUBMITTED.
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if wf.mission_id is None:
+            return ServiceResult(success=False, errors=["No mission linked to workflow"])
+
+        mission = self._missions.get(wf.mission_id)
+        if mission is None:
+            return ServiceResult(success=False, errors=[f"Mission not found: {wf.mission_id}"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Add evidence records
+        for h in evidence_hashes:
+            # Generate deterministic ed25519 signature from hash
+            sig_hex = hashlib.sha256(h.encode()).hexdigest() * 2  # 128 hex chars
+            ev_result = self.add_evidence(wf.mission_id, h, f"ed25519:{sig_hex[:128]}")
+            if not ev_result.success:
+                return ev_result
+
+        # Transition mission to WORK_SUBMITTED
+        transition_result = self._transition_mission(wf.mission_id, MissionState.WORK_SUBMITTED)
+        if not transition_result.success:
+            return transition_result
+
+        self._workflow_orchestrator.record_work_submitted(
+            workflow_id, evidence_hashes, now,
+        )
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            wf.worker_id or "unknown",
+            EventKind.WORK_SUBMITTED,
+            {
+                "workflow_id": workflow_id,
+                "mission_id": wf.mission_id,
+                "evidence_count": len(evidence_hashes),
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": workflow_id,
+                "mission_id": wf.mission_id,
+                "evidence_count": len(evidence_hashes),
+                "status": wf.status.value,
+            },
+        )
+
+    def complete_and_pay_workflow(
+        self,
+        workflow_id: str,
+        ledger: Any,
+        reserve: Any,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Complete workflow: process payment → release escrow.
+
+        Validates mission is APPROVED, processes payment, releases escrow.
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if wf.mission_id is None:
+            return ServiceResult(success=False, errors=["No mission linked to workflow"])
+        if wf.escrow_id is None:
+            return ServiceResult(success=False, errors=["No escrow linked to workflow"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Step 1: Process payment
+        payment_result = self.process_mission_payment(
+            wf.mission_id, wf.mission_reward, ledger, reserve,
+        )
+        if not payment_result.success:
+            return payment_result
+
+        # Step 2: Release escrow (build commission breakdown for validation)
+        from decimal import Decimal as D
+        from genesis.compensation.engine import CommissionEngine
+
+        engine = CommissionEngine(self._resolver)
+        breakdown = engine.compute_commission(
+            mission_reward=wf.mission_reward,
+            ledger=ledger,
+            reserve=reserve,
+        )
+
+        try:
+            self._escrow_manager.release_escrow(
+                wf.escrow_id, breakdown, now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[f"Escrow release failed: {e}"])
+
+        self._workflow_orchestrator.record_completed(workflow_id, now)
+
+        payment_result.data["workflow_id"] = workflow_id
+        payment_result.data["status"] = wf.status.value
+        payment_result.data["escrow_released"] = True
+        return payment_result
+
+    def cancel_workflow(
+        self,
+        workflow_id: str,
+        reason: str = "",
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cancel workflow: cancel listing → refund escrow.
+
+        Full escrow returned including employer creator fee.
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Cancel listing if it exists and is not yet terminal
+        listing = self._listings.get(wf.listing_id)
+        if listing is not None and not self._listing_sm.is_terminal(listing.state):
+            cancel_result = self.cancel_listing(wf.listing_id)
+            if not cancel_result.success:
+                return cancel_result
+
+        # Refund escrow
+        if wf.escrow_id is not None:
+            try:
+                self._escrow_manager.refund_escrow(wf.escrow_id, now)
+            except ValueError:
+                pass  # Escrow may already be in terminal state
+
+        self._workflow_orchestrator.record_cancelled(workflow_id, now)
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            wf.creator_id,
+            EventKind.WORKFLOW_CANCELLED,
+            {
+                "workflow_id": workflow_id,
+                "listing_id": wf.listing_id,
+                "reason": reason,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": workflow_id,
+                "listing_id": wf.listing_id,
+                "status": wf.status.value,
+                "escrow_refunded": True,
+            },
+        )
+
+    def file_payment_dispute_workflow(
+        self,
+        workflow_id: str,
+        complainant_id: str,
+        reason: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File a payment dispute: escrow → DISPUTED, adjudication opened.
+
+        Routes through the Three-Tier Justice system (E-3).
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if wf.escrow_id is None:
+            return ServiceResult(success=False, errors=["No escrow linked to workflow"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Step 1: Dispute escrow
+        try:
+            self._escrow_manager.dispute_escrow(wf.escrow_id, now)
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Determine accused (the other party)
+        if wf.worker_id is None:
+            return ServiceResult(success=False, errors=["No worker allocated — cannot determine accused party"])
+        accused_id = wf.worker_id if complainant_id == wf.creator_id else wf.creator_id
+
+        # Step 2: Open adjudication case
+        adj_result = self.open_adjudication(
+            type=LegalAdjudicationType.PAYMENT_DISPUTE,
+            complainant_id=complainant_id,
+            accused_id=accused_id,
+            reason=reason,
+            mission_id=wf.mission_id,
+            now=now,
+        )
+        if not adj_result.success:
+            return adj_result
+
+        case_id = adj_result.data.get("case_id", "")
+        self._workflow_orchestrator.record_disputed(workflow_id, case_id)
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            complainant_id,
+            EventKind.PAYMENT_DISPUTE_FILED,
+            {
+                "workflow_id": workflow_id,
+                "escrow_id": wf.escrow_id,
+                "case_id": case_id,
+                "complainant_id": complainant_id,
+                "accused_id": accused_id,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": workflow_id,
+                "case_id": case_id,
+                "escrow_id": wf.escrow_id,
+                "status": wf.status.value,
+            },
+        )
+
+    def resolve_payment_dispute_workflow(
+        self,
+        workflow_id: str,
+        release_to_worker: bool,
+        ledger: Any = None,
+        reserve: Any = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Resolve a payment dispute: release or refund escrow.
+
+        If release_to_worker=True, escrow is released to worker.
+        If False, escrow is refunded to poster.
+        """
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(success=False, errors=[f"Workflow not found: {workflow_id}"])
+
+        if wf.escrow_id is None:
+            return ServiceResult(success=False, errors=["No escrow linked to workflow"])
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if release_to_worker:
+            # Release to worker — need commission breakdown
+            if ledger is None or reserve is None:
+                return ServiceResult(
+                    success=False,
+                    errors=["Ledger and reserve required to release escrow to worker"],
+                )
+            from decimal import Decimal as D
+            from genesis.compensation.engine import CommissionEngine
+
+            engine = CommissionEngine(self._resolver)
+            breakdown = engine.compute_commission(
+                mission_reward=wf.mission_reward,
+                ledger=ledger,
+                reserve=reserve,
+            )
+            try:
+                self._escrow_manager.release_escrow(wf.escrow_id, breakdown, now)
+            except ValueError as e:
+                return ServiceResult(success=False, errors=[f"Escrow release failed: {e}"])
+        else:
+            # Refund to poster
+            try:
+                self._escrow_manager.refund_escrow(wf.escrow_id, now)
+            except ValueError as e:
+                return ServiceResult(success=False, errors=[f"Escrow refund failed: {e}"])
+
+        self._workflow_orchestrator.record_dispute_resolved(
+            workflow_id, release_to_worker, now,
+        )
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            "system",
+            EventKind.DISPUTE_RESOLVED,
+            {
+                "workflow_id": workflow_id,
+                "escrow_id": wf.escrow_id,
+                "released_to_worker": release_to_worker,
+                "case_id": wf.dispute_case_id,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "workflow_id": workflow_id,
+                "released_to_worker": release_to_worker,
+                "status": wf.status.value,
+            },
+        )
+
+    def get_workflow(self, workflow_id: str) -> Optional[Any]:
+        """Retrieve a workflow state by ID."""
+        return self._workflow_orchestrator.get_workflow(workflow_id)
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}

@@ -512,6 +512,25 @@ Genesis operates a codified three-tier justice system. Every adjudication follow
 49. Can a Constitutional Court decision be reached without 5/7 supermajority? If yes, reject design.
 50. Can an appeal panel include members from the original panel? If yes, reject design.
 
+### Workflow Orchestration
+
+Genesis workflow orchestration bridges the four independent subsystems (market, mission, escrow, compliance) into a coherent end-to-end lifecycle. The orchestrator is a coordination layer — it does not replace any subsystem but wires them together with structural guarantees.
+
+**Escrow-first principle:** No listing goes live without escrowed funds being locked. The full escrow amount (mission_reward + employer_creator_fee) must be staked and locked before the listing is visible to workers. This eliminates "work done, never paid" by structural design.
+
+**Compliance gate:** All listings are compliance-screened before publication. Rejected listings are blocked immediately. Flagged listings are allowed but marked for human review. Screening cannot be bypassed.
+
+**Work submission ceremony:** Workers must submit evidence (deliverables with hashes) before their work can enter review. The WORK_SUBMITTED state ensures there is a verifiable submission record between assignment and review. The existing direct path (ASSIGNED → IN_REVIEW) is preserved for backward compatibility.
+
+**Dispute→adjudication bridge:** Payment disputes automatically create an adjudication case (PAYMENT_DISPUTE type) in the Three-Tier Justice system and move escrow to DISPUTED state. Resolution routes through standard adjudication panels with all constitutional rights preserved.
+
+**Cancellation→refund:** Cancellation at any pre-terminal stage returns the full escrow (including employer creator fee) to the poster. No funds are retained on cancellation.
+
+**Workflow orchestration design tests:**
+51. Can a listing go live without escrow funds being locked? If yes, reject design.
+52. Can a payment dispute be filed without an adjudication case being created? If yes, reject design.
+53. Can work be approved and paid without evidence being submitted? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

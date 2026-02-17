@@ -116,6 +116,13 @@ class EventKind(str, enum.Enum):
     CONSTITUTIONAL_COURT_OPENED = "constitutional_court_opened"
     CONSTITUTIONAL_COURT_DECIDED = "constitutional_court_decided"
     REHABILITATION_STARTED = "rehabilitation_started"
+    # Workflow orchestration events (Phase E-4)
+    WORKFLOW_CREATED = "workflow_created"
+    ESCROW_WORKFLOW_FUNDED = "escrow_workflow_funded"
+    WORK_SUBMITTED = "work_submitted"
+    WORKFLOW_CANCELLED = "workflow_cancelled"
+    PAYMENT_DISPUTE_FILED = "payment_dispute_filed"
+    DISPUTE_RESOLVED = "dispute_resolved"
 
 
 @dataclass(frozen=True)

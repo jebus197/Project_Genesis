@@ -194,6 +194,12 @@
     "max_restoration_score": 0.30,
     "rehab_window_days": 180
   },
+  "workflow": {
+    "default_deadline_days": 30,
+    "require_compliance_screening": true,
+    "require_escrow_before_publish": true,
+    "auto_start_bids_on_publish": true
+  },
   "poc_mode": {
     "active": true,
     "label": "Proof of Concept",

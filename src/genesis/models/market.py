@@ -13,6 +13,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from datetime import datetime
+from decimal import Decimal
 from typing import Any, Optional
 
 from genesis.models.skill import SkillRequirement
@@ -55,6 +56,10 @@ class MarketListing:
     allocated_utc: Optional[datetime] = None
     allocated_worker_id: Optional[str] = None
     allocated_mission_id: Optional[str] = None
+    # Workflow integration — escrow and deadline
+    mission_reward: Optional[Decimal] = None
+    escrow_id: Optional[str] = None
+    deadline_days: Optional[int] = None
     # Optional metadata for search and filtering
     domain_tags: list[str] = field(default_factory=list)
     preferences: dict[str, Any] = field(default_factory=dict)

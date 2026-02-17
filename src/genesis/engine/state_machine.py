@@ -19,6 +19,9 @@ _TRANSITIONS: set[tuple[MissionState, MissionState]] = {
     (MissionState.DRAFT, MissionState.SUBMITTED),
     (MissionState.SUBMITTED, MissionState.ASSIGNED),
     (MissionState.ASSIGNED, MissionState.IN_REVIEW),
+    (MissionState.SUBMITTED, MissionState.WORK_SUBMITTED),
+    (MissionState.ASSIGNED, MissionState.WORK_SUBMITTED),
+    (MissionState.WORK_SUBMITTED, MissionState.IN_REVIEW),
     (MissionState.IN_REVIEW, MissionState.REVIEW_COMPLETE),
     (MissionState.REVIEW_COMPLETE, MissionState.HUMAN_GATE_PENDING),
     (MissionState.REVIEW_COMPLETE, MissionState.APPROVED),
@@ -29,6 +32,7 @@ _TRANSITIONS: set[tuple[MissionState, MissionState]] = {
     (MissionState.DRAFT, MissionState.CANCELLED),
     (MissionState.SUBMITTED, MissionState.CANCELLED),
     (MissionState.ASSIGNED, MissionState.CANCELLED),
+    (MissionState.WORK_SUBMITTED, MissionState.CANCELLED),
     (MissionState.IN_REVIEW, MissionState.CANCELLED),
 }
 
@@ -70,6 +74,9 @@ class MissionStateMachine:
         if target == MissionState.SUBMITTED:
             errors.extend(self._validate_submission(mission))
 
+        elif target == MissionState.WORK_SUBMITTED:
+            errors.extend(self._validate_work_submitted(mission))
+
         elif target == MissionState.ASSIGNED:
             errors.extend(self._validate_assignment(mission, policy))
 
@@ -93,6 +100,13 @@ class MissionStateMachine:
             errors.append(f"{mission.mission_id}: missing mission_title")
         if not mission.domain_type:
             errors.append(f"{mission.mission_id}: missing domain_type")
+        return errors
+
+    def _validate_work_submitted(self, mission: Mission) -> list[str]:
+        """Validate work submission — must have at least one evidence record."""
+        errors: list[str] = []
+        if not mission.evidence:
+            errors.append(f"{mission.mission_id}: no evidence records for work submission")
         return errors
 
     def _validate_assignment(self, mission: Mission, policy: TierPolicy) -> list[str]:

@@ -754,6 +754,21 @@ class PolicyResolver:
         config = self._policy.get("rehabilitation", {})
         return {**defaults, **config}
 
+    def workflow_config(self) -> dict[str, Any]:
+        """Return workflow orchestration configuration.
+
+        Keys: default_deadline_days, require_compliance_screening,
+              require_escrow_before_publish, auto_start_bids_on_publish.
+        """
+        defaults = {
+            "default_deadline_days": 30,
+            "require_compliance_screening": True,
+            "require_escrow_before_publish": True,
+            "auto_start_bids_on_publish": True,
+        }
+        config = self._policy.get("workflow", {})
+        return {**defaults, **config}
+
     def poc_mode(self) -> dict[str, Any]:
         """Return PoC mode configuration.
 

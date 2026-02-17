@@ -665,6 +665,23 @@ def check() -> int:
                 f"constitutional_court.min_justice_trust must be >= 0.70, got {court_mjt}"
             )
 
+    # --- Workflow orchestration invariants (E-4) ---
+    wf = policy.get("workflow", {})
+    if wf:
+        if not wf.get("require_escrow_before_publish", False):
+            errors.append("workflow.require_escrow_before_publish must be true")
+        if not wf.get("require_compliance_screening", False):
+            errors.append("workflow.require_compliance_screening must be true")
+        wf_deadline = wf.get("default_deadline_days", 0)
+        if wf_deadline < 1:
+            errors.append(
+                f"workflow.default_deadline_days must be >= 1, got {wf_deadline}"
+            )
+        if wf_deadline > 365:
+            errors.append(
+                f"workflow.default_deadline_days must be <= 365, got {wf_deadline}"
+            )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

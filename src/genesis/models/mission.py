@@ -45,6 +45,7 @@ class MissionState(str, enum.Enum):
     DRAFT = "draft"
     SUBMITTED = "submitted"
     ASSIGNED = "assigned"
+    WORK_SUBMITTED = "work_submitted"
     IN_REVIEW = "in_review"
     REVIEW_COMPLETE = "review_complete"
     HUMAN_GATE_PENDING = "human_gate_pending"
