@@ -854,3 +854,56 @@ class StateStore:
             epoch.get("previous_hash", GENESIS_PREVIOUS_HASH),
             epoch.get("committed_count", 0),
         )
+
+    # ------------------------------------------------------------------
+    # Lifecycle state persistence
+    # ------------------------------------------------------------------
+
+    def save_lifecycle_state(
+        self,
+        first_light_achieved: bool,
+        founder_id: Optional[str],
+        founder_last_action_utc: Optional[datetime],
+    ) -> None:
+        """Persist platform lifecycle metadata.
+
+        This ensures First Light (irreversible) and founder dormancy
+        tracking survive service restarts. Without this, duplicate
+        FIRST_LIGHT events could fire and the dormancy counter would
+        reset.
+        """
+        lifecycle: dict[str, Any] = {
+            "first_light_achieved": first_light_achieved,
+            "saved_utc": datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        }
+        if founder_id is not None:
+            lifecycle["founder_id"] = founder_id
+        if founder_last_action_utc is not None:
+            lifecycle["founder_last_action_utc"] = (
+                founder_last_action_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+            )
+        self._state["lifecycle"] = lifecycle
+        self._save()
+
+    def load_lifecycle_state(
+        self,
+    ) -> dict[str, Any]:
+        """Load platform lifecycle metadata.
+
+        Returns dict with keys:
+            first_light_achieved (bool)
+            founder_id (str or None)
+            founder_last_action_utc (datetime or None)
+        """
+        data = self._state.get("lifecycle", {})
+        result: dict[str, Any] = {
+            "first_light_achieved": data.get("first_light_achieved", False),
+            "founder_id": data.get("founder_id"),
+            "founder_last_action_utc": None,
+        }
+        ts = data.get("founder_last_action_utc")
+        if ts is not None:
+            result["founder_last_action_utc"] = datetime.strptime(
+                ts, "%Y-%m-%dT%H:%M:%SZ",
+            ).replace(tzinfo=timezone.utc)
+        return result

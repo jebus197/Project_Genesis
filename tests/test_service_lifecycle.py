@@ -12,6 +12,7 @@ from pathlib import Path
 
 from genesis.models.trust import ActorKind
 from genesis.persistence.event_log import EventLog, EventKind
+from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
 from genesis.service import GenesisService
 
@@ -274,3 +275,257 @@ class TestFounderDormancy:
         status = service.status()
         assert status["founder"]["designated"] is True
         assert status["founder"]["founder_id"] == "george"
+
+
+# ------------------------------------------------------------------
+# Restart regression (P1: lifecycle state persistence)
+# ------------------------------------------------------------------
+
+class TestLifecyclePersistence:
+    """Prove that lifecycle state survives service restarts.
+
+    CX P1 finding: without persistence, First Light would fire
+    duplicate events on every restart and the dormancy counter
+    would reset to None.
+    """
+
+    def test_first_light_survives_restart(self, tmp_path: Path) -> None:
+        """First Light fires once, persists, and is suppressed after restart."""
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store = StateStore(store_path)
+        log = EventLog(log_path)
+
+        svc1 = GenesisService(resolver, event_log=log, state_store=store)
+        svc1.open_epoch("epoch-1")
+
+        # Register humans and trigger First Light
+        for i in range(5):
+            svc1.register_actor(
+                actor_id=f"h-{i}", actor_kind=ActorKind.HUMAN,
+                region="EU", organization="Org",
+            )
+        r1 = svc1.check_first_light(
+            monthly_revenue=Decimal("2000"),
+            monthly_costs=Decimal("1000"),
+            reserve_balance=Decimal("5000"),
+        )
+        assert r1.data["first_light"] is True
+        assert r1.data["achieved_now"] is True
+
+        # Simulate restart: fresh StateStore, EventLog, GenesisService
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+        svc2.open_epoch("epoch-2")
+
+        # First Light should be already-achieved (no new event)
+        r2 = svc2.check_first_light(
+            monthly_revenue=Decimal("3000"),
+            monthly_costs=Decimal("1000"),
+            reserve_balance=Decimal("10000"),
+        )
+        assert r2.data["first_light"] is True
+        assert r2.data["already_achieved"] is True
+
+        # PoC mode must still be off after restart
+        assert svc2._resolver.poc_mode()["active"] is False
+
+    def test_founder_dormancy_survives_restart(self, tmp_path: Path) -> None:
+        """Founder designation and last-action timestamp persist across restart."""
+        store_path = tmp_path / "genesis_state.json"
+
+        resolver = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store = StateStore(store_path)
+
+        svc1 = GenesisService(resolver, event_log=EventLog(), state_store=store)
+        svc1.open_epoch("epoch-1")
+        svc1.register_actor(
+            actor_id="george", actor_kind=ActorKind.HUMAN,
+            region="EU", organization="Genesis",
+        )
+        svc1.set_founder("george")
+        svc1.record_founder_action()
+
+        # Capture the last-action timestamp
+        original_ts = svc1._founder_last_action_utc
+
+        # Simulate restart
+        store2 = StateStore(store_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=EventLog(), state_store=store2)
+
+        assert svc2._founder_id == "george"
+        assert svc2._founder_last_action_utc is not None
+        # Timestamps may lose sub-second precision in JSON round-trip
+        assert abs(
+            (svc2._founder_last_action_utc - original_ts).total_seconds()
+        ) < 2.0
+
+    def test_poc_mode_stays_off_after_restart(self, tmp_path: Path) -> None:
+        """PoC mode disabled by First Light must remain off after restart."""
+        store_path = tmp_path / "genesis_state.json"
+
+        resolver = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store = StateStore(store_path)
+
+        svc1 = GenesisService(resolver, event_log=EventLog(), state_store=store)
+        svc1.open_epoch("epoch-1")
+        for i in range(5):
+            svc1.register_actor(
+                actor_id=f"h-{i}", actor_kind=ActorKind.HUMAN,
+                region="EU", organization="Org",
+            )
+        svc1.check_first_light(
+            monthly_revenue=Decimal("2000"),
+            monthly_costs=Decimal("1000"),
+            reserve_balance=Decimal("5000"),
+        )
+        assert svc1._resolver.poc_mode()["active"] is False
+
+        # Restart with fresh resolver (PoC default = true in config)
+        store2 = StateStore(store_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=EventLog(), state_store=store2)
+
+        # PoC must be off — restored from persisted lifecycle state
+        assert svc2._resolver.poc_mode()["active"] is False
+
+
+# ------------------------------------------------------------------
+# Production call-path integration (P2 wiring)
+# ------------------------------------------------------------------
+
+class TestProductionCallPaths:
+    """Prove that lifecycle methods are wired into production paths.
+
+    CX P2 finding: check_first_light and record_creator_allocation
+    had no call sites outside tests. process_mission_payment() now
+    wires them into the payment pipeline.
+    """
+
+    def test_process_mission_payment_records_creator_allocation(
+        self, service: GenesisService,
+    ) -> None:
+        """Payment processing automatically emits creator allocation event."""
+        from genesis.compensation.ledger import OperationalLedger
+        from genesis.models.compensation import (
+            CompletedMission,
+            ReserveFundState,
+        )
+        from genesis.models.mission import MissionClass, DomainType
+
+        # Register actors (diverse enough for reviewer assignment)
+        regions = ["NA", "EU", "APAC", "LATAM", "AF"]
+        orgs = ["Org1", "Org2", "Org3", "Org4", "Org5"]
+        families = ["gpt", "claude", "gemini", "llama", "mistral"]
+        methods = ["llm_judge", "human_reviewer", "reasoning_model",
+                    "human_reviewer", "llm_judge"]
+        for i in range(5):
+            service.register_actor(
+                actor_id=f"actor-{i}", actor_kind=ActorKind.HUMAN,
+                region=regions[i], organization=orgs[i],
+                model_family=families[i], method_type=methods[i],
+                initial_trust=0.5,
+            )
+
+        # Create and drive mission to APPROVED
+        service.create_mission(
+            mission_id="M-PAY-001",
+            title="Test payment",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            domain_type=DomainType.OBJECTIVE,
+            worker_id="actor-0",
+        )
+        service.submit_mission("M-PAY-001")
+        service.assign_reviewers("M-PAY-001", seed="pay-test")
+
+        mission = service.get_mission("M-PAY-001")
+        service.add_evidence(
+            "M-PAY-001",
+            artifact_hash="sha256:" + "a" * 64,
+            signature="ed25519:" + "b" * 64,
+        )
+        for reviewer in mission.reviewers:
+            service.submit_review("M-PAY-001", reviewer.id, "APPROVE")
+        service.complete_review("M-PAY-001")
+        service.approve_mission("M-PAY-001")
+
+        # Build ledger + reserve for commission computation
+        ledger = OperationalLedger()
+        now = datetime.now(timezone.utc)
+        for i in range(55):
+            ledger.record_completed_mission(CompletedMission(
+                mission_id=f"hist-{i}",
+                reward_amount=Decimal("500.00"),
+                completed_utc=now - timedelta(days=30),
+                operational_costs=Decimal("10.00"),
+            ))
+        reserve = ReserveFundState(
+            balance=Decimal("10000"),
+            target=Decimal("10000"),
+            gap=Decimal("0"),
+            is_below_target=False,
+        )
+
+        # Process payment — should auto-emit creator allocation
+        result = service.process_mission_payment(
+            mission_id="M-PAY-001",
+            mission_reward=Decimal("500.00"),
+            ledger=ledger,
+            reserve=reserve,
+        )
+        assert result.success
+        assert Decimal(result.data["creator_allocation"]) == Decimal("10.00")
+
+        # Creator allocation event was emitted through the payment path
+        events = service._event_log.events(
+            EventKind.CREATOR_ALLOCATION_DISBURSED,
+        )
+        assert len(events) >= 1
+        assert events[-1].payload["mission_id"] == "M-PAY-001"
+
+    def test_process_mission_payment_rejects_unapproved(
+        self, service: GenesisService,
+    ) -> None:
+        """Payment processing rejects missions not in APPROVED state."""
+        from genesis.compensation.ledger import OperationalLedger
+        from genesis.models.compensation import ReserveFundState
+        from genesis.models.mission import MissionClass, DomainType
+
+        service.create_mission(
+            mission_id="M-DRAFT",
+            title="Draft mission",
+            mission_class=MissionClass.DOCUMENTATION_UPDATE,
+            domain_type=DomainType.OBJECTIVE,
+        )
+
+        result = service.process_mission_payment(
+            mission_id="M-DRAFT",
+            mission_reward=Decimal("500.00"),
+            ledger=OperationalLedger(),
+            reserve=ReserveFundState(
+                balance=Decimal("10000"),
+                target=Decimal("10000"),
+                gap=Decimal("0"),
+                is_below_target=False,
+            ),
+        )
+        assert not result.success
+        assert "APPROVED" in result.errors[0]
+
+    def test_periodic_first_light_check_delegates(
+        self, service: GenesisService,
+    ) -> None:
+        """periodic_first_light_check delegates to check_first_light."""
+        _register_humans(service)
+        result = service.periodic_first_light_check(
+            monthly_revenue=Decimal("100"),
+            monthly_costs=Decimal("1000"),
+            reserve_balance=Decimal("0"),
+        )
+        assert result.success
+        assert result.data["first_light"] is False

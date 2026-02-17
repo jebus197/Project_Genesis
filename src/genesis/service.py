@@ -192,6 +192,14 @@ class GenesisService:
             self._leave_records = state_store.load_leave_records()
             stored_hash, _ = state_store.load_epoch_state()
             self._epoch_service = EpochService(resolver, stored_hash)
+            # Restore lifecycle state (First Light, founder dormancy)
+            lifecycle = state_store.load_lifecycle_state()
+            self._first_light_achieved = lifecycle["first_light_achieved"]
+            self._founder_id = lifecycle["founder_id"]
+            self._founder_last_action_utc = lifecycle["founder_last_action_utc"]
+            # Restore PoC mode override if First Light was previously achieved
+            if self._first_light_achieved:
+                self._resolver._policy.setdefault("poc_mode", {})["active"] = False
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -3184,6 +3192,7 @@ class GenesisService:
             )
         self._founder_id = actor_id
         self._founder_last_action_utc = datetime.now(timezone.utc)
+        self._safe_persist_post_audit()
         return ServiceResult(
             success=True,
             data={
@@ -3205,6 +3214,7 @@ class GenesisService:
                 errors=["No founder designated — call set_founder() first"],
             )
         self._founder_last_action_utc = datetime.now(timezone.utc)
+        self._safe_persist_post_audit()
         return ServiceResult(
             success=True,
             data={
@@ -3253,6 +3263,98 @@ class GenesisService:
                     "3-chamber supermajority recipient selection."
                 ),
             },
+        )
+
+    # ------------------------------------------------------------------
+    # Production call-path integration (P2 wiring)
+    # ------------------------------------------------------------------
+
+    def process_mission_payment(
+        self,
+        mission_id: str,
+        mission_reward: "Decimal",
+        ledger: "OperationalLedger",
+        reserve: "ReserveFundState",
+    ) -> ServiceResult:
+        """Process payment for an approved mission.
+
+        Orchestrates the full payment flow:
+        1. Validates mission is in APPROVED state.
+        2. Computes commission via CommissionEngine.
+        3. Records creator allocation event (audit trail).
+        4. Returns the full breakdown for escrow settlement.
+
+        This is the production call site that wires
+        record_creator_allocation into the payment pipeline.
+        """
+        from decimal import Decimal
+        from genesis.compensation.engine import CommissionEngine
+
+        mission = self._missions.get(mission_id)
+        if mission is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Mission not found: {mission_id}"],
+            )
+        if mission.state != MissionState.APPROVED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Mission {mission_id} not APPROVED (state: {mission.state.value})"],
+            )
+
+        engine = CommissionEngine(self._resolver)
+        breakdown = engine.compute_commission(
+            mission_reward=mission_reward,
+            ledger=ledger,
+            reserve=reserve,
+        )
+
+        # Wire: record creator allocation event in the audit trail
+        if breakdown.creator_allocation > Decimal("0"):
+            alloc_result = self.record_creator_allocation(
+                mission_id=mission_id,
+                creator_allocation=breakdown.creator_allocation,
+                mission_reward=mission_reward,
+                worker_id=mission.worker_id or "unknown",
+            )
+            if not alloc_result.success:
+                return alloc_result
+
+        data: dict[str, Any] = {
+            "mission_id": mission_id,
+            "commission_rate": str(breakdown.rate),
+            "commission_amount": str(breakdown.commission_amount),
+            "creator_allocation": str(breakdown.creator_allocation),
+            "worker_payout": str(breakdown.worker_payout),
+            "mission_reward": str(mission_reward),
+        }
+        return ServiceResult(success=True, data=data)
+
+    def periodic_first_light_check(
+        self,
+        monthly_revenue: "Decimal",
+        monthly_costs: "Decimal",
+        reserve_balance: "Decimal",
+        missions_per_human_per_month: float = 0.0,
+        avg_mission_value: "Decimal" = None,
+        commission_rate: "Decimal" = None,
+    ) -> ServiceResult:
+        """Production entry point for periodic First Light evaluation.
+
+        This wraps check_first_light() and provides a deterministic
+        call site for scheduled tasks or post-payment pipelines.
+        Intended to be called from a cron-like scheduler or after
+        each batch of mission completions.
+
+        Returns the same result as check_first_light().
+        """
+        return self.check_first_light(
+            monthly_revenue=monthly_revenue,
+            monthly_costs=monthly_costs,
+            reserve_balance=reserve_balance,
+            missions_per_human_per_month=missions_per_human_per_month,
+            avg_mission_value=avg_mission_value,
+            commission_rate=commission_rate,
         )
 
     # ------------------------------------------------------------------
@@ -3639,6 +3741,11 @@ class GenesisService:
         self._state_store.save_epoch_state(
             self._epoch_service.previous_hash,
             len(self._epoch_service.committed_records),
+        )
+        self._state_store.save_lifecycle_state(
+            self._first_light_achieved,
+            self._founder_id,
+            self._founder_last_action_utc,
         )
 
     def _safe_persist(
