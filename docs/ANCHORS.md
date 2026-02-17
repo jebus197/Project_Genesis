@@ -12,6 +12,12 @@ Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan
 
 ---
 
+## Genesis Block 5
+
+- `f2c5381d48b3c467341997b69916aaa82d30d5f160982b69a09942f3a16865c8` → [tx 8d2152dc5f...](https://sepolia.etherscan.io/tx/8d2152dc5f6f51c35d7f0b5b4624377b3e9c178c4fa4851d4eba7a650064df6d)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10275625 | Minted: 2026-02-17T00:02:48Z
+  **Lifecycle wiring + Genesis Block naming convention.** First Light trigger wired to fire events and auto-disable PoC mode. Creator allocation event emission. Founder dormancy tracking for 50-year legacy. Anchor log reframed as Trust Mint Log with Genesis Block numbering. 890 tests.
+
 ## Genesis Block 4
 
 - `1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91` → [tx 5b8ab0e1...](https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac)
