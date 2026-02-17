@@ -529,3 +529,85 @@ class TestProductionCallPaths:
         )
         assert result.success
         assert result.data["first_light"] is False
+
+
+# ------------------------------------------------------------------
+# Persistence warning surfacing (P2-a residual)
+# ------------------------------------------------------------------
+
+class TestPersistenceWarningSurfacing:
+    """Prove that founder lifecycle methods surface persistence warnings."""
+
+    def test_set_founder_surfaces_persist_warning(
+        self, service: GenesisService, monkeypatch,
+    ) -> None:
+        """set_founder returns warning field when persistence degrades."""
+        service.register_actor(
+            actor_id="george", actor_kind=ActorKind.HUMAN,
+            region="EU", organization="Genesis",
+        )
+        monkeypatch.setattr(
+            service, "_safe_persist_post_audit",
+            lambda: "Persistence degraded: disk full",
+        )
+        result = service.set_founder("george")
+        assert result.success
+        assert "warning" in result.data
+        assert "disk full" in result.data["warning"]
+
+    def test_record_founder_action_surfaces_persist_warning(
+        self, service: GenesisService, monkeypatch,
+    ) -> None:
+        """record_founder_action returns warning field when persistence degrades."""
+        service.register_actor(
+            actor_id="george", actor_kind=ActorKind.HUMAN,
+            region="EU", organization="Genesis",
+        )
+        service.set_founder("george")
+        monkeypatch.setattr(
+            service, "_safe_persist_post_audit",
+            lambda: "Persistence degraded: write failed",
+        )
+        result = service.record_founder_action()
+        assert result.success
+        assert "warning" in result.data
+        assert "write failed" in result.data["warning"]
+
+
+# ------------------------------------------------------------------
+# CLI adapter integration (P2-b: runtime call sites)
+# ------------------------------------------------------------------
+
+class TestCLIAdapterIntegration:
+    """Prove that CLI commands wire through to service lifecycle methods.
+
+    CX P2-b finding: production entrypoints had no call sites outside
+    tests. These tests verify the CLI adapter is a live call site.
+    """
+
+    def test_cli_check_first_light_calls_through(self, tmp_path: Path) -> None:
+        """CLI check-first-light calls periodic_first_light_check."""
+        from genesis.cli import main
+
+        exit_code = main([
+            "--config", str(CONFIG_DIR),
+            "check-first-light",
+            "--revenue", "100",
+            "--costs", "1000",
+            "--reserve", "0",
+        ])
+        assert exit_code == 0
+
+    def test_cli_process_payment_rejects_missing_mission(
+        self, tmp_path: Path,
+    ) -> None:
+        """CLI process-payment returns error for non-existent mission."""
+        from genesis.cli import main
+
+        exit_code = main([
+            "--config", str(CONFIG_DIR),
+            "process-payment",
+            "--mission-id", "NONEXISTENT",
+            "--reward", "500.00",
+        ])
+        assert exit_code == 1

@@ -83,6 +83,53 @@ def cmd_create_mission(args: argparse.Namespace) -> int:
     return 1
 
 
+def cmd_check_first_light(args: argparse.Namespace) -> int:
+    """Evaluate First Light conditions from current financials."""
+    from decimal import Decimal
+
+    service = _make_service(args.config)
+    result = service.periodic_first_light_check(
+        monthly_revenue=Decimal(args.revenue),
+        monthly_costs=Decimal(args.costs),
+        reserve_balance=Decimal(args.reserve),
+    )
+    if result.success:
+        print(json.dumps(result.data, indent=2, default=str))
+        return 0
+    print(f"Failed: {'; '.join(result.errors)}", file=sys.stderr)
+    return 1
+
+
+def cmd_process_payment(args: argparse.Namespace) -> int:
+    """Process payment for an approved mission."""
+    from decimal import Decimal
+    from genesis.compensation.ledger import OperationalLedger
+    from genesis.models.compensation import ReserveFundState
+
+    service = _make_service(args.config)
+    # In production these come from the ledger and reserve subsystems;
+    # the CLI provides a manual override for testing and operations.
+    ledger = OperationalLedger()
+    reserve = ReserveFundState(
+        balance=Decimal(args.reserve_balance),
+        target=Decimal(args.reserve_target),
+        gap=max(Decimal(args.reserve_target) - Decimal(args.reserve_balance), Decimal("0")),
+        is_below_target=Decimal(args.reserve_balance) < Decimal(args.reserve_target),
+    )
+
+    result = service.process_mission_payment(
+        mission_id=args.mission_id,
+        mission_reward=Decimal(args.reward),
+        ledger=ledger,
+        reserve=reserve,
+    )
+    if result.success:
+        print(json.dumps(result.data, indent=2, default=str))
+        return 0
+    print(f"Failed: {'; '.join(result.errors)}", file=sys.stderr)
+    return 1
+
+
 def cmd_check_invariants(args: argparse.Namespace) -> int:
     """Run constitutional invariant checks."""
     # Import and run the existing check_invariants tool
@@ -135,6 +182,19 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p_create.add_argument("--worker", help="Worker ID")
 
+    # check-first-light
+    p_fl = sub.add_parser("check-first-light", help="Evaluate First Light conditions")
+    p_fl.add_argument("--revenue", required=True, help="Monthly revenue (Decimal)")
+    p_fl.add_argument("--costs", required=True, help="Monthly costs (Decimal)")
+    p_fl.add_argument("--reserve", required=True, help="Reserve balance (Decimal)")
+
+    # process-payment
+    p_pay = sub.add_parser("process-payment", help="Process payment for an approved mission")
+    p_pay.add_argument("--mission-id", required=True, help="Mission ID")
+    p_pay.add_argument("--reward", required=True, help="Mission reward (Decimal)")
+    p_pay.add_argument("--reserve-balance", default="10000", help="Reserve balance")
+    p_pay.add_argument("--reserve-target", default="10000", help="Reserve target")
+
     # check-invariants
     sub.add_parser("check-invariants", help="Run constitutional invariant checks")
 
@@ -153,6 +213,8 @@ def main(argv: list[str] | None = None) -> int:
         "status": cmd_status,
         "register-actor": cmd_register_actor,
         "create-mission": cmd_create_mission,
+        "check-first-light": cmd_check_first_light,
+        "process-payment": cmd_process_payment,
         "check-invariants": cmd_check_invariants,
     }
 

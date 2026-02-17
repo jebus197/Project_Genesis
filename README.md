@@ -338,7 +338,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (896 tests):**
+**Validation (900 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

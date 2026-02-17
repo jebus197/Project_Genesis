@@ -3192,14 +3192,14 @@ class GenesisService:
             )
         self._founder_id = actor_id
         self._founder_last_action_utc = datetime.now(timezone.utc)
-        self._safe_persist_post_audit()
-        return ServiceResult(
-            success=True,
-            data={
-                "founder_id": actor_id,
-                "last_action_utc": self._founder_last_action_utc.isoformat(),
-            },
-        )
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "founder_id": actor_id,
+            "last_action_utc": self._founder_last_action_utc.isoformat(),
+        }
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
 
     def record_founder_action(self) -> ServiceResult:
         """Reset the 50-year dormancy counter.
@@ -3214,15 +3214,15 @@ class GenesisService:
                 errors=["No founder designated — call set_founder() first"],
             )
         self._founder_last_action_utc = datetime.now(timezone.utc)
-        self._safe_persist_post_audit()
-        return ServiceResult(
-            success=True,
-            data={
-                "founder_id": self._founder_id,
-                "last_action_utc": self._founder_last_action_utc.isoformat(),
-                "dormancy_reset": True,
-            },
-        )
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "founder_id": self._founder_id,
+            "last_action_utc": self._founder_last_action_utc.isoformat(),
+            "dormancy_reset": True,
+        }
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
 
     def check_dormancy(self) -> ServiceResult:
         """Check whether the 50-year founder dormancy threshold is met.
