@@ -1123,6 +1123,7 @@ class GenesisService:
                 "session_max_seconds": request.session_max_seconds,
                 "scripted_intro_version": request.scripted_intro_version,
                 "region_constraint": request.region_constraint,
+                "has_challenge_phrase": request.challenge_phrase is not None,
             },
         )
 
@@ -1139,6 +1140,10 @@ class GenesisService:
                 "session_max_seconds": request.session_max_seconds,
                 "scripted_intro": self._quorum_verifier.get_scripted_intro(
                     request.scripted_intro_version,
+                ),
+                "challenge_phrase": request.challenge_phrase,
+                "pre_session_briefing": self._quorum_verifier.get_pre_session_briefing(
+                    request.pre_session_briefing_version,
                 ),
             },
         )
@@ -1329,9 +1334,14 @@ class GenesisService:
             return ServiceResult(success=False, errors=[str(exc)])
 
         if result.confirmed and offending_verifier_id:
-            # Trust nuke: set offender's trust to 0.001
+            # Store pre-nuke score on the request for potential appeal
+            request = self._quorum_verifier.get_request(request_id)
             trust_rec = self._trust_records.get(offending_verifier_id)
-            if trust_rec:
+            if trust_rec and request:
+                request.pre_nuke_trust_score = trust_rec.score
+                # Trust nuke: set offender's trust to 0.001
+                trust_rec.score = self._quorum_verifier._abuse_trust_nuke
+            elif trust_rec:
                 trust_rec.score = self._quorum_verifier._abuse_trust_nuke
 
             self._record_actor_lifecycle_event(
@@ -1411,6 +1421,135 @@ class GenesisService:
                 "original_request_id": original_request_id,
                 "verifier_ids": request.verifier_ids,
                 "applicant_pseudonym": request.applicant_pseudonym,
+            },
+        )
+
+    def signal_quorum_participant_ready(
+        self,
+        request_id: str,
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Signal that the participant is ready to begin the live session.
+
+        The session timer starts from this moment, not from request creation.
+        This gives the participant unlimited preparation time.
+        """
+        try:
+            request = self._quorum_verifier.signal_participant_ready(
+                request_id, now=now,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "request_id": request_id,
+                "participant_ready_utc": request.participant_ready_utc.isoformat(),
+            },
+        )
+
+    def appeal_reviewer_trust_nuke(
+        self,
+        request_id: str,
+        appellant_id: str,
+        appeal_panel_ids: list[str],
+        votes: dict[str, bool],
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Appeal a trust-nuke decision via escalated 5-panel review.
+
+        A reviewer whose trust was nuked to 0.001 can appeal once.
+        Requires 4/5 supermajority to overturn. The appeal panel must
+        be ACTIVE, HUMAN, trust-minted, >=0.70 trust, and must NOT
+        overlap with the original abuse review panel.
+
+        If overturned, the reviewer's trust is restored to pre-nuke level.
+        Complainant trust is never affected.
+        """
+        # Validate appeal panel members
+        for panel_member_id in appeal_panel_ids:
+            entry = self._roster.get(panel_member_id)
+            if entry is None:
+                return ServiceResult(
+                    success=False, errors=[f"Panel member not found: {panel_member_id}"],
+                )
+            if entry.status != ActorStatus.ACTIVE:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Panel member {panel_member_id} is not ACTIVE"],
+                )
+            if entry.actor_kind != ActorKind.HUMAN:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Panel member {panel_member_id} is not HUMAN"],
+                )
+            trust_rec = self._trust_records.get(panel_member_id)
+            if not trust_rec or not trust_rec.trust_minted:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Panel member {panel_member_id} is not trust-minted"],
+                )
+            if trust_rec.score < 0.70:
+                return ServiceResult(
+                    success=False,
+                    errors=[
+                        f"Panel member {panel_member_id} trust {trust_rec.score} "
+                        f"is below 0.70 minimum"
+                    ],
+                )
+
+        # Emit appeal filed event
+        self._record_actor_lifecycle_event(
+            actor_id=appellant_id,
+            event_kind=EventKind.QUORUM_NUKE_APPEAL_FILED,
+            payload={
+                "request_id": request_id,
+                "appellant_id": appellant_id,
+                "appeal_panel_ids": appeal_panel_ids,
+            },
+        )
+
+        try:
+            appeal_result = self._quorum_verifier.appeal_trust_nuke(
+                request_id=request_id,
+                appellant_verifier_id=appellant_id,
+                appeal_panel=appeal_panel_ids,
+                votes=votes,
+                now=now,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        # If overturned, restore trust
+        if appeal_result.overturned and appeal_result.restored_score is not None:
+            trust_rec = self._trust_records.get(appellant_id)
+            if trust_rec:
+                trust_rec.score = appeal_result.restored_score
+
+        # Emit resolution event
+        self._record_actor_lifecycle_event(
+            actor_id=appellant_id,
+            event_kind=EventKind.QUORUM_NUKE_APPEAL_RESOLVED,
+            payload={
+                "request_id": request_id,
+                "appellant_id": appellant_id,
+                "overturned": appeal_result.overturned,
+                "trust_restored": appeal_result.trust_restored,
+                "restored_score": appeal_result.restored_score,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "request_id": request_id,
+                "appellant_id": appellant_id,
+                "overturned": appeal_result.overturned,
+                "trust_restored": appeal_result.trust_restored,
+                "restored_score": appeal_result.restored_score,
             },
         )
 

@@ -452,6 +452,37 @@ def check() -> int:
                 f"quorum_verification.abuse_trust_nuke_to must be <= 0.01 "
                 f"(severe penalty), got {atn}"
             )
+        # D-5b: Nuke appeal panel size (escalation — must be >= 5)
+        naps = quorum.get("nuke_appeal_panel_size", 0)
+        if naps < 5:
+            errors.append(
+                f"quorum_verification.nuke_appeal_panel_size must be >= 5, got {naps}"
+            )
+        # D-5b: Nuke appeal panel must be larger than abuse review panel (escalation)
+        if naps <= arps:
+            errors.append(
+                f"quorum_verification.nuke_appeal_panel_size ({naps}) must be > "
+                f"abuse_review_panel_size ({arps}) (escalation requirement)"
+            )
+        # D-5b: Nuke appeal supermajority (must be >= 4 for 5-panel)
+        nasm = quorum.get("nuke_appeal_supermajority", 0)
+        if nasm < 4:
+            errors.append(
+                f"quorum_verification.nuke_appeal_supermajority must be >= 4, got {nasm}"
+            )
+        # D-5b: Nuke appeal window must be > 0
+        nawh = quorum.get("nuke_appeal_window_hours", 0)
+        if nawh <= 0:
+            errors.append(
+                "quorum_verification.nuke_appeal_window_hours must be > 0"
+            )
+        # D-5b: Nuke appeal reviewer min trust (high-trust gate)
+        narmt = quorum.get("nuke_appeal_reviewer_min_trust", 0)
+        if narmt < 0.70:
+            errors.append(
+                f"quorum_verification.nuke_appeal_reviewer_min_trust must be >= 0.70, "
+                f"got {narmt}"
+            )
 
     if errors:
         print("Invariant check failed:")

@@ -12,10 +12,15 @@ from pathlib import Path
 from genesis.identity.quorum_verifier import (
     QuorumVerifier,
     QuorumVerificationRequest,
+    NukeAppealResult,
     PanelDiversityResult,
     AbuseReviewResult,
     SCRIPTED_INTRO_V1,
+    PRE_SESSION_BRIEFING_V1,
+    PRE_SESSION_BRIEFING_VERSIONS,
+    _generate_challenge_phrase,
 )
+from genesis.identity.wordlists.en import WORDS as EN_WORDS
 from genesis.persistence.event_log import EventLog, EventKind
 from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
@@ -53,6 +58,10 @@ def _safeguard_config(**overrides) -> dict:
         "abuse_trust_nuke_to": 0.001,
         "abuse_review_panel_size": 3,
         "abuse_reviewer_min_trust": 0.70,
+        "nuke_appeal_panel_size": 5,
+        "nuke_appeal_supermajority": 4,
+        "nuke_appeal_window_hours": 72,
+        "nuke_appeal_reviewer_min_trust": 0.70,
     }
     cfg.update(overrides)
     return cfg
@@ -837,3 +846,448 @@ class TestServiceIntegration:
         # Should fail because no minted verifiers available
         assert result.success is False
         assert any("Not enough" in e for e in result.errors)
+
+
+# ===========================================================================
+# Pre-Session Preparation Tests (Phase D-5b)
+# ===========================================================================
+
+class TestPreSessionPreparation:
+    """Prove pre-session preparation: briefing, challenge phrase, ready signal."""
+
+    def test_briefing_constant_contains_key_info(self) -> None:
+        """Pre-session briefing must mention key elements."""
+        assert "UNLIMITED preparation time" in PRE_SESSION_BRIEFING_V1
+        assert "challenge phrase" in PRE_SESSION_BRIEFING_V1.lower()
+        assert "proof-of-interaction" in PRE_SESSION_BRIEFING_V1
+        assert "When you are ready" in PRE_SESSION_BRIEFING_V1
+        assert "v1" in PRE_SESSION_BRIEFING_VERSIONS
+
+    def test_request_has_challenge_phrase_and_no_ready_timestamp(self) -> None:
+        """New request must have challenge_phrase set, but no ready timestamp."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_diverse_verifiers(),
+            verifier_orgs=_diverse_orgs(),
+            now=NOW,
+        )
+        assert request.challenge_phrase is not None
+        assert len(request.challenge_phrase.split()) == 6
+        assert request.participant_ready_utc is None
+
+    def test_signal_ready_sets_timestamp(self) -> None:
+        """signal_participant_ready sets the ready timestamp."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_diverse_verifiers(),
+            verifier_orgs=_diverse_orgs(),
+            now=NOW,
+        )
+        ready_time = NOW + timedelta(minutes=15)
+        qv.signal_participant_ready(request.request_id, now=ready_time)
+        assert request.participant_ready_utc == ready_time
+
+        # Cannot signal twice
+        with pytest.raises(ValueError, match="already signalled ready"):
+            qv.signal_participant_ready(request.request_id, now=ready_time)
+
+    def test_session_timer_starts_from_ready_not_created(self) -> None:
+        """Session expiry should count from participant_ready_utc, not created_utc."""
+        qv = QuorumVerifier(_safeguard_config(session_max_seconds=120))
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_diverse_verifiers(),
+            verifier_orgs=_diverse_orgs(),
+            now=NOW,
+        )
+        # 10 minutes of prep time — should NOT affect session timer
+        ready_time = NOW + timedelta(minutes=10)
+        qv.signal_participant_ready(request.request_id, now=ready_time)
+
+        # Before ready: is_session_expired would have returned None
+        # 60 seconds after ready: not expired
+        assert qv.is_session_expired(
+            request.request_id, now=ready_time + timedelta(seconds=60),
+        ) is False
+
+        # 121 seconds after ready: expired (session_max_seconds=120)
+        assert qv.is_session_expired(
+            request.request_id, now=ready_time + timedelta(seconds=121),
+        ) is True
+
+    def test_challenge_phrase_is_valid_bip39_words(self) -> None:
+        """Challenge phrase must be 6 words, all from BIP39 wordlist."""
+        phrase = _generate_challenge_phrase()
+        words = phrase.split()
+        assert len(words) == 6
+        en_word_set = set(EN_WORDS)
+        for word in words:
+            assert word in en_word_set, f"{word} not in BIP39 wordlist"
+
+        # Each invocation should produce different phrases (probabilistic)
+        phrases = {_generate_challenge_phrase() for _ in range(20)}
+        assert len(phrases) >= 15  # extremely unlikely to have many collisions
+
+
+# ===========================================================================
+# Nuke Appeal Tests (Phase D-5b)
+# ===========================================================================
+
+class TestNukeAppeal:
+    """Prove trust-nuke appeal: 5-panel, 4/5 supermajority, one-shot."""
+
+    def _make_abuse_confirmed_request(self, qv, *, now=NOW):
+        """Helper: create request, file complaint, confirm abuse."""
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_diverse_verifiers(),
+            verifier_orgs=_diverse_orgs(),
+            now=now,
+        )
+        qv.file_abuse_complaint(request.request_id, "ACTOR-001", "bad behavior")
+        qv.review_abuse_complaint(
+            request.request_id,
+            review_panel=["R-001", "R-002", "R-003"],
+            votes={"R-001": True, "R-002": True, "R-003": True},
+            now=now,
+        )
+        return request
+
+    def test_nuke_appeal_within_window_succeeds(self) -> None:
+        """Appeal within 72h window should be accepted."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        appeal_time = NOW + timedelta(hours=24)
+        result = qv.appeal_trust_nuke(
+            request.request_id,
+            appellant_verifier_id="V-001",
+            appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+            votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": True, "AP-5": True},
+            now=appeal_time,
+        )
+        assert result.overturned is True
+        assert result.trust_restored is True
+
+    def test_nuke_appeal_after_window_rejected(self) -> None:
+        """Appeal after 72h window should raise ValueError."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        with pytest.raises(ValueError, match="Nuke appeal window has expired"):
+            qv.appeal_trust_nuke(
+                request.request_id,
+                appellant_verifier_id="V-001",
+                appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+                votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": True, "AP-5": True},
+                now=NOW + timedelta(hours=100),
+            )
+
+    def test_nuke_appeal_4_of_5_overturns(self) -> None:
+        """4/5 supermajority should overturn the nuke."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        result = qv.appeal_trust_nuke(
+            request.request_id,
+            appellant_verifier_id="V-001",
+            appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+            votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": True, "AP-5": False},
+            now=NOW + timedelta(hours=24),
+        )
+        assert result.overturned is True
+        assert result.trust_restored is True
+
+    def test_nuke_appeal_3_of_5_upholds(self) -> None:
+        """3/5 should NOT overturn (need 4/5 supermajority)."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        result = qv.appeal_trust_nuke(
+            request.request_id,
+            appellant_verifier_id="V-001",
+            appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+            votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": False, "AP-5": False},
+            now=NOW + timedelta(hours=24),
+        )
+        assert result.overturned is False
+        assert result.trust_restored is False
+        assert result.restored_score is None
+
+    def test_nuke_appeal_no_overlap_with_original_panel(self) -> None:
+        """Appeal panel must not include members from original abuse panel."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        # "R-001" was on original abuse review panel
+        with pytest.raises(ValueError, match="must not overlap"):
+            qv.appeal_trust_nuke(
+                request.request_id,
+                appellant_verifier_id="V-001",
+                appeal_panel=["R-001", "AP-2", "AP-3", "AP-4", "AP-5"],
+                votes={"R-001": True, "AP-2": True, "AP-3": True, "AP-4": True, "AP-5": True},
+                now=NOW + timedelta(hours=24),
+            )
+
+    def test_nuke_appeal_one_shot_only(self) -> None:
+        """Only one nuke appeal allowed — second attempt raises ValueError."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = self._make_abuse_confirmed_request(qv)
+
+        # First appeal (fails — 3/5)
+        qv.appeal_trust_nuke(
+            request.request_id,
+            appellant_verifier_id="V-001",
+            appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+            votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": False, "AP-5": False},
+            now=NOW + timedelta(hours=24),
+        )
+
+        # Second attempt
+        with pytest.raises(ValueError, match="one appeal only"):
+            qv.appeal_trust_nuke(
+                request.request_id,
+                appellant_verifier_id="V-001",
+                appeal_panel=["AP-6", "AP-7", "AP-8", "AP-9", "AP-10"],
+                votes={"AP-6": True, "AP-7": True, "AP-8": True, "AP-9": True, "AP-10": True},
+                now=NOW + timedelta(hours=25),
+            )
+
+    def test_pre_nuke_score_stored_and_restorable(self) -> None:
+        """pre_nuke_trust_score should be stored on abuse confirmation."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_diverse_verifiers(),
+            verifier_orgs=_diverse_orgs(),
+            now=NOW,
+        )
+        qv.file_abuse_complaint(request.request_id, "ACTOR-001", "abuse")
+
+        # Simulate pre-nuke score being set (normally done by service layer)
+        request.pre_nuke_trust_score = 0.85
+
+        qv.review_abuse_complaint(
+            request.request_id,
+            review_panel=["R-001", "R-002", "R-003"],
+            votes={"R-001": True, "R-002": True, "R-003": True},
+            now=NOW,
+        )
+
+        # Appeal should restore to pre-nuke score
+        result = qv.appeal_trust_nuke(
+            request.request_id,
+            appellant_verifier_id="V-001",
+            appeal_panel=["AP-1", "AP-2", "AP-3", "AP-4", "AP-5"],
+            votes={"AP-1": True, "AP-2": True, "AP-3": True, "AP-4": True, "AP-5": True},
+            now=NOW + timedelta(hours=24),
+        )
+        assert result.overturned is True
+        assert result.restored_score == 0.85
+
+
+# ===========================================================================
+# Nuke Appeal Service Integration Tests (Phase D-5b)
+# ===========================================================================
+
+class TestNukeAppealServiceIntegration:
+    """Prove service-layer nuke appeal: trust restored, events emitted."""
+
+    @staticmethod
+    def _make_service(event_log=None):
+        resolver = PolicyResolver.from_config_dir(CONFIG_DIR)
+        return GenesisService(resolver, event_log=event_log)
+
+    @staticmethod
+    def _setup_active_verifier(service, event_log, actor_id, score=0.80, org="Org"):
+        """Register and fully mint a human for use as a quorum verifier."""
+        result = service.register_human(
+            actor_id=actor_id, region="EU", organization=org,
+            status=ActorStatus.ACTIVE, initial_trust=score,
+        )
+        assert result.success, f"Registration failed: {result.errors}"
+        service.request_verification(actor_id)
+        service.complete_verification(actor_id, method="voice_liveness")
+        event = EventRecord.create(
+            event_id=f"mission-done-{actor_id}",
+            event_kind=EventKind.MISSION_TRANSITION,
+            actor_id=actor_id,
+            payload={
+                "mission_id": f"M-{actor_id}",
+                "to_state": "approved",
+                "from_state": "submitted",
+            },
+        )
+        event_log.append(event)
+        mint_result = service.mint_trust_profile(actor_id)
+        assert mint_result.success, f"Minting failed for {actor_id}: {mint_result.errors}"
+
+    def _setup_abuse_scenario(self, service, event_log):
+        """Set up: 5 verifiers, quorum request, confirmed abuse on first verifier.
+
+        IMPORTANT: Abuse reviewers use AREV- prefix, separate from both quorum
+        verifiers (VER-) and appeal panelists (registered later).
+        """
+        service.open_epoch("test-epoch")
+
+        # Register applicant
+        service.register_human(
+            actor_id="APPLICANT", region="EU", organization="OrgApp",
+        )
+        service.request_verification("APPLICANT")
+
+        # Register 5 verifiers with distinct orgs (quorum panel pool)
+        for i in range(5):
+            self._setup_active_verifier(
+                service, event_log, f"VER-{i:03d}", score=0.80, org=f"Org{i}",
+            )
+
+        # Register 3 abuse reviewers with distinct orgs
+        for i in range(3):
+            self._setup_active_verifier(
+                service, event_log, f"AREV-{i:03d}", score=0.80, org=f"ARevOrg{i}",
+            )
+
+        # Request quorum verification
+        req_result = service.request_quorum_verification("APPLICANT")
+        assert req_result.success, f"Quorum request failed: {req_result.errors}"
+        request_id = req_result.data["request_id"]
+        verifier_ids = req_result.data["verifier_ids"]
+
+        # File abuse complaint and confirm
+        service.file_quorum_abuse_complaint(
+            request_id, "APPLICANT", "verifier was abusive",
+        )
+        # Use first verifier as offender
+        offender = verifier_ids[0]
+        # Abuse reviewers — distinct from both quorum panel and future appeal panel
+        abuse_result = service.review_quorum_abuse(
+            request_id,
+            review_panel_ids=["AREV-000", "AREV-001", "AREV-002"],
+            votes={"AREV-000": True, "AREV-001": True, "AREV-002": True},
+            offending_verifier_id=offender,
+        )
+        assert abuse_result.success
+        assert abuse_result.data["confirmed"] is True
+
+        return request_id, offender
+
+    def test_nuke_appeal_restores_trust_on_overturn(self) -> None:
+        """Overturned nuke appeal should restore verifier's trust score."""
+        event_log = EventLog()
+        service = self._make_service(event_log)
+        request_id, offender = self._setup_abuse_scenario(service, event_log)
+
+        # Offender's trust should be nuked to 0.001
+        trust_rec = service._trust_records[offender]
+        assert trust_rec.score == pytest.approx(0.001)
+
+        # Register 5 fresh appeal panel members (no overlap with abuse panel)
+        for i in range(5):
+            self._setup_active_verifier(
+                service, event_log, f"NAP-{i:03d}", score=0.80, org=f"NApOrg{i}",
+            )
+        appeal_panel = [f"NAP-{i:03d}" for i in range(5)]
+        votes = {pid: True for pid in appeal_panel}
+
+        result = service.appeal_reviewer_trust_nuke(
+            request_id, offender, appeal_panel, votes,
+        )
+        assert result.success, f"Appeal failed: {result.errors}"
+        assert result.data["overturned"] is True
+        assert result.data["trust_restored"] is True
+
+        # Trust should be restored
+        assert trust_rec.score > 0.001
+
+    def test_nuke_appeal_emits_events(self) -> None:
+        """Nuke appeal should emit FILED and RESOLVED events."""
+        event_log = EventLog()
+        service = self._make_service(event_log)
+        request_id, offender = self._setup_abuse_scenario(service, event_log)
+
+        # Register 5 fresh appeal panelists
+        for i in range(5):
+            self._setup_active_verifier(
+                service, event_log, f"EAP-{i:03d}", score=0.80, org=f"EApOrg{i}",
+            )
+        appeal_panel = [f"EAP-{i:03d}" for i in range(5)]
+        votes = {pid: True for pid in appeal_panel}
+
+        service.appeal_reviewer_trust_nuke(
+            request_id, offender, appeal_panel, votes,
+        )
+
+        filed_events = event_log.events(EventKind.QUORUM_NUKE_APPEAL_FILED)
+        assert len(filed_events) >= 1
+        assert filed_events[-1].payload["appellant_id"] == offender
+
+        resolved_events = event_log.events(EventKind.QUORUM_NUKE_APPEAL_RESOLVED)
+        assert len(resolved_events) >= 1
+        assert resolved_events[-1].payload["overturned"] is True
+
+    def test_complainant_trust_unaffected(self) -> None:
+        """Complainant's trust should never be affected by nuke appeal."""
+        event_log = EventLog()
+        service = self._make_service(event_log)
+
+        service.open_epoch("test-epoch")
+
+        # Complainant: a minted verifier
+        self._setup_active_verifier(
+            service, event_log, "COMPLAINANT", score=0.75, org="CompOrg",
+        )
+        complainant_trust_before = service._trust_records["COMPLAINANT"].score
+
+        # Register applicant and 5 verifiers
+        service.register_human(
+            actor_id="VICTIM", region="EU", organization="OrgV",
+        )
+        service.request_verification("VICTIM")
+        for i in range(5):
+            self._setup_active_verifier(
+                service, event_log, f"CVER-{i:03d}", score=0.80, org=f"COrg{i}",
+            )
+
+        req_result = service.request_quorum_verification("VICTIM")
+        assert req_result.success
+        request_id = req_result.data["request_id"]
+        offender = req_result.data["verifier_ids"][0]
+
+        # Complainant files abuse complaint
+        service.file_quorum_abuse_complaint(
+            request_id, "COMPLAINANT", "abusive behavior",
+        )
+        # Confirm abuse (use 3 fresh reviewers)
+        for i in range(5, 8):
+            self._setup_active_verifier(
+                service, event_log, f"CREV-{i:03d}", score=0.80, org=f"CRevOrg{i}",
+            )
+        service.review_quorum_abuse(
+            request_id,
+            review_panel_ids=["CREV-005", "CREV-006", "CREV-007"],
+            votes={"CREV-005": True, "CREV-006": True, "CREV-007": True},
+            offending_verifier_id=offender,
+        )
+
+        # Appeal overturns nuke
+        for i in range(8, 13):
+            self._setup_active_verifier(
+                service, event_log, f"CAPP-{i:03d}", score=0.80, org=f"CAppOrg{i}",
+            )
+        appeal_panel = [f"CAPP-{i:03d}" for i in range(8, 13)]
+        votes = {pid: True for pid in appeal_panel}
+        service.appeal_reviewer_trust_nuke(
+            request_id, offender, appeal_panel, votes,
+        )
+
+        # Complainant trust should be unchanged
+        complainant_trust_after = service._trust_records["COMPLAINANT"].score
+        assert complainant_trust_after == complainant_trust_before

@@ -93,6 +93,8 @@ class EventKind(str, enum.Enum):
     QUORUM_SESSION_EVIDENCE = "quorum_session_evidence"
     QUORUM_ABUSE_COMPLAINT = "quorum_abuse_complaint"
     QUORUM_ABUSE_CONFIRMED = "quorum_abuse_confirmed"
+    QUORUM_NUKE_APPEAL_FILED = "quorum_nuke_appeal_filed"
+    QUORUM_NUKE_APPEAL_RESOLVED = "quorum_nuke_appeal_resolved"
 
 
 @dataclass(frozen=True)

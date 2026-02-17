@@ -120,7 +120,11 @@
     "recording_retention_hours": 72,
     "abuse_trust_nuke_to": 0.001,
     "abuse_review_panel_size": 3,
-    "abuse_reviewer_min_trust": 0.70
+    "abuse_reviewer_min_trust": 0.70,
+    "nuke_appeal_panel_size": 5,
+    "nuke_appeal_supermajority": 4,
+    "nuke_appeal_window_hours": 72,
+    "nuke_appeal_reviewer_min_trust": 0.70
   },
   "poc_mode": {
     "active": true,

@@ -20,6 +20,8 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
+from genesis.identity.wordlists.en import WORDS as EN_WORDS
+
 
 # ---------------------------------------------------------------------------
 # Scripted interaction protocol
@@ -39,6 +41,31 @@ SCRIPTED_INTRO_V1 = (
 SCRIPTED_INTRO_VERSIONS: dict[str, str] = {
     "v1": SCRIPTED_INTRO_V1,
 }
+
+# ---------------------------------------------------------------------------
+# Pre-session preparation briefing
+# ---------------------------------------------------------------------------
+
+PRE_SESSION_BRIEFING_V1 = (
+    "Welcome to your identity verification session. Here is what will happen:\n\n"
+    "1. A verified community member will greet you using a scripted introduction.\n"
+    "2. You will be asked to read, write, or have someone assist you with a "
+    "short word challenge.\n"
+    "3. The session is recorded for your protection and will be automatically "
+    "deleted in 72 hours if no issues are raised.\n\n"
+    "IMPORTANT — Your Challenge Phrase:\n"
+    "Below is your unique challenge phrase. Please memorise it or write it down. "
+    "This phrase is your proof-of-interaction. If you ever need to appeal or "
+    "reference this session, you can confirm: 'I completed verification on "
+    "[date], my phrase was: [your phrase].' The phrase does not reveal your "
+    "identity, trust score, or any platform details — it is bound only to "
+    "this session.\n\n"
+    "You have UNLIMITED preparation time. The session timer does not start "
+    "until you signal that you are ready. Take as long as you need.\n\n"
+    "When you are ready, signal the system and the live session will begin."
+)
+
+PRE_SESSION_BRIEFING_VERSIONS: dict[str, str] = {"v1": PRE_SESSION_BRIEFING_V1}
 
 
 # ---------------------------------------------------------------------------
@@ -70,6 +97,28 @@ class QuorumVerificationRequest:
     recording_retention_hours: int = 72     # auto-delete window
     abuse_complaints: dict[str, str] = field(default_factory=dict)
     scripted_intro_version: str = "v1"
+
+    # --- Phase D-5b: pre-session preparation fields ---
+    challenge_phrase: Optional[str] = None
+    participant_ready_utc: Optional[datetime] = None
+    pre_session_briefing_version: str = "v1"
+
+    # --- Phase D-5b: nuke appeal fields ---
+    abuse_confirmed_utc: Optional[datetime] = None
+    pre_nuke_trust_score: Optional[float] = None
+    nuke_appeal_filed: bool = False
+    nuke_appeal_result: Optional[NukeAppealResult] = None
+    abuse_review_panel_ids: Optional[tuple[str, ...]] = None
+
+
+@dataclass(frozen=True)
+class NukeAppealResult:
+    """Outcome of a trust-nuke appeal by a reviewer."""
+    overturned: bool
+    appeal_panel: tuple[str, ...]
+    votes: dict[str, bool]       # reviewer -> overturn (True=restore)
+    trust_restored: bool         # == overturned
+    restored_score: Optional[float]
 
 
 @dataclass(frozen=True)
@@ -140,6 +189,12 @@ class QuorumVerifier:
         self._abuse_trust_nuke: float = config.get("abuse_trust_nuke_to", 0.001)
         self._abuse_review_panel_size: int = config.get("abuse_review_panel_size", 3)
         self._abuse_reviewer_min_trust: float = config.get("abuse_reviewer_min_trust", 0.70)
+
+        # Phase D-5b: Nuke appeal settings
+        self._nuke_appeal_panel_size: int = config.get("nuke_appeal_panel_size", 5)
+        self._nuke_appeal_supermajority: int = config.get("nuke_appeal_supermajority", 4)
+        self._nuke_appeal_window_hours: int = config.get("nuke_appeal_window_hours", 72)
+        self._nuke_appeal_reviewer_min_trust: float = config.get("nuke_appeal_reviewer_min_trust", 0.70)
 
         # Active requests: request_id -> QuorumVerificationRequest
         self._requests: dict[str, QuorumVerificationRequest] = {}
@@ -239,6 +294,7 @@ class QuorumVerifier:
             recording_retention_hours=self._recording_retention_hours,
             scripted_intro_version="v1",
             appeal_of=appeal_of,
+            challenge_phrase=_generate_challenge_phrase(),
         )
 
         self._requests[request.request_id] = request
@@ -433,6 +489,8 @@ class QuorumVerifier:
         request_id: str,
         review_panel: list[str],
         votes: dict[str, bool],
+        *,
+        now: Optional[datetime] = None,
     ) -> AbuseReviewResult:
         """Review an abuse complaint via a panel of high-trust reviewers.
 
@@ -460,6 +518,11 @@ class QuorumVerifier:
 
         confirms = sum(1 for v in votes.values() if v)
         confirmed = confirms > len(review_panel) // 2  # strict majority
+
+        if confirmed:
+            now_utc = now or datetime.now(timezone.utc)
+            request.abuse_confirmed_utc = now_utc
+            request.abuse_review_panel_ids = tuple(review_panel)
 
         return AbuseReviewResult(
             confirmed=confirmed,
@@ -629,6 +692,169 @@ class QuorumVerifier:
         return SCRIPTED_INTRO_VERSIONS.get(version, SCRIPTED_INTRO_V1)
 
     # ------------------------------------------------------------------
+    # Public API — Pre-session preparation (Phase D-5b)
+    # ------------------------------------------------------------------
+
+    def get_pre_session_briefing(self, version: str = "v1") -> str:
+        """Get the pre-session briefing text for a given version."""
+        return PRE_SESSION_BRIEFING_VERSIONS.get(version, PRE_SESSION_BRIEFING_V1)
+
+    def signal_participant_ready(
+        self,
+        request_id: str,
+        *,
+        now: Optional[datetime] = None,
+    ) -> QuorumVerificationRequest:
+        """Signal that the participant has reviewed the briefing and is ready.
+
+        Sets participant_ready_utc. The session timer counts from this moment,
+        NOT from request creation. This gives unlimited preparation time.
+
+        Raises:
+            KeyError: Unknown request_id.
+            ValueError: Participant already signalled ready.
+        """
+        request = self._requests.get(request_id)
+        if request is None:
+            raise KeyError(f"Unknown request: {request_id}")
+
+        if request.participant_ready_utc is not None:
+            raise ValueError(
+                f"Participant already signalled ready at "
+                f"{request.participant_ready_utc.isoformat()}"
+            )
+
+        now_utc = now or datetime.now(timezone.utc)
+        request.participant_ready_utc = now_utc
+        return request
+
+    def is_session_expired(
+        self,
+        request_id: str,
+        *,
+        now: Optional[datetime] = None,
+    ) -> Optional[bool]:
+        """Check if a live session has expired.
+
+        Returns:
+            None — participant has not signalled ready yet.
+            True — session timer has elapsed since ready signal.
+            False — session is still within time limit.
+
+        Raises:
+            KeyError: Unknown request_id.
+        """
+        request = self._requests.get(request_id)
+        if request is None:
+            raise KeyError(f"Unknown request: {request_id}")
+
+        if request.participant_ready_utc is None:
+            return None
+
+        now_utc = now or datetime.now(timezone.utc)
+        elapsed = (now_utc - request.participant_ready_utc).total_seconds()
+        return elapsed > request.session_max_seconds
+
+    # ------------------------------------------------------------------
+    # Public API — Nuke appeal (Phase D-5b)
+    # ------------------------------------------------------------------
+
+    def appeal_trust_nuke(
+        self,
+        request_id: str,
+        appellant_verifier_id: str,
+        appeal_panel: list[str],
+        votes: dict[str, bool],
+        *,
+        now: Optional[datetime] = None,
+    ) -> NukeAppealResult:
+        """Appeal a trust-nuke decision via escalated panel review.
+
+        A reviewer whose trust was nuked to 0.001 may appeal once.
+        The appeal requires a 5-member panel with 4/5 supermajority to
+        overturn. The appeal panel must not overlap with the original
+        abuse review panel. One appeal only — final.
+
+        Args:
+            request_id: The quorum verification request that led to abuse.
+            appellant_verifier_id: The verifier whose trust was nuked.
+            appeal_panel: List of appeal reviewer IDs.
+            votes: Mapping reviewer_id -> True (overturn/restore) or False (uphold nuke).
+            now: Override current time (for testing).
+
+        Returns:
+            NukeAppealResult.
+
+        Raises:
+            KeyError: Unknown request_id.
+            ValueError: Various validation failures.
+        """
+        request = self._requests.get(request_id)
+        if request is None:
+            raise KeyError(f"Unknown request: {request_id}")
+
+        now_utc = now or datetime.now(timezone.utc)
+
+        # Must have confirmed abuse
+        if request.abuse_confirmed_utc is None:
+            raise ValueError("No confirmed abuse on this request — nothing to appeal")
+
+        # One appeal only
+        if request.nuke_appeal_filed:
+            raise ValueError("Nuke appeal already filed — one appeal only, final")
+
+        # Within appeal window
+        deadline = request.abuse_confirmed_utc + timedelta(
+            hours=self._nuke_appeal_window_hours,
+        )
+        if now_utc > deadline:
+            raise ValueError(
+                f"Nuke appeal window has expired (deadline was "
+                f"{deadline.isoformat()})"
+            )
+
+        # Panel size check
+        if len(appeal_panel) < self._nuke_appeal_panel_size:
+            raise ValueError(
+                f"Nuke appeal requires at least {self._nuke_appeal_panel_size} "
+                f"panel members, got {len(appeal_panel)}"
+            )
+
+        # No overlap with original abuse review panel
+        original_panel = set(request.abuse_review_panel_ids or ())
+        overlap = original_panel & set(appeal_panel)
+        if overlap:
+            raise ValueError(
+                f"Appeal panel must not overlap with original abuse review panel. "
+                f"Overlapping: {sorted(overlap)}"
+            )
+
+        # All appeal panel members must have votes
+        for reviewer_id in appeal_panel:
+            if reviewer_id not in votes:
+                raise ValueError(f"Missing vote from appeal reviewer {reviewer_id}")
+
+        # Count votes — supermajority required to overturn
+        overturn_votes = sum(1 for v in votes.values() if v)
+        overturned = overturn_votes >= self._nuke_appeal_supermajority
+
+        restored_score = request.pre_nuke_trust_score if overturned else None
+
+        result = NukeAppealResult(
+            overturned=overturned,
+            appeal_panel=tuple(appeal_panel),
+            votes=dict(votes),
+            trust_restored=overturned,
+            restored_score=restored_score,
+        )
+
+        # Mark as filed (one-shot)
+        request.nuke_appeal_filed = True
+        request.nuke_appeal_result = result
+
+        return result
+
+    # ------------------------------------------------------------------
     # Internal helpers
     # ------------------------------------------------------------------
 
@@ -701,3 +927,19 @@ def _secure_sample(
         pool.pop()
 
     return selected
+
+
+def _generate_challenge_phrase(word_count: int = 6) -> str:
+    """Generate a BIP39 challenge phrase for proof-of-interaction.
+
+    Uses the same Fisher-Yates shuffle pattern as _secure_sample to
+    select *word_count* unique words from the BIP39 English wordlist.
+    """
+    pool = list(EN_WORDS)
+    selected: list[str] = []
+    for _ in range(word_count):
+        idx = secrets.randbelow(len(pool))
+        selected.append(pool[idx])
+        pool[idx] = pool[-1]
+        pool.pop()
+    return " ".join(selected)
