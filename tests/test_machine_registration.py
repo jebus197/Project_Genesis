@@ -141,7 +141,7 @@ class TestMachineRegistration:
             organization="Org1",
         )
         bot = service.get_actor("new-bot")
-        assert bot.trust_score == 0.10  # default, not inherited
+        assert bot.trust_score == 0.0  # default, not inherited
 
     def test_machine_does_not_affect_human_count(self, service: GenesisService) -> None:
         _register_human(service, "h1")

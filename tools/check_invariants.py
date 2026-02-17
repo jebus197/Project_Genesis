@@ -351,6 +351,15 @@ def check() -> int:
     if decomm.get("M_RECERT_FAIL_WINDOW_DAYS", 0) <= 0:
         errors.append("M_RECERT_FAIL_WINDOW_DAYS must be > 0")
 
+    # --- Constitutional supermajority invariants ---
+    supermajority = eligibility.get("constitutional_supermajority")
+    if supermajority is None:
+        errors.append("constitutional_supermajority must be defined")
+    elif not (0.5 < supermajority <= 1.0):
+        errors.append(
+            f"constitutional_supermajority must be in (0.5, 1.0], got {supermajority}"
+        )
+
     # --- Identity verification invariants ---
     id_verify = policy.get("identity_verification", {})
     expiry_days = id_verify.get("verification_expiry_days", 0)
@@ -364,6 +373,37 @@ def check() -> int:
             f"reverification_required_for must include {sorted(required_actions)}, "
             f"missing: {sorted(missing_actions)}"
         )
+
+    # --- Voice liveness invariants ---
+    voice = policy.get("voice_liveness", {})
+    if voice:
+        if voice.get("stage_1_word_count", 0) < 1:
+            errors.append("voice_liveness.stage_1_word_count must be >= 1")
+        if voice.get("stage_2_word_count", 0) <= voice.get("stage_1_word_count", 0):
+            errors.append("voice_liveness.stage_2_word_count must be > stage_1_word_count")
+        if voice.get("session_timeout_seconds", 0) < 30:
+            errors.append("voice_liveness.session_timeout_seconds must be >= 30")
+        wmt = voice.get("word_match_threshold", 0)
+        if not (0.0 < wmt <= 1.0):
+            errors.append("voice_liveness.word_match_threshold must be in (0, 1]")
+        nt = voice.get("naturalness_threshold", 0)
+        if not (0.0 < nt <= 1.0):
+            errors.append("voice_liveness.naturalness_threshold must be in (0, 1]")
+
+    # --- Quorum verification invariants ---
+    quorum = policy.get("quorum_verification", {})
+    if quorum:
+        min_q = quorum.get("min_quorum_size", 0)
+        max_q = quorum.get("max_quorum_size", 0)
+        if min_q < 3:
+            errors.append("quorum_verification.min_quorum_size must be >= 3")
+        if max_q < min_q:
+            errors.append("quorum_verification.max_quorum_size must be >= min_quorum_size")
+        if quorum.get("verification_timeout_hours", 0) <= 0:
+            errors.append("quorum_verification.verification_timeout_hours must be > 0")
+        mvt = quorum.get("min_verifier_trust", 0)
+        if not (0.0 < mvt <= 1.0):
+            errors.append("quorum_verification.min_verifier_trust must be in (0, 1]")
 
     if errors:
         print("Invariant check failed:")

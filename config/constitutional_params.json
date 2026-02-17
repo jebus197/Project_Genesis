@@ -20,8 +20,9 @@
     "T_floor_M": 0.0
   },
   "eligibility": {
-    "tau_vote": 0.70,
-    "tau_prop": 0.85
+    "tau_vote": 0.60,
+    "tau_prop": 0.75,
+    "constitutional_supermajority": 0.80
   },
   "effort_thresholds": {
     "E_min_per_tier": {
@@ -44,7 +45,7 @@
     "RECERT_PROBATION_TASKS": 100
   },
   "machine_decommission": {
-    "M_ZERO_DECOMMISSION_DAYS": 180,
+    "M_ZERO_DECOMMISSION_DAYS": 90,
     "M_RECERT_FAIL_MAX": 3,
     "M_RECERT_FAIL_WINDOW_DAYS": 180
   },

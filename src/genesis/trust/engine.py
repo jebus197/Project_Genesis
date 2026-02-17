@@ -121,6 +121,8 @@ class TrustEngine:
             decommissioned=record.decommissioned,
             recertification_failure_timestamps=list(record.recertification_failure_timestamps),
             probation_tasks_completed=record.probation_tasks_completed,
+            trust_minted=record.trust_minted,
+            trust_minted_utc=record.trust_minted_utc,
             last_active_utc=record.last_active_utc,
             domain_scores=dict(record.domain_scores),
         )
@@ -274,6 +276,8 @@ class TrustEngine:
             decommissioned=record.decommissioned,
             recertification_failure_timestamps=list(record.recertification_failure_timestamps),
             probation_tasks_completed=record.probation_tasks_completed,
+            trust_minted=record.trust_minted,
+            trust_minted_utc=record.trust_minted_utc,
             last_active_utc=now,
             domain_scores=new_domain_scores,
         )
@@ -408,13 +412,27 @@ class TrustEngine:
 
         floor = self._resolver.trust_floor(is_machine)
 
+        # Compute decayed score
+        if new_domain_scores:
+            decayed_score = max(new_global, floor)
+        else:
+            decayed_score = max(record.score * self.compute_decay_factor(
+                (now - record.last_active_utc).total_seconds() / 86400.0 if record.last_active_utc else 0,
+                half_life, 0,
+            ), floor)
+
+        # Absolute human floor: minted humans never drop below 0.001 (1/1000)
+        if (
+            record.actor_kind == ActorKind.HUMAN
+            and record.trust_minted
+            and decayed_score < 0.001
+        ):
+            decayed_score = 0.001
+
         return TrustRecord(
             actor_id=record.actor_id,
             actor_kind=record.actor_kind,
-            score=max(new_global, floor) if new_domain_scores else max(record.score * self.compute_decay_factor(
-                (now - record.last_active_utc).total_seconds() / 86400.0 if record.last_active_utc else 0,
-                half_life, 0,
-            ), floor),
+            score=decayed_score,
             quality=record.quality,
             reliability=record.reliability,
             volume=record.volume,
@@ -425,6 +443,8 @@ class TrustEngine:
             decommissioned=record.decommissioned,
             recertification_failure_timestamps=list(record.recertification_failure_timestamps),
             probation_tasks_completed=record.probation_tasks_completed,
+            trust_minted=record.trust_minted,
+            trust_minted_utc=record.trust_minted_utc,
             last_active_utc=record.last_active_utc,
             domain_scores=new_domain_scores,
         )

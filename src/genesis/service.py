@@ -91,6 +91,10 @@ from genesis.review.roster import (
 from genesis.review.selector import ReviewerSelector, SelectionResult
 from genesis.countdown.first_light import FirstLightEstimator
 from genesis.skills.taxonomy import SkillTaxonomy
+from genesis.identity.challenge import ChallengeGenerator
+from genesis.identity.voice_verifier import VoiceVerifier
+from genesis.identity.session import SessionManager, SessionState
+from genesis.identity.quorum_verifier import QuorumVerifier
 from genesis.trust.engine import TrustEngine
 
 
@@ -166,6 +170,15 @@ class GenesisService:
 
         # Protected leave engine
         self._leave_engine = LeaveAdjudicationEngine(resolver)
+
+        # Voice liveness subsystem (Phase D)
+        vl_cfg = resolver.voice_liveness_config()
+        self._challenge_generator = ChallengeGenerator(vl_cfg)
+        self._voice_verifier = VoiceVerifier(vl_cfg)
+        self._session_manager = SessionManager(
+            self._challenge_generator, self._voice_verifier, vl_cfg,
+        )
+        self._quorum_verifier = QuorumVerifier(resolver.quorum_verification_config())
 
         # First Light sustainability monitor — extract config from policy
         fl_cfg = resolver._policy.get("first_light", {})
@@ -246,6 +259,7 @@ class GenesisService:
         method_type: str = "human_reviewer",
         initial_trust: float = 0.10,
         registered_by: Optional[str] = None,
+        status: ActorStatus = ActorStatus.ACTIVE,
     ) -> ServiceResult:
         """Register a new actor in the roster.
 
@@ -253,10 +267,8 @@ class GenesisService:
         For machine actors with registered_by, delegates to register_machine()
         which validates the operator.
 
-        Legacy compatibility: machine registration without registered_by is
-        allowed through this method (creates the entry directly without
-        operator validation). New code should use register_machine() which
-        enforces the operator check.
+        Actors default to PROVISIONAL status with score 0.0.
+        Pass status=ActorStatus.ACTIVE for test convenience or legacy flows.
         """
         # Normalise actor_kind to enum if passed as string
         if isinstance(actor_kind, str):
@@ -275,6 +287,7 @@ class GenesisService:
                 model_family=model_family,
                 method_type=method_type,
                 initial_trust=initial_trust,
+                status=status,
             )
         elif actor_kind == ActorKind.MACHINE:
             if registered_by is not None:
@@ -286,6 +299,7 @@ class GenesisService:
                     model_family=model_family,
                     method_type=method_type,
                     initial_trust=initial_trust,
+                    status=status,
                 )
             # No legacy path — machines MUST have a human operator
             return ServiceResult(
@@ -301,9 +315,15 @@ class GenesisService:
         organization: str,
         model_family: str = "human_reviewer",
         method_type: str = "human_reviewer",
-        initial_trust: float = 0.10,
+        initial_trust: float = 0.0,
+        status: ActorStatus = ActorStatus.PROVISIONAL,
     ) -> ServiceResult:
-        """Register a human actor (self-registration)."""
+        """Register a human actor (self-registration).
+
+        Actors start as PROVISIONAL with score 0.0. They must complete
+        liveness verification + first mission to mint their trust profile,
+        which transitions them to ACTIVE with score 1/1000.
+        """
         try:
             now = datetime.now(timezone.utc)
             entry = RosterEntry(
@@ -314,6 +334,7 @@ class GenesisService:
                 organization=organization,
                 model_family=model_family,
                 method_type=method_type,
+                status=status,
                 registered_utc=now,
             )
             self._roster.register(entry)
@@ -357,14 +378,18 @@ class GenesisService:
         organization: str,
         model_family: str = "generic_model",
         method_type: str = "inference",
-        initial_trust: float = 0.10,
+        initial_trust: float = 0.0,
         machine_metadata: Optional[dict] = None,
+        status: ActorStatus = ActorStatus.PROVISIONAL,
     ) -> ServiceResult:
         """Register a machine actor under a verified human operator.
 
         Validates that the operator exists, is human, and is active.
         Machines cannot self-register — only verified humans can
         register machines.
+
+        Actors start as PROVISIONAL with score 0.0. They must complete
+        their first mission to mint their trust profile.
         """
         # Validate operator
         operator = self._roster.get(operator_id)
@@ -410,6 +435,7 @@ class GenesisService:
                 organization=organization,
                 model_family=model_family,
                 method_type=method_type,
+                status=status,
                 registered_by=operator_id,
                 registered_utc=now,
                 machine_metadata=machine_metadata,
@@ -911,6 +937,235 @@ class GenesisService:
             },
         )
 
+    # ------------------------------------------------------------------
+    # Voice liveness challenge (Phase D)
+    # ------------------------------------------------------------------
+
+    def start_liveness_challenge(
+        self,
+        actor_id: str,
+        language: str = "en",
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Start a voice liveness challenge session for an actor.
+
+        The actor must have a PENDING identity verification (call
+        request_verification() first). Returns the challenge words
+        that the actor must read aloud.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        if entry.identity_status != IdentityVerificationStatus.PENDING:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor must be in PENDING verification status to start liveness challenge, "
+                    f"got {entry.identity_status.value}. Call request_verification() first."
+                ],
+            )
+
+        try:
+            session = self._session_manager.start_session(
+                actor_id=actor_id, language=language, now=now,
+            )
+        except ValueError as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "session_id": session.session_id,
+                "actor_id": actor_id,
+                "words": list(session.challenge.words),
+                "stage": session.current_stage,
+                "state": session.state.value,
+            },
+        )
+
+    def submit_liveness_response(
+        self,
+        actor_id: str,
+        session_id: str,
+        spoken_words: list[str],
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit a spoken-word response for a liveness challenge.
+
+        If the response passes, the actor's identity verification is
+        automatically completed (PENDING → VERIFIED) with method
+        'voice_liveness'.
+
+        If the response fails but attempts remain, a new challenge is
+        issued (retry). If all attempts are exhausted, the session
+        fails and the actor must start over.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        try:
+            session = self._session_manager.submit_response(
+                session_id=session_id,
+                spoken_words=spoken_words,
+                now=now,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        if session.actor_id != actor_id:
+            return ServiceResult(
+                success=False,
+                errors=[f"Session {session_id} belongs to {session.actor_id}, not {actor_id}"],
+            )
+
+        result_data: dict[str, Any] = {
+            "session_id": session_id,
+            "actor_id": actor_id,
+            "state": session.state.value,
+            "stage": session.current_stage,
+        }
+
+        if session.last_result is not None:
+            result_data["word_match_score"] = session.last_result.word_match_score
+            result_data["words_matched"] = session.last_result.words_matched
+            result_data["words_expected"] = session.last_result.words_expected
+
+        if session.state == SessionState.PASSED:
+            # Auto-complete identity verification on liveness pass
+            verification_result = self.complete_verification(
+                actor_id=actor_id, method="voice_liveness", now=now,
+            )
+            result_data["verification_completed"] = verification_result.success
+            if not verification_result.success:
+                result_data["verification_errors"] = verification_result.errors
+
+        elif session.state == SessionState.CHALLENGE_ISSUED:
+            # Retry — new challenge words available
+            result_data["words"] = list(session.challenge.words)
+
+        return ServiceResult(success=True, data=result_data)
+
+    def request_quorum_verification(
+        self,
+        actor_id: str,
+        *,
+        quorum_size: Optional[int] = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Request quorum-based identity verification (disability accommodation).
+
+        An alternative to voice liveness. A panel of randomly selected
+        verified humans in the same geographic region must unanimously
+        confirm the actor's identity via live video.
+
+        The actor must be in PENDING verification status.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        if entry.identity_status != IdentityVerificationStatus.PENDING:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor must be in PENDING verification status, "
+                    f"got {entry.identity_status.value}"
+                ],
+            )
+
+        # Gather eligible verifiers: ACTIVE, minted, VERIFIED identity, trust above threshold
+        available_verifiers: list[tuple[str, float, str]] = []
+        for roster_entry in self._roster.all_actors():
+            if roster_entry.actor_id == actor_id:
+                continue  # Can't verify yourself
+            if roster_entry.status != ActorStatus.ACTIVE:
+                continue
+            if roster_entry.actor_kind != ActorKind.HUMAN:
+                continue
+            if roster_entry.identity_status != IdentityVerificationStatus.VERIFIED:
+                continue
+            trust_rec = self._trust_records.get(roster_entry.actor_id)
+            score = trust_rec.score if trust_rec else 0.0
+            available_verifiers.append(
+                (roster_entry.actor_id, score, roster_entry.region)
+            )
+
+        try:
+            request = self._quorum_verifier.request_quorum_verification(
+                actor_id=actor_id,
+                region=entry.region,
+                available_verifiers=available_verifiers,
+                quorum_size=quorum_size,
+                now=now,
+            )
+        except ValueError as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "request_id": request.request_id,
+                "actor_id": actor_id,
+                "quorum_size": request.quorum_size,
+                "verifier_ids": request.verifier_ids,
+                "region_constraint": request.region_constraint,
+                "expires_utc": request.expires_utc.isoformat(),
+            },
+        )
+
+    def submit_quorum_vote(
+        self,
+        request_id: str,
+        verifier_id: str,
+        approved: bool,
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Submit a verifier's vote on a quorum verification request.
+
+        If all votes are in and unanimously approved, the actor's identity
+        verification is automatically completed.
+        """
+        try:
+            request = self._quorum_verifier.submit_vote(
+                request_id=request_id,
+                verifier_id=verifier_id,
+                approved=approved,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        # Check result
+        result = self._quorum_verifier.check_result(request_id, now=now)
+
+        result_data: dict[str, Any] = {
+            "request_id": request_id,
+            "verifier_id": verifier_id,
+            "approved": approved,
+            "votes_cast": len(request.votes),
+            "quorum_size": request.quorum_size,
+        }
+
+        if result is True:
+            # Unanimous approval — complete verification
+            verification_result = self.complete_verification(
+                actor_id=request.actor_id,
+                method="quorum_verification",
+                now=now,
+            )
+            result_data["verification_completed"] = verification_result.success
+            result_data["outcome"] = "approved"
+        elif result is False:
+            result_data["outcome"] = "rejected"
+        else:
+            result_data["outcome"] = "pending"
+
+        return ServiceResult(success=True, data=result_data)
+
     def lapse_verification(self, actor_id: str) -> ServiceResult:
         """Lapse a verified actor's identity (expired or manual).
 
@@ -1041,6 +1296,126 @@ class GenesisService:
         return ServiceResult(
             success=True,
             data={"lapsed_count": len(lapsed), "actors": lapsed},
+        )
+
+    # ------------------------------------------------------------------
+    # Trust profile minting
+    # ------------------------------------------------------------------
+
+    def mint_trust_profile(self, actor_id: str) -> ServiceResult:
+        """Mint an actor's trust profile — the ceremony that grants standing.
+
+        Requirements (all three gates):
+        1. Actor is PROVISIONAL (first mint) OR has LAPSED identity (re-mint)
+        2. Identity verification status is VERIFIED
+        3. Actor has completed at least 1 mission since registration/lapse
+
+        On first mint: PROVISIONAL → ACTIVE, score set to 0.001 (displayed as 1/1000).
+        On re-mint: status stays ACTIVE, score keeps current (decayed) value.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+
+        # Determine if first mint or re-mint
+        is_first_mint = entry.status == ActorStatus.PROVISIONAL
+        is_remint = (
+            entry.status == ActorStatus.ACTIVE
+            and entry.identity_status == IdentityVerificationStatus.VERIFIED
+        )
+
+        if not is_first_mint and not is_remint:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Cannot mint: actor {actor_id} must be PROVISIONAL "
+                    f"(first mint) or ACTIVE with re-verified identity (re-mint). "
+                    f"Current status: {entry.status.value}"
+                ],
+            )
+
+        # Gate 2: Identity must be VERIFIED
+        if entry.identity_status != IdentityVerificationStatus.VERIFIED:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Cannot mint: identity status must be VERIFIED, "
+                    f"got {entry.identity_status.value}"
+                ],
+            )
+
+        # Gate 3: At least 1 completed mission
+        # Scan event log for MISSION_TRANSITION events with actor as worker
+        # and payload indicating completion
+        has_completed_mission = False
+        for event in self._event_log.events(EventKind.MISSION_TRANSITION):
+            if event.actor_id == actor_id:
+                to_state = event.payload.get("to_state", "")
+                if to_state in ("approved", "completed"):
+                    has_completed_mission = True
+                    break
+            # Also check if actor was the worker (payload may have worker_id)
+            if event.payload.get("worker_id") == actor_id:
+                to_state = event.payload.get("to_state", "")
+                if to_state in ("approved", "completed"):
+                    has_completed_mission = True
+                    break
+        if not has_completed_mission:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Cannot mint: actor must have at least 1 completed mission"
+                ],
+            )
+
+        # All gates passed — mint the trust profile
+        now = datetime.now(timezone.utc)
+
+        # Update roster status
+        if is_first_mint:
+            entry.status = ActorStatus.ACTIVE
+
+        # Update trust record
+        record = self._trust_records.get(actor_id)
+        if record is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Trust record not found: {actor_id}"],
+            )
+
+        if is_first_mint:
+            record.score = 0.001  # Displayed as 1/1000
+
+        record.trust_minted = True
+        record.trust_minted_utc = now
+
+        # Update roster trust score to match
+        entry.trust_score = record.score
+
+        # Emit event
+        self._record_actor_lifecycle_event(
+            actor_id=actor_id,
+            event_kind=EventKind.TRUST_PROFILE_MINTED,
+            payload={
+                "remint": not is_first_mint,
+                "score": record.score,
+                "display_score": record.display_score(),
+                "identity_method": entry.identity_method,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "actor_id": actor_id,
+                "remint": not is_first_mint,
+                "score": record.score,
+                "display_score": record.display_score(),
+                "minted_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+            },
         )
 
     # ------------------------------------------------------------------

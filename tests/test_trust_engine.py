@@ -29,6 +29,7 @@ def _human_record(score: float = 0.5) -> TrustRecord:
         quality=0.8,
         reliability=0.7,
         volume=0.3,
+        trust_minted=True,
     )
 
 

@@ -75,6 +75,10 @@ class TrustRecord:
     recertification_failure_timestamps: list[datetime] = field(default_factory=list)
     probation_tasks_completed: int = 0
 
+    # Trust profile minting
+    trust_minted: bool = False
+    trust_minted_utc: Optional[datetime] = None
+
     # Domain-specific decay tracking
     last_active_utc: Optional[datetime] = None
 
@@ -84,22 +88,38 @@ class TrustRecord:
     # Type: dict[str, DomainTrustScore] — uses Any to avoid circular import.
     # Set via TrustEngine.apply_domain_update().
 
+    def display_score(self) -> int:
+        """Return trust score on the 1-1000 display scale.
+
+        Internal math stays 0.0-1.0. This multiplies by 1000 and
+        returns an integer for display purposes.
+        """
+        return int(round(self.score * 1000))
+
     def is_eligible_to_vote(self, tau_vote: float) -> bool:
         """Check if actor meets voting eligibility threshold.
 
-        Constitutional rule: only humans hold constitutional authority.
-        Machines cannot vote regardless of trust score.
+        Constitutional rules:
+        - Only humans hold constitutional authority.
+        - Machines cannot vote regardless of trust score.
+        - Actor must have a minted trust profile.
         """
         if self.actor_kind != ActorKind.HUMAN:
+            return False
+        if not self.trust_minted:
             return False
         return self.score >= tau_vote and not self.quarantined and not self.decommissioned
 
     def is_eligible_to_propose(self, tau_prop: float) -> bool:
         """Check if actor meets proposal eligibility threshold (stricter).
 
-        Constitutional rule: only humans hold constitutional authority.
-        Machines cannot propose regardless of trust score.
+        Constitutional rules:
+        - Only humans hold constitutional authority.
+        - Machines cannot propose regardless of trust score.
+        - Actor must have a minted trust profile.
         """
         if self.actor_kind != ActorKind.HUMAN:
+            return False
+        if not self.trust_minted:
             return False
         return self.score >= tau_prop and not self.quarantined and not self.decommissioned

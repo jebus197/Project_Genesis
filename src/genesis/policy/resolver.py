@@ -131,6 +131,14 @@ class PolicyResolver:
         el = self._params["eligibility"]
         return el["tau_vote"], el["tau_prop"]
 
+    def constitutional_supermajority(self) -> float:
+        """Return the supermajority threshold for constitutional votes.
+
+        80% of votes cast must be in favour for a constitutional action
+        to pass. This is a flat requirement in addition to chamber thresholds.
+        """
+        return self._params["eligibility"]["constitutional_supermajority"]
+
     def effort_thresholds(self) -> dict[str, Any]:
         """Return effort-proportionality thresholds.
 
@@ -340,6 +348,38 @@ class PolicyResolver:
             ],
         }
         config = self._policy.get("identity_verification", {})
+        return {**defaults, **config}
+
+    def voice_liveness_config(self) -> dict[str, Any]:
+        """Return voice liveness challenge configuration."""
+        defaults = {
+            "stage_1_word_count": 6,
+            "stage_2_word_count": 12,
+            "max_attempts_per_stage": 3,
+            "session_timeout_seconds": 120,
+            "word_match_threshold": 0.85,
+            "naturalness_threshold": 0.70,
+            "supported_languages": ["en"],
+            "require_face_presence": False,
+        }
+        config = self._policy.get("voice_liveness", {})
+        return {**defaults, **config}
+
+    def quorum_verification_config(self) -> dict[str, Any]:
+        """Return quorum verification configuration for disability accommodation.
+
+        Geographically-bound randomised quorum of verified humans can
+        verify someone live on video as an alternative to voice challenge.
+        """
+        defaults = {
+            "min_quorum_size": 3,
+            "max_quorum_size": 5,
+            "verification_timeout_hours": 48,
+            "min_verifier_trust": 0.60,
+            "geographic_region_required": True,
+            "unanimous_required": True,
+        }
+        config = self._policy.get("quorum_verification", {})
         return {**defaults, **config}
 
     # ------------------------------------------------------------------

@@ -27,6 +27,7 @@ from genesis.models.trust import ActorKind
 
 class ActorStatus(str, enum.Enum):
     """Operational status of a roster actor."""
+    PROVISIONAL = "provisional"
     ACTIVE = "active"
     QUARANTINED = "quarantined"
     DECOMMISSIONED = "decommissioned"
@@ -86,8 +87,10 @@ class RosterEntry:
     identity_method: Optional[str] = None
 
     def is_available(self) -> bool:
-        """An actor is available if active or on probation."""
-        return self.status in (ActorStatus.ACTIVE, ActorStatus.PROBATION)
+        """An actor is available if provisional, active, or on probation."""
+        return self.status in (
+            ActorStatus.PROVISIONAL, ActorStatus.ACTIVE, ActorStatus.PROBATION,
+        )
 
 
 class ActorRoster:
@@ -148,6 +151,7 @@ class ActorRoster:
         return [
             a for a in self._actors.values()
             if a.is_available()
+            and a.status != ActorStatus.PROVISIONAL
             and a.actor_id not in exclude
             and a.trust_score >= min_trust
         ]

@@ -29,6 +29,7 @@ from genesis.models.trust import ActorKind, TrustRecord
 from genesis.persistence.event_log import EventLog
 from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
+from genesis.review.roster import ActorStatus
 from genesis.service import GenesisService
 
 CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
@@ -66,25 +67,25 @@ def _setup_actors(service):
     """Register a worker and enough reviewers for R0 missions."""
     service.register_actor(
         "worker-1", ActorKind.HUMAN, "eu", "acme",
-        initial_trust=0.5,
+        initial_trust=0.5, status=ActorStatus.ACTIVE,
     )
     service.register_actor(
         "reviewer-1", ActorKind.HUMAN, "eu", "acme",
-        initial_trust=0.5,
+        initial_trust=0.5, status=ActorStatus.ACTIVE,
     )
     service.register_actor(
         "reviewer-2-operator", ActorKind.HUMAN, "us", "skynet",
-        initial_trust=0.5,
+        initial_trust=0.5, status=ActorStatus.ACTIVE,
     )
     service.register_actor(
         "reviewer-2", ActorKind.MACHINE, "us", "skynet",
         model_family="gpt", method_type="llm_evaluator",
-        initial_trust=0.5,
+        initial_trust=0.5, status=ActorStatus.ACTIVE,
         registered_by="reviewer-2-operator",
     )
     service.register_actor(
         "reviewer-3", ActorKind.HUMAN, "apac", "delta",
-        initial_trust=0.5,
+        initial_trust=0.5, status=ActorStatus.ACTIVE,
     )
 
 

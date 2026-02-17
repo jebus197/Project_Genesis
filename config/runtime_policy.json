@@ -90,6 +90,24 @@
       "high_risk_adjudication"
     ]
   },
+  "voice_liveness": {
+    "stage_1_word_count": 6,
+    "stage_2_word_count": 12,
+    "max_attempts_per_stage": 3,
+    "session_timeout_seconds": 120,
+    "word_match_threshold": 0.85,
+    "naturalness_threshold": 0.70,
+    "supported_languages": ["en"],
+    "require_face_presence": false
+  },
+  "quorum_verification": {
+    "min_quorum_size": 3,
+    "max_quorum_size": 5,
+    "verification_timeout_hours": 48,
+    "min_verifier_trust": 0.60,
+    "geographic_region_required": true,
+    "unanimous_required": true
+  },
   "poc_mode": {
     "active": true,
     "label": "Proof of Concept",

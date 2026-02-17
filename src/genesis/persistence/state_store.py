@@ -229,6 +229,12 @@ class StateStore:
                     for ts in record.recertification_failure_timestamps
                 ],
                 "probation_tasks_completed": record.probation_tasks_completed,
+                "trust_minted": record.trust_minted,
+                "trust_minted_utc": (
+                    record.trust_minted_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if record.trust_minted_utc
+                    else None
+                ),
                 "last_active_utc": (
                     record.last_active_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
                     if record.last_active_utc
@@ -280,6 +286,13 @@ class StateStore:
                 for ts in data.get("recertification_failure_timestamps", [])
             ]
 
+            # Deserialize trust minting timestamp
+            trust_minted_utc = None
+            if data.get("trust_minted_utc"):
+                trust_minted_utc = datetime.strptime(
+                    data["trust_minted_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
             record = TrustRecord(
                 actor_id=data["actor_id"],
                 actor_kind=ActorKind(data["actor_kind"]),
@@ -288,6 +301,8 @@ class StateStore:
                 reliability=data.get("reliability", 0.0),
                 volume=data.get("volume", 0.0),
                 effort=data.get("effort", 0.0),
+                trust_minted=data.get("trust_minted", False),
+                trust_minted_utc=trust_minted_utc,
                 last_active_utc=last_active_utc,
                 domain_scores=domain_scores,
                 recertification_failure_timestamps=fail_timestamps,

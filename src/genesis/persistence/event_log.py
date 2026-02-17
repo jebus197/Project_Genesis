@@ -82,6 +82,8 @@ class EventKind(str, enum.Enum):
     IDENTITY_VERIFIED = "identity_verified"
     IDENTITY_LAPSED = "identity_lapsed"
     IDENTITY_FLAGGED = "identity_flagged"
+    # Trust profile minting events
+    TRUST_PROFILE_MINTED = "trust_profile_minted"
 
 
 @dataclass(frozen=True)
