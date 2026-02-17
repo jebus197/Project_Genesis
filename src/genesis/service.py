@@ -3097,8 +3097,9 @@ class GenesisService:
                         "human_count": estimate.current_humans,
                     },
                 )
-                self._event_log.append(event)
+                # Epoch write FIRST — if this fails, event is not appended
                 self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
             except (ValueError, OSError, RuntimeError):
                 pass  # Event log append is best-effort for lifecycle events
 
@@ -3146,6 +3147,7 @@ class GenesisService:
 
         if self._event_log is not None:
             try:
+                params = self._resolver.commission_params()
                 event = EventRecord.create(
                     event_id=self._next_event_id(),
                     event_kind=EventKind.CREATOR_ALLOCATION_DISBURSED,
@@ -3157,12 +3159,13 @@ class GenesisService:
                         "total_creator_income": str(total_creator),
                         "mission_reward": str(mission_reward),
                         "worker_id": worker_id,
-                        "worker_side_rate": "0.05",
-                        "employer_side_rate": "0.05",
+                        "worker_side_rate": str(params.get("creator_allocation_rate", Decimal("0"))),
+                        "employer_side_rate": str(params.get("employer_creator_fee_rate", Decimal("0"))),
                     },
                 )
-                self._event_log.append(event)
+                # Epoch write FIRST — if this fails, event is not appended
                 self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
             except (ValueError, OSError, RuntimeError) as exc:
                 return ServiceResult(
                     success=False,

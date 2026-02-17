@@ -163,8 +163,10 @@ class TestCreatorAllocationEvent:
         assert events[0].payload["mission_id"] == "M-001"
         assert events[0].payload["worker_side_allocation"] == "10.00"
         assert events[0].payload["employer_side_fee"] == "25.00"
-        assert events[0].payload["worker_side_rate"] == "0.05"
-        assert events[0].payload["employer_side_rate"] == "0.05"
+        # Rates must come from policy config, not be hardcoded
+        params = service._resolver.commission_params()
+        assert events[0].payload["worker_side_rate"] == str(params["creator_allocation_rate"])
+        assert events[0].payload["employer_side_rate"] == str(params["employer_creator_fee_rate"])
 
     def test_skips_zero_allocation(
         self, service: GenesisService,
@@ -670,3 +672,29 @@ class TestNoEpochCrashRegression:
         # Must not raise RuntimeError — should return failure ServiceResult
         assert result.success is False
         assert any("RuntimeError" in e or "epoch" in e.lower() for e in result.errors)
+
+    def test_no_event_on_failed_creator_allocation(
+        self, resolver: PolicyResolver,
+    ) -> None:
+        """Failed creator allocation must NOT leave orphan events in log.
+
+        CX P1 finding (8031218): if epoch write fails, the event was
+        already appended to the log. Retry could duplicate audit events.
+        Fix: epoch write before append — failure means zero events.
+        """
+        svc = GenesisService(resolver, event_log=EventLog())
+        # No epoch opened — record_mission_event will raise RuntimeError
+        result = svc.record_creator_allocation(
+            mission_id="test-mission",
+            creator_allocation=Decimal("10.00"),
+            employer_creator_fee=Decimal("25.00"),
+            mission_reward=Decimal("500.00"),
+            worker_id="worker-1",
+        )
+        assert result.success is False
+        # Critical: NO event must be in the log after failure
+        events = svc._event_log.events(EventKind.CREATOR_ALLOCATION_DISBURSED)
+        assert len(events) == 0, (
+            f"Expected 0 events after failure, found {len(events)}. "
+            "Epoch write must happen BEFORE event log append."
+        )
