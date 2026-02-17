@@ -1063,6 +1063,7 @@ class GenesisService:
         confirm the actor's identity via live video.
 
         The actor must be in PENDING verification status.
+        Verifiers must be ACTIVE, HUMAN, VERIFIED, trust-minted, and high-trust (>=0.70).
         """
         entry = self._roster.get(actor_id)
         if entry is None:
@@ -1077,8 +1078,9 @@ class GenesisService:
                 ],
             )
 
-        # Gather eligible verifiers: ACTIVE, minted, VERIFIED identity, trust above threshold
+        # Gather eligible verifiers: ACTIVE, HUMAN, VERIFIED, minted
         available_verifiers: list[tuple[str, float, str]] = []
+        verifier_orgs: dict[str, str] = {}
         for roster_entry in self._roster.all_actors():
             if roster_entry.actor_id == actor_id:
                 continue  # Can't verify yourself
@@ -1089,21 +1091,40 @@ class GenesisService:
             if roster_entry.identity_status != IdentityVerificationStatus.VERIFIED:
                 continue
             trust_rec = self._trust_records.get(roster_entry.actor_id)
-            score = trust_rec.score if trust_rec else 0.0
+            if not trust_rec or not trust_rec.trust_minted:
+                continue  # Must be trust-minted
+            score = trust_rec.score
             available_verifiers.append(
                 (roster_entry.actor_id, score, roster_entry.region)
             )
+            verifier_orgs[roster_entry.actor_id] = roster_entry.organization
 
         try:
             request = self._quorum_verifier.request_quorum_verification(
                 actor_id=actor_id,
                 region=entry.region,
                 available_verifiers=available_verifiers,
+                verifier_orgs=verifier_orgs,
                 quorum_size=quorum_size,
                 now=now,
             )
         except ValueError as exc:
             return ServiceResult(success=False, errors=[str(exc)])
+
+        # Emit QUORUM_PANEL_FORMED event
+        self._record_actor_lifecycle_event(
+            actor_id=actor_id,
+            event_kind=EventKind.QUORUM_PANEL_FORMED,
+            payload={
+                "request_id": request.request_id,
+                "quorum_size": request.quorum_size,
+                "verifier_ids": request.verifier_ids,
+                "applicant_pseudonym": request.applicant_pseudonym,
+                "session_max_seconds": request.session_max_seconds,
+                "scripted_intro_version": request.scripted_intro_version,
+                "region_constraint": request.region_constraint,
+            },
+        )
 
         return ServiceResult(
             success=True,
@@ -1114,6 +1135,11 @@ class GenesisService:
                 "verifier_ids": request.verifier_ids,
                 "region_constraint": request.region_constraint,
                 "expires_utc": request.expires_utc.isoformat(),
+                "applicant_pseudonym": request.applicant_pseudonym,
+                "session_max_seconds": request.session_max_seconds,
+                "scripted_intro": self._quorum_verifier.get_scripted_intro(
+                    request.scripted_intro_version,
+                ),
             },
         )
 
@@ -1123,6 +1149,7 @@ class GenesisService:
         verifier_id: str,
         approved: bool,
         *,
+        attestation: Optional[str] = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
         """Submit a verifier's vote on a quorum verification request.
@@ -1135,9 +1162,22 @@ class GenesisService:
                 request_id=request_id,
                 verifier_id=verifier_id,
                 approved=approved,
+                attestation=attestation,
             )
         except (KeyError, ValueError) as exc:
             return ServiceResult(success=False, errors=[str(exc)])
+
+        # Emit QUORUM_VOTE_CAST event
+        self._record_actor_lifecycle_event(
+            actor_id=verifier_id,
+            event_kind=EventKind.QUORUM_VOTE_CAST,
+            payload={
+                "request_id": request_id,
+                "verifier_id": verifier_id,
+                "approved": approved,
+                "has_attestation": attestation is not None,
+            },
+        )
 
         # Check result
         result = self._quorum_verifier.check_result(request_id, now=now)
@@ -1159,12 +1199,220 @@ class GenesisService:
             )
             result_data["verification_completed"] = verification_result.success
             result_data["outcome"] = "approved"
+            self._record_actor_lifecycle_event(
+                actor_id=request.actor_id,
+                event_kind=EventKind.QUORUM_VERIFICATION_COMPLETED,
+                payload={"request_id": request_id, "outcome": "approved"},
+            )
         elif result is False:
             result_data["outcome"] = "rejected"
+            self._record_actor_lifecycle_event(
+                actor_id=request.actor_id,
+                event_kind=EventKind.QUORUM_VERIFICATION_COMPLETED,
+                payload={"request_id": request_id, "outcome": "rejected"},
+            )
         else:
             result_data["outcome"] = "pending"
 
         return ServiceResult(success=True, data=result_data)
+
+    def declare_quorum_recusal(
+        self,
+        request_id: str,
+        verifier_id: str,
+        reason: str,
+    ) -> ServiceResult:
+        """Declare a verifier's recusal from a quorum panel."""
+        try:
+            request = self._quorum_verifier.declare_recusal(
+                request_id=request_id,
+                verifier_id=verifier_id,
+                reason=reason,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        self._record_actor_lifecycle_event(
+            actor_id=verifier_id,
+            event_kind=EventKind.QUORUM_RECUSAL_DECLARED,
+            payload={
+                "request_id": request_id,
+                "verifier_id": verifier_id,
+                "reason": reason,
+            },
+        )
+        return ServiceResult(
+            success=True,
+            data={"request_id": request_id, "recused": verifier_id},
+        )
+
+    def attach_quorum_evidence(
+        self,
+        request_id: str,
+        evidence_hash: str,
+    ) -> ServiceResult:
+        """Attach session recording evidence hash to a quorum request."""
+        try:
+            request = self._quorum_verifier.attach_session_evidence(
+                request_id=request_id,
+                evidence_hash=evidence_hash,
+            )
+        except KeyError as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        self._record_actor_lifecycle_event(
+            actor_id=request.actor_id,
+            event_kind=EventKind.QUORUM_SESSION_EVIDENCE,
+            payload={
+                "request_id": request_id,
+                "evidence_hash": evidence_hash,
+            },
+        )
+        return ServiceResult(
+            success=True,
+            data={"request_id": request_id, "evidence_hash": evidence_hash},
+        )
+
+    def file_quorum_abuse_complaint(
+        self,
+        request_id: str,
+        reporter_id: str,
+        complaint: str,
+    ) -> ServiceResult:
+        """File an abuse complaint against a quorum verification session."""
+        try:
+            request = self._quorum_verifier.file_abuse_complaint(
+                request_id=request_id,
+                reporter_id=reporter_id,
+                complaint_text=complaint,
+            )
+        except KeyError as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        self._record_actor_lifecycle_event(
+            actor_id=reporter_id,
+            event_kind=EventKind.QUORUM_ABUSE_COMPLAINT,
+            payload={
+                "request_id": request_id,
+                "reporter_id": reporter_id,
+            },
+        )
+        return ServiceResult(
+            success=True,
+            data={
+                "request_id": request_id,
+                "reporter_id": reporter_id,
+                "recording_preserved": True,
+            },
+        )
+
+    def review_quorum_abuse(
+        self,
+        request_id: str,
+        review_panel_ids: list[str],
+        votes: dict[str, bool],
+        *,
+        offending_verifier_id: Optional[str] = None,
+    ) -> ServiceResult:
+        """Review an abuse complaint. If confirmed, nuke offending verifier's trust.
+
+        The review panel must be high-trust members (>=0.70). If majority
+        confirms abuse, the offending verifier's trust is set to 0.001 (1/1000).
+        """
+        try:
+            result = self._quorum_verifier.review_abuse_complaint(
+                request_id=request_id,
+                review_panel=review_panel_ids,
+                votes=votes,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        if result.confirmed and offending_verifier_id:
+            # Trust nuke: set offender's trust to 0.001
+            trust_rec = self._trust_records.get(offending_verifier_id)
+            if trust_rec:
+                trust_rec.score = self._quorum_verifier._abuse_trust_nuke
+
+            self._record_actor_lifecycle_event(
+                actor_id=offending_verifier_id,
+                event_kind=EventKind.QUORUM_ABUSE_CONFIRMED,
+                payload={
+                    "request_id": request_id,
+                    "offending_verifier_id": offending_verifier_id,
+                    "trust_nuked_to": self._quorum_verifier._abuse_trust_nuke,
+                    "review_panel": review_panel_ids,
+                    "votes": votes,
+                },
+            )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "request_id": request_id,
+                "confirmed": result.confirmed,
+                "trust_action_taken": result.trust_action_taken,
+            },
+        )
+
+    def appeal_quorum_verification(
+        self,
+        actor_id: str,
+        original_request_id: str,
+        *,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Appeal a rejected quorum verification. Creates a new panel."""
+        # Gather eligible verifiers (same logic as request_quorum_verification)
+        available_verifiers: list[tuple[str, float, str]] = []
+        verifier_orgs: dict[str, str] = {}
+        for roster_entry in self._roster.all_actors():
+            if roster_entry.actor_id == actor_id:
+                continue
+            if roster_entry.status != ActorStatus.ACTIVE:
+                continue
+            if roster_entry.actor_kind != ActorKind.HUMAN:
+                continue
+            if roster_entry.identity_status != IdentityVerificationStatus.VERIFIED:
+                continue
+            trust_rec = self._trust_records.get(roster_entry.actor_id)
+            if not trust_rec or not trust_rec.trust_minted:
+                continue
+            score = trust_rec.score
+            available_verifiers.append(
+                (roster_entry.actor_id, score, roster_entry.region)
+            )
+            verifier_orgs[roster_entry.actor_id] = roster_entry.organization
+
+        try:
+            request = self._quorum_verifier.request_appeal(
+                original_request_id=original_request_id,
+                available_verifiers=available_verifiers,
+                verifier_orgs=verifier_orgs,
+                now=now,
+            )
+        except (KeyError, ValueError) as exc:
+            return ServiceResult(success=False, errors=[str(exc)])
+
+        self._record_actor_lifecycle_event(
+            actor_id=actor_id,
+            event_kind=EventKind.QUORUM_APPEAL_FILED,
+            payload={
+                "appeal_request_id": request.request_id,
+                "original_request_id": original_request_id,
+                "new_panel": request.verifier_ids,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "appeal_request_id": request.request_id,
+                "original_request_id": original_request_id,
+                "verifier_ids": request.verifier_ids,
+                "applicant_pseudonym": request.applicant_pseudonym,
+            },
+        )
 
     def lapse_verification(self, actor_id: str) -> ServiceResult:
         """Lapse a verified actor's identity (expired or manual).

@@ -30,6 +30,8 @@ def _default_quorum_config() -> dict:
         "verification_timeout_hours": 48,
         "min_verifier_trust": 0.60,
         "geographic_region_required": True,
+        "require_vote_attestation": False,
+        "verifier_cooldown_hours": 0,
     }
 
 

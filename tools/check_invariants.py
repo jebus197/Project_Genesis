@@ -404,6 +404,54 @@ def check() -> int:
         mvt = quorum.get("min_verifier_trust", 0)
         if not (0.0 < mvt <= 1.0):
             errors.append("quorum_verification.min_verifier_trust must be in (0, 1]")
+        # D-5: High-trust gate — verifiers must be >= 0.70
+        if mvt < 0.70:
+            errors.append(
+                f"quorum_verification.min_verifier_trust must be >= 0.70 "
+                f"(high-trust gate), got {mvt}"
+            )
+        # D-5: Panel diversity
+        pdmo = quorum.get("panel_diversity_min_organizations", 0)
+        if pdmo < 2:
+            errors.append("quorum_verification.panel_diversity_min_organizations must be >= 2")
+        # D-5: Verifier cooldown
+        vch = quorum.get("verifier_cooldown_hours", 0)
+        if vch <= 0:
+            errors.append("quorum_verification.verifier_cooldown_hours must be > 0")
+        # D-5: Appeal window
+        awh = quorum.get("appeal_window_hours", 0)
+        if awh <= 0:
+            errors.append("quorum_verification.appeal_window_hours must be > 0")
+        # D-5: Vote attestation required
+        if not quorum.get("require_vote_attestation"):
+            errors.append("quorum_verification.require_vote_attestation must be true")
+        # D-5: Blind adjudication required
+        if not quorum.get("blind_adjudication"):
+            errors.append("quorum_verification.blind_adjudication must be true")
+        # D-5: Session time limit (max 10 min)
+        sms = quorum.get("session_max_seconds", 0)
+        if sms <= 0 or sms > 600:
+            errors.append(
+                f"quorum_verification.session_max_seconds must be in (0, 600], got {sms}"
+            )
+        # D-5: Recording retention >= appeal window
+        rrh = quorum.get("recording_retention_hours", 0)
+        if rrh < awh:
+            errors.append(
+                f"quorum_verification.recording_retention_hours ({rrh}) must be "
+                f">= appeal_window_hours ({awh})"
+            )
+        # D-5: Abuse review panel size
+        arps = quorum.get("abuse_review_panel_size", 0)
+        if arps < 3:
+            errors.append("quorum_verification.abuse_review_panel_size must be >= 3")
+        # D-5: Abuse trust nuke must be a severe penalty
+        atn = quorum.get("abuse_trust_nuke_to", 1.0)
+        if atn > 0.01:
+            errors.append(
+                f"quorum_verification.abuse_trust_nuke_to must be <= 0.01 "
+                f"(severe penalty), got {atn}"
+            )
 
     if errors:
         print("Invariant check failed:")

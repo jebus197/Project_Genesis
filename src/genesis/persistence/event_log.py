@@ -84,6 +84,15 @@ class EventKind(str, enum.Enum):
     IDENTITY_FLAGGED = "identity_flagged"
     # Trust profile minting events
     TRUST_PROFILE_MINTED = "trust_profile_minted"
+    # Quorum verification safeguard events
+    QUORUM_PANEL_FORMED = "quorum_panel_formed"
+    QUORUM_VOTE_CAST = "quorum_vote_cast"
+    QUORUM_RECUSAL_DECLARED = "quorum_recusal_declared"
+    QUORUM_VERIFICATION_COMPLETED = "quorum_verification_completed"
+    QUORUM_APPEAL_FILED = "quorum_appeal_filed"
+    QUORUM_SESSION_EVIDENCE = "quorum_session_evidence"
+    QUORUM_ABUSE_COMPLAINT = "quorum_abuse_complaint"
+    QUORUM_ABUSE_CONFIRMED = "quorum_abuse_confirmed"
 
 
 @dataclass(frozen=True)

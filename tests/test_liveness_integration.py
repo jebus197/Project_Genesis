@@ -35,10 +35,10 @@ def _setup_actor(service, actor_id="HUMAN-001"):
     return actor_id
 
 
-def _setup_active_verifier(service, event_log, actor_id, score=0.75):
+def _setup_active_verifier(service, event_log, actor_id, score=0.75, org="Org"):
     """Register and fully mint a human actor for use as a quorum verifier."""
     result = service.register_human(
-        actor_id=actor_id, region="EU", organization="Org",
+        actor_id=actor_id, region="EU", organization=org,
         status=ActorStatus.ACTIVE, initial_trust=score,
     )
     assert result.success
@@ -259,8 +259,9 @@ class TestQuorumVerificationIntegration:
         svc.open_epoch("test-epoch")
 
         # Set up 5 verified, active, minted humans as potential verifiers
+        # Use distinct orgs to satisfy panel diversity requirements
         for i in range(5):
-            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75)
+            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         # Register the actor to be verified
         svc.register_human(actor_id="SUBJECT-1", region="EU", organization="Org")
@@ -278,7 +279,7 @@ class TestQuorumVerificationIntegration:
         svc.open_epoch("test-epoch")
 
         for i in range(5):
-            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75)
+            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         svc.register_human(actor_id="SUBJECT-2", region="EU", organization="Org")
         svc.request_verification("SUBJECT-2")
@@ -287,9 +288,12 @@ class TestQuorumVerificationIntegration:
         request_id = qr.data["request_id"]
         verifier_ids = qr.data["verifier_ids"]
 
-        # All approve
+        # All approve (attestation required by config)
         for vid in verifier_ids:
-            result = svc.submit_quorum_vote(request_id, vid, approved=True)
+            result = svc.submit_quorum_vote(
+                request_id, vid, approved=True,
+                attestation="I attest this verification was conducted fairly",
+            )
 
         assert result.data["outcome"] == "approved"
         assert result.data["verification_completed"] is True
@@ -305,7 +309,7 @@ class TestQuorumVerificationIntegration:
         svc.open_epoch("test-epoch")
 
         for i in range(5):
-            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75)
+            _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         svc.register_human(actor_id="SUBJECT-3", region="EU", organization="Org")
         svc.request_verification("SUBJECT-3")
@@ -314,9 +318,15 @@ class TestQuorumVerificationIntegration:
         request_id = qr.data["request_id"]
         verifier_ids = qr.data["verifier_ids"]
 
-        # First approves, second rejects
-        svc.submit_quorum_vote(request_id, verifier_ids[0], approved=True)
-        result = svc.submit_quorum_vote(request_id, verifier_ids[1], approved=False)
+        # First approves, second rejects (attestation required)
+        svc.submit_quorum_vote(
+            request_id, verifier_ids[0], approved=True,
+            attestation="I attest this verification was conducted fairly",
+        )
+        result = svc.submit_quorum_vote(
+            request_id, verifier_ids[1], approved=False,
+            attestation="I attest this verification was conducted fairly",
+        )
 
         assert result.data["outcome"] == "rejected"
 
