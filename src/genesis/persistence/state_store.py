@@ -55,7 +55,12 @@ from genesis.models.leave import (
     LeaveState,
 )
 from genesis.models.trust import ActorKind, TrustRecord
-from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
+from genesis.review.roster import (
+    ActorRoster,
+    ActorStatus,
+    IdentityVerificationStatus,
+    RosterEntry,
+)
 
 
 class StateStore:
@@ -114,6 +119,20 @@ class StateStore:
                 )
             if actor.machine_metadata is not None:
                 entry_data["machine_metadata"] = actor.machine_metadata
+            if actor.lineage_ids:
+                entry_data["lineage_ids"] = actor.lineage_ids
+            # Identity verification fields
+            entry_data["identity_status"] = actor.identity_status.value
+            if actor.identity_verified_utc is not None:
+                entry_data["identity_verified_utc"] = actor.identity_verified_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            if actor.identity_expires_utc is not None:
+                entry_data["identity_expires_utc"] = actor.identity_expires_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                )
+            if actor.identity_method is not None:
+                entry_data["identity_method"] = actor.identity_method
             entries.append(entry_data)
         self._state["roster"] = entries
         self._save()
@@ -127,6 +146,18 @@ class StateStore:
                 registered_utc = datetime.strptime(
                     data["registered_utc"], "%Y-%m-%dT%H:%M:%SZ"
                 ).replace(tzinfo=timezone.utc)
+            # Identity verification timestamps
+            identity_verified_utc = None
+            if data.get("identity_verified_utc"):
+                identity_verified_utc = datetime.strptime(
+                    data["identity_verified_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+            identity_expires_utc = None
+            if data.get("identity_expires_utc"):
+                identity_expires_utc = datetime.strptime(
+                    data["identity_expires_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+
             entry = RosterEntry(
                 actor_id=data["actor_id"],
                 actor_kind=ActorKind(data["actor_kind"]),
@@ -139,6 +170,13 @@ class StateStore:
                 registered_by=data.get("registered_by"),
                 registered_utc=registered_utc,
                 machine_metadata=data.get("machine_metadata"),
+                lineage_ids=data.get("lineage_ids", []),
+                identity_status=IdentityVerificationStatus(
+                    data.get("identity_status", "unverified")
+                ),
+                identity_verified_utc=identity_verified_utc,
+                identity_expires_utc=identity_expires_utc,
+                identity_method=data.get("identity_method"),
             )
             roster.register(entry)
         return roster
@@ -180,6 +218,17 @@ class StateStore:
                 "effort": record.effort,
                 "quarantined": record.quarantined,
                 "decommissioned": record.decommissioned,
+                "recertification_failures": record.recertification_failures,
+                "last_recertification_utc": (
+                    record.last_recertification_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if record.last_recertification_utc
+                    else None
+                ),
+                "recertification_failure_timestamps": [
+                    ts.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    for ts in record.recertification_failure_timestamps
+                ],
+                "probation_tasks_completed": record.probation_tasks_completed,
                 "last_active_utc": (
                     record.last_active_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
                     if record.last_active_utc
@@ -220,6 +269,17 @@ class StateStore:
                     data["last_active_utc"], "%Y-%m-%dT%H:%M:%SZ"
                 ).replace(tzinfo=timezone.utc)
 
+            # Deserialize recertification timestamps
+            last_recert_utc = None
+            if data.get("last_recertification_utc"):
+                last_recert_utc = datetime.strptime(
+                    data["last_recertification_utc"], "%Y-%m-%dT%H:%M:%SZ"
+                ).replace(tzinfo=timezone.utc)
+            fail_timestamps = [
+                datetime.strptime(ts, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                for ts in data.get("recertification_failure_timestamps", [])
+            ]
+
             record = TrustRecord(
                 actor_id=data["actor_id"],
                 actor_kind=ActorKind(data["actor_kind"]),
@@ -230,9 +290,13 @@ class StateStore:
                 effort=data.get("effort", 0.0),
                 last_active_utc=last_active_utc,
                 domain_scores=domain_scores,
+                recertification_failure_timestamps=fail_timestamps,
+                probation_tasks_completed=data.get("probation_tasks_completed", 0),
             )
             record.quarantined = data.get("quarantined", False)
             record.decommissioned = data.get("decommissioned", False)
+            record.recertification_failures = data.get("recertification_failures", 0)
+            record.last_recertification_utc = last_recert_utc
             records[actor_id] = record
         return records
 

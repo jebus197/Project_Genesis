@@ -72,6 +72,8 @@ class TrustRecord:
     recertification_failures: int = 0
     last_recertification_utc: Optional[datetime] = None
     decommissioned: bool = False
+    recertification_failure_timestamps: list[datetime] = field(default_factory=list)
+    probation_tasks_completed: int = 0
 
     # Domain-specific decay tracking
     last_active_utc: Optional[datetime] = None

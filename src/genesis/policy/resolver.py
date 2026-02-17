@@ -329,6 +329,19 @@ class PolicyResolver:
         """Return identity signal policy."""
         return dict(self._policy["identity_signals"])
 
+    def identity_verification_config(self) -> dict[str, Any]:
+        """Return identity verification config with backward-compatible defaults."""
+        defaults = {
+            "verification_expiry_days": 365,
+            "reverification_required_for": [
+                "constitutional_vote",
+                "constitutional_proposal",
+                "high_risk_adjudication",
+            ],
+        }
+        config = self._policy.get("identity_verification", {})
+        return {**defaults, **config}
+
     # ------------------------------------------------------------------
     # Skill taxonomy (optional — pre-labour-market mode if absent)
     # ------------------------------------------------------------------

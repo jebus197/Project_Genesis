@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -82,7 +82,12 @@ from genesis.persistence.event_log import EventLog, EventRecord, EventKind
 from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
 from genesis.quality.engine import QualityEngine
-from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
+from genesis.review.roster import (
+    ActorRoster,
+    ActorStatus,
+    IdentityVerificationStatus,
+    RosterEntry,
+)
 from genesis.review.selector import ReviewerSelector, SelectionResult
 from genesis.countdown.first_light import FirstLightEstimator
 from genesis.skills.taxonomy import SkillTaxonomy
@@ -379,6 +384,22 @@ class GenesisService:
                 errors=[f"Operator {operator_id} is not in an active state"],
             )
 
+        # Lineage validation: if operator has decommissioned machines,
+        # new registration must declare lineage_ids in machine_metadata.
+        decommissioned_machines = [
+            m for m in self._roster.machines_for_operator(operator_id)
+            if m.status == ActorStatus.DECOMMISSIONED
+        ]
+        lineage_ids = (machine_metadata or {}).get("lineage_ids", [])
+        if decommissioned_machines and not lineage_ids:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Operator has decommissioned machines — new registration must "
+                    "declare lineage_ids in machine_metadata"
+                ],
+            )
+
         try:
             now = datetime.now(timezone.utc)
             entry = RosterEntry(
@@ -392,6 +413,7 @@ class GenesisService:
                 registered_by=operator_id,
                 registered_utc=now,
                 machine_metadata=machine_metadata,
+                lineage_ids=lineage_ids if lineage_ids else [],
             )
             self._roster.register(entry)
 
@@ -441,7 +463,11 @@ class GenesisService:
         return self._roster.get(actor_id)
 
     def quarantine_actor(self, actor_id: str) -> ServiceResult:
-        """Place an actor in quarantine."""
+        """Place an actor in quarantine.
+
+        Emits MACHINE_QUARANTINED event for machine actors.
+        Rolls back on event or persistence failure.
+        """
         entry = self._roster.get(actor_id)
         if entry is None:
             return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
@@ -457,10 +483,565 @@ class GenesisService:
             if trust and prev_quarantined is not None:
                 trust.quarantined = prev_quarantined
 
+        # Emit lifecycle event for machines
+        if entry.actor_kind == ActorKind.MACHINE:
+            err = self._record_actor_lifecycle_event(
+                actor_id,
+                EventKind.MACHINE_QUARANTINED,
+                {"previous_status": prev_status.value},
+            )
+            if err:
+                _rollback()
+                return ServiceResult(success=False, errors=[err])
+
         err = self._safe_persist(on_rollback=_rollback)
         if err:
             return ServiceResult(success=False, errors=[err])
         return ServiceResult(success=True)
+
+    # ------------------------------------------------------------------
+    # Machine immune system — recertification lifecycle
+    # ------------------------------------------------------------------
+
+    def start_recertification(
+        self,
+        actor_id: str,
+        reviewer_signatures: list[str],
+    ) -> ServiceResult:
+        """Begin the recertification process for a quarantined machine.
+
+        Validates:
+        - Actor exists, is a MACHINE, is QUARANTINED, and not decommissioned.
+        - At least RECERT_REVIEW_SIGS unique valid reviewer signatures provided.
+
+        Transitions: QUARANTINED → PROBATION. Resets probation counter.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(success=False, errors=["Only machines can be recertified"])
+        if entry.status != ActorStatus.QUARANTINED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor must be quarantined to start recertification, got {entry.status.value}"],
+            )
+        trust = self._trust_records.get(actor_id.strip())
+        if trust and trust.decommissioned:
+            return ServiceResult(success=False, errors=["Decommissioned actors cannot be recertified"])
+
+        # Validate reviewer signatures
+        recert = self._resolver.recertification_requirements()
+        required_sigs = recert["RECERT_REVIEW_SIGS"]
+        unique_sigs = set(reviewer_signatures)
+        # Filter out invalid / non-existent / self-referencing reviewers
+        valid_sigs = set()
+        for sig_id in unique_sigs:
+            reviewer = self._roster.get(sig_id)
+            if reviewer and reviewer.is_available() and sig_id != actor_id:
+                valid_sigs.add(sig_id)
+        if len(valid_sigs) < required_sigs:
+            return ServiceResult(
+                success=False,
+                errors=[f"Need {required_sigs} valid reviewer signatures, got {len(valid_sigs)}"],
+            )
+
+        # Snapshot for rollback
+        prev_status = entry.status
+        prev_probation = trust.probation_tasks_completed if trust else 0
+
+        entry.status = ActorStatus.PROBATION
+        if trust:
+            trust.probation_tasks_completed = 0
+
+        # Emit lifecycle event
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.MACHINE_RECERTIFICATION_STARTED,
+            {
+                "reviewer_signatures": sorted(valid_sigs),
+                "signature_count": len(valid_sigs),
+            },
+        )
+        if err:
+            entry.status = prev_status
+            if trust:
+                trust.probation_tasks_completed = prev_probation
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.status = prev_status
+            if trust:
+                trust.probation_tasks_completed = prev_probation
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "probation"})
+
+    def complete_recertification(self, actor_id: str) -> ServiceResult:
+        """Complete recertification for a machine on probation.
+
+        Checks:
+        - probation_tasks_completed >= RECERT_PROBATION_TASKS
+        - quality >= RECERT_CORRECTNESS_MIN
+        - reliability >= RECERT_REPRO_MIN
+
+        Success: PROBATION → ACTIVE, quarantined=False.
+        Failure: increments failure counter, may trigger auto-decommission.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(success=False, errors=["Only machines can complete recertification"])
+        if entry.status != ActorStatus.PROBATION:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor must be on probation, got {entry.status.value}"],
+            )
+        trust = self._trust_records.get(actor_id.strip())
+        if trust is None:
+            return ServiceResult(success=False, errors=[f"No trust record for {actor_id}"])
+
+        recert = self._resolver.recertification_requirements()
+        failures: list[str] = []
+        if trust.probation_tasks_completed < recert["RECERT_PROBATION_TASKS"]:
+            failures.append(
+                f"Insufficient probation tasks: {trust.probation_tasks_completed}/{recert['RECERT_PROBATION_TASKS']}"
+            )
+        if trust.quality < recert["RECERT_CORRECTNESS_MIN"]:
+            failures.append(
+                f"Quality below minimum: {trust.quality:.4f} < {recert['RECERT_CORRECTNESS_MIN']}"
+            )
+        if trust.reliability < recert["RECERT_REPRO_MIN"]:
+            failures.append(
+                f"Reliability below minimum: {trust.reliability:.4f} < {recert['RECERT_REPRO_MIN']}"
+            )
+
+        if failures:
+            # Recertification failed — increment failure counter
+            now_ts = datetime.now(timezone.utc)
+            fail_timestamps = list(trust.recertification_failure_timestamps) + [now_ts]
+            trust.recertification_failures += 1
+            trust.recertification_failure_timestamps = fail_timestamps
+
+            # Emit failure event
+            err = self._record_actor_lifecycle_event(
+                actor_id,
+                EventKind.MACHINE_RECERTIFICATION_FAILED,
+                {"failures": failures, "failure_count": trust.recertification_failures},
+            )
+            if err:
+                trust.recertification_failures -= 1
+                trust.recertification_failure_timestamps = fail_timestamps[:-1]
+                return ServiceResult(success=False, errors=[err])
+
+            # Check windowed threshold for auto-decommission
+            decomm = self._resolver.decommission_rules()
+            windowed = self._trust_engine.count_windowed_failures(trust, now_ts)
+            if windowed >= decomm["M_RECERT_FAIL_MAX"]:
+                entry.status = ActorStatus.DECOMMISSIONED
+                trust.decommissioned = True
+                trust.score = 0.0
+                derr = self._record_actor_lifecycle_event(
+                    actor_id,
+                    EventKind.MACHINE_DECOMMISSIONED,
+                    {"reason": "recertification_failure_threshold", "windowed_failures": windowed},
+                )
+                if derr:
+                    # Rollback decommission but keep failure recorded
+                    entry.status = ActorStatus.PROBATION
+                    trust.decommissioned = False
+
+            persist_err = self._safe_persist(on_rollback=lambda: None)
+            return ServiceResult(
+                success=False,
+                errors=failures,
+                data={
+                    "actor_id": actor_id,
+                    "recertification_failures": trust.recertification_failures,
+                    "decommissioned": trust.decommissioned,
+                },
+            )
+
+        # Recertification succeeded
+        prev_status = entry.status
+        prev_quarantined = trust.quarantined
+        entry.status = ActorStatus.ACTIVE
+        trust.quarantined = False
+        trust.last_recertification_utc = datetime.now(timezone.utc)
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.MACHINE_RECERTIFICATION_COMPLETED,
+            {
+                "probation_tasks": trust.probation_tasks_completed,
+                "quality": trust.quality,
+                "reliability": trust.reliability,
+            },
+        )
+        if err:
+            entry.status = prev_status
+            trust.quarantined = prev_quarantined
+            trust.last_recertification_utc = None
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.status = prev_status
+            trust.quarantined = prev_quarantined
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "active"})
+
+    def decommission_actor(self, actor_id: str, reason: str) -> ServiceResult:
+        """Explicitly decommission an actor.
+
+        Sets trust score to 0, marks decommissioned, updates roster.
+        Emits MACHINE_DECOMMISSIONED event.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.status == ActorStatus.DECOMMISSIONED:
+            return ServiceResult(success=False, errors=["Actor already decommissioned"])
+
+        trust = self._trust_records.get(actor_id.strip())
+        prev_status = entry.status
+        prev_score = trust.score if trust else None
+        prev_decomm = trust.decommissioned if trust else None
+        prev_quarantined = trust.quarantined if trust else None
+
+        entry.status = ActorStatus.DECOMMISSIONED
+        if trust:
+            trust.score = 0.0
+            trust.decommissioned = True
+            trust.quarantined = True
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.MACHINE_DECOMMISSIONED,
+            {"reason": reason, "previous_status": prev_status.value},
+        )
+        if err:
+            entry.status = prev_status
+            if trust:
+                trust.score = prev_score
+                trust.decommissioned = prev_decomm
+                trust.quarantined = prev_quarantined
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.status = prev_status
+            if trust:
+                trust.score = prev_score
+                trust.decommissioned = prev_decomm
+                trust.quarantined = prev_quarantined
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        # Update roster trust score
+        if trust:
+            roster_entry = self._roster.get(actor_id)
+            if roster_entry:
+                roster_entry.trust_score = 0.0
+
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "decommissioned"})
+
+    def check_auto_decommission(self) -> ServiceResult:
+        """Auto-decommission machines quarantined with T=0 for too long.
+
+        Checks all quarantined machines with trust score 0. If quarantined
+        for >= M_ZERO_DECOMMISSION_DAYS, auto-decommissions.
+        Should be called periodically (e.g. daily).
+        """
+        decomm = self._resolver.decommission_rules()
+        threshold_days = decomm["M_ZERO_DECOMMISSION_DAYS"]
+        now = datetime.now(timezone.utc)
+        decommissioned: list[str] = []
+
+        for actor_id, trust in list(self._trust_records.items()):
+            if trust.actor_kind != ActorKind.MACHINE:
+                continue
+            if trust.decommissioned:
+                continue
+            if not trust.quarantined or trust.score > 0.0:
+                continue
+
+            entry = self._roster.get(actor_id)
+            if entry is None or entry.status != ActorStatus.QUARANTINED:
+                continue
+
+            # Check how long quarantined — use last_active_utc as proxy
+            quarantine_start = trust.last_active_utc or trust.last_recertification_utc
+            if quarantine_start is None:
+                continue  # No timestamp to judge duration
+
+            if (now - quarantine_start).days >= threshold_days:
+                entry.status = ActorStatus.DECOMMISSIONED
+                trust.decommissioned = True
+                trust.score = 0.0
+
+                err = self._record_actor_lifecycle_event(
+                    actor_id,
+                    EventKind.MACHINE_DECOMMISSIONED,
+                    {
+                        "reason": "auto_decommission_zero_trust",
+                        "quarantine_days": (now - quarantine_start).days,
+                    },
+                )
+                if not err:
+                    decommissioned.append(actor_id)
+                    if entry:
+                        entry.trust_score = 0.0
+
+        if decommissioned:
+            self._safe_persist(on_rollback=lambda: None)
+
+        return ServiceResult(
+            success=True,
+            data={"decommissioned_count": len(decommissioned), "actors": decommissioned},
+        )
+
+    # ------------------------------------------------------------------
+    # Identity verification lifecycle
+    # ------------------------------------------------------------------
+
+    def request_verification(self, actor_id: str) -> ServiceResult:
+        """Request identity verification for an actor.
+
+        Transitions: UNVERIFIED → PENDING.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.identity_status not in (
+            IdentityVerificationStatus.UNVERIFIED,
+            IdentityVerificationStatus.LAPSED,
+        ):
+            return ServiceResult(
+                success=False,
+                errors=[f"Cannot request verification from status {entry.identity_status.value}"],
+            )
+
+        prev_status = entry.identity_status
+        entry.identity_status = IdentityVerificationStatus.PENDING
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.IDENTITY_VERIFICATION_REQUESTED,
+            {"previous_status": prev_status.value},
+        )
+        if err:
+            entry.identity_status = prev_status
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.identity_status = prev_status
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "pending"})
+
+    def complete_verification(
+        self,
+        actor_id: str,
+        method: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Complete identity verification for an actor.
+
+        Transitions: PENDING → VERIFIED. Sets expiry based on config.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.identity_status != IdentityVerificationStatus.PENDING:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor must be in PENDING status, got {entry.identity_status.value}"],
+            )
+
+        now = now or datetime.now(timezone.utc)
+        id_config = self._resolver.identity_verification_config()
+        expiry_days = id_config["verification_expiry_days"]
+
+        prev_status = entry.identity_status
+        prev_verified = entry.identity_verified_utc
+        prev_expires = entry.identity_expires_utc
+        prev_method = entry.identity_method
+
+        entry.identity_status = IdentityVerificationStatus.VERIFIED
+        entry.identity_verified_utc = now
+        entry.identity_expires_utc = now + timedelta(days=expiry_days)
+        entry.identity_method = method
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.IDENTITY_VERIFIED,
+            {"method": method, "expires_utc": entry.identity_expires_utc.isoformat()},
+        )
+        if err:
+            entry.identity_status = prev_status
+            entry.identity_verified_utc = prev_verified
+            entry.identity_expires_utc = prev_expires
+            entry.identity_method = prev_method
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.identity_status = prev_status
+            entry.identity_verified_utc = prev_verified
+            entry.identity_expires_utc = prev_expires
+            entry.identity_method = prev_method
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(
+            success=True,
+            data={
+                "actor_id": actor_id,
+                "status": "verified",
+                "expires_utc": entry.identity_expires_utc.isoformat(),
+            },
+        )
+
+    def lapse_verification(self, actor_id: str) -> ServiceResult:
+        """Lapse a verified actor's identity (expired or manual).
+
+        Transitions: VERIFIED → LAPSED.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+        if entry.identity_status != IdentityVerificationStatus.VERIFIED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Can only lapse VERIFIED actors, got {entry.identity_status.value}"],
+            )
+
+        prev_status = entry.identity_status
+        entry.identity_status = IdentityVerificationStatus.LAPSED
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.IDENTITY_LAPSED,
+            {"previous_verified_utc": entry.identity_verified_utc.isoformat() if entry.identity_verified_utc else None},
+        )
+        if err:
+            entry.identity_status = prev_status
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.identity_status = prev_status
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "lapsed"})
+
+    def flag_identity(self, actor_id: str, reason: str) -> ServiceResult:
+        """Flag an actor's identity for investigation.
+
+        Transitions: Any → FLAGGED.
+        """
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        prev_status = entry.identity_status
+        entry.identity_status = IdentityVerificationStatus.FLAGGED
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.IDENTITY_FLAGGED,
+            {"reason": reason, "previous_status": prev_status.value},
+        )
+        if err:
+            entry.identity_status = prev_status
+            return ServiceResult(success=False, errors=[err])
+
+        def _rollback() -> None:
+            entry.identity_status = prev_status
+
+        err = self._safe_persist(on_rollback=_rollback)
+        if err:
+            return ServiceResult(success=False, errors=[err])
+        return ServiceResult(success=True, data={"actor_id": actor_id, "status": "flagged"})
+
+    def check_identity_for_high_stakes(
+        self,
+        actor_id: str,
+        action_type: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Gate check: does this actor have valid identity for a high-stakes action?
+
+        Returns success if:
+        - action_type is NOT in reverification_required_for, OR
+        - actor is VERIFIED and not expired.
+
+        Auto-lapses expired actors. Blocks FLAGGED actors.
+        """
+        id_config = self._resolver.identity_verification_config()
+        required_for = id_config.get("reverification_required_for", [])
+
+        if action_type not in required_for:
+            return ServiceResult(success=True, data={"gate": "not_required"})
+
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        if entry.identity_status == IdentityVerificationStatus.FLAGGED:
+            return ServiceResult(
+                success=False,
+                errors=["Identity flagged — high-stakes actions blocked"],
+            )
+
+        if entry.identity_status != IdentityVerificationStatus.VERIFIED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Identity verification required for {action_type}, status is {entry.identity_status.value}"],
+            )
+
+        # Check expiry
+        now = now or datetime.now(timezone.utc)
+        if entry.identity_expires_utc and now > entry.identity_expires_utc:
+            # Auto-lapse
+            self.lapse_verification(actor_id)
+            return ServiceResult(
+                success=False,
+                errors=[f"Identity expired — re-verification required for {action_type}"],
+            )
+
+        return ServiceResult(success=True, data={"gate": "verified"})
+
+    def check_lapsed_identities(self, now: Optional[datetime] = None) -> ServiceResult:
+        """Batch check: lapse any VERIFIED actors whose identity has expired.
+
+        Should be called periodically (e.g. daily).
+        """
+        now = now or datetime.now(timezone.utc)
+        lapsed: list[str] = []
+
+        for entry in self._roster.all_actors():
+            if entry.identity_status != IdentityVerificationStatus.VERIFIED:
+                continue
+            if entry.identity_expires_utc and now > entry.identity_expires_utc:
+                result = self.lapse_verification(entry.actor_id)
+                if result.success:
+                    lapsed.append(entry.actor_id)
+
+        return ServiceResult(
+            success=True,
+            data={"lapsed_count": len(lapsed), "actors": lapsed},
+        )
 
     # ------------------------------------------------------------------
     # Skill profile management
@@ -1632,10 +2213,12 @@ class GenesisService:
 
         # Machine recertification enforcement
         recert_issues: list[str] = []
+        now_ts = datetime.now(timezone.utc)
         if new_record.actor_kind == ActorKind.MACHINE:
             recert_issues = self._trust_engine.check_recertification(new_record)
             if recert_issues:
-                # Increment failure counter
+                # Append failure timestamp + increment counter
+                fail_timestamps = list(new_record.recertification_failure_timestamps) + [now_ts]
                 new_record = TrustRecord(
                     actor_id=new_record.actor_id,
                     actor_kind=new_record.actor_kind,
@@ -1649,10 +2232,15 @@ class GenesisService:
                     last_recertification_utc=new_record.last_recertification_utc,
                     decommissioned=new_record.decommissioned,
                     last_active_utc=new_record.last_active_utc,
+                    recertification_failure_timestamps=fail_timestamps,
+                    probation_tasks_completed=new_record.probation_tasks_completed,
                 )
-                # Check if decommission threshold reached
+                # Use windowed failure count for decommission threshold
                 decomm = self._resolver.decommission_rules()
-                if new_record.recertification_failures >= decomm["M_RECERT_FAIL_MAX"]:
+                windowed_count = self._trust_engine.count_windowed_failures(
+                    new_record, now_ts,
+                )
+                if windowed_count >= decomm["M_RECERT_FAIL_MAX"]:
                     new_record = TrustRecord(
                         actor_id=new_record.actor_id,
                         actor_kind=new_record.actor_kind,
@@ -1666,10 +2254,31 @@ class GenesisService:
                         last_recertification_utc=new_record.last_recertification_utc,
                         decommissioned=True,
                         last_active_utc=new_record.last_active_utc,
+                        recertification_failure_timestamps=new_record.recertification_failure_timestamps,
+                        probation_tasks_completed=new_record.probation_tasks_completed,
                     )
                     # Update roster status
                     if roster_entry:
                         roster_entry.status = ActorStatus.DECOMMISSIONED
+            else:
+                # Successful update — increment probation counter for PROBATION machines
+                if roster_entry and roster_entry.status == ActorStatus.PROBATION:
+                    new_record = TrustRecord(
+                        actor_id=new_record.actor_id,
+                        actor_kind=new_record.actor_kind,
+                        score=new_record.score,
+                        quality=new_record.quality,
+                        reliability=new_record.reliability,
+                        volume=new_record.volume,
+                        effort=new_record.effort,
+                        quarantined=new_record.quarantined,
+                        recertification_failures=new_record.recertification_failures,
+                        last_recertification_utc=new_record.last_recertification_utc,
+                        decommissioned=new_record.decommissioned,
+                        last_active_utc=new_record.last_active_utc,
+                        recertification_failure_timestamps=new_record.recertification_failure_timestamps,
+                        probation_tasks_completed=new_record.probation_tasks_completed + 1,
+                    )
 
         self._trust_records[actor_id.strip()] = new_record
 
@@ -3737,6 +4346,44 @@ class GenesisService:
             except (ValueError, OSError) as e:
                 return f"Event log failure: {e}"
 
+        self._epoch_service.record_mission_event(event_hash)
+        return None
+
+    def _record_actor_lifecycle_event(
+        self,
+        actor_id: str,
+        event_kind: EventKind,
+        payload: dict[str, Any],
+    ) -> Optional[str]:
+        """Record an actor lifecycle event. Returns error string or None.
+
+        Reusable 3-step event recorder for machine immune system and
+        identity verification events. Same epoch-before-append ordering
+        as all other event helpers.
+        """
+        # 1. Pre-check: verify epoch is open before writing anything
+        epoch = self._epoch_service.current_epoch
+        if epoch is None or epoch.closed:
+            return "Audit-trail failure (no epoch open): No open epoch — call open_epoch() first."
+
+        event_data = f"{actor_id}:{event_kind.value}:{datetime.now(timezone.utc).isoformat()}"
+        event_hash = "sha256:" + hashlib.sha256(event_data.encode()).hexdigest()
+
+        # 2. Durable append — if this fails, epoch stays clean
+        if self._event_log is not None:
+            try:
+                payload_with_hash = {**payload, "event_hash": event_hash}
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=event_kind,
+                    actor_id=actor_id,
+                    payload=payload_with_hash,
+                )
+                self._event_log.append(event)
+            except (ValueError, OSError) as e:
+                return f"Event log failure: {e}"
+
+        # 3. Epoch hash insertion — epoch was validated open in step 1
         self._epoch_service.record_mission_event(event_hash)
         return None
 

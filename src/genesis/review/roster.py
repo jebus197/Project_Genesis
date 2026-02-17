@@ -35,6 +35,20 @@ class ActorStatus(str, enum.Enum):
     MEMORIALISED = "memorialised"
 
 
+class IdentityVerificationStatus(str, enum.Enum):
+    """Verification state for an actor's identity.
+
+    Identity verification is an anti-abuse control only.
+    It cannot mint trust, grant privileged routing, or grant
+    constitutional authority (runtime_policy.json constraints).
+    """
+    UNVERIFIED = "unverified"
+    PENDING = "pending"
+    VERIFIED = "verified"
+    LAPSED = "lapsed"
+    FLAGGED = "flagged"
+
+
 @dataclass
 class RosterEntry:
     """A single actor in the roster.
@@ -62,6 +76,14 @@ class RosterEntry:
     machine_metadata: Optional[dict] = None
     # Machine-specific metadata: model version, API endpoint, capabilities.
     # None for humans.
+    lineage_ids: list[str] = field(default_factory=list)
+    # IDs of previously decommissioned machines that share lineage with this actor.
+    # Required for machines whose operator previously had decommissioned machines.
+    # Identity verification fields
+    identity_status: IdentityVerificationStatus = IdentityVerificationStatus.UNVERIFIED
+    identity_verified_utc: Optional[datetime] = None
+    identity_expires_utc: Optional[datetime] = None
+    identity_method: Optional[str] = None
 
     def is_available(self) -> bool:
         """An actor is available if active or on probation."""

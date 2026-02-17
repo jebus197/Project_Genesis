@@ -71,6 +71,17 @@ class EventKind(str, enum.Enum):
     # Platform lifecycle events
     FIRST_LIGHT = "first_light"
     MACHINE_REGISTERED = "machine_registered"
+    # Machine immune system events
+    MACHINE_QUARANTINED = "machine_quarantined"
+    MACHINE_DECOMMISSIONED = "machine_decommissioned"
+    MACHINE_RECERTIFICATION_STARTED = "machine_recertification_started"
+    MACHINE_RECERTIFICATION_COMPLETED = "machine_recertification_completed"
+    MACHINE_RECERTIFICATION_FAILED = "machine_recertification_failed"
+    # Identity verification events
+    IDENTITY_VERIFICATION_REQUESTED = "identity_verification_requested"
+    IDENTITY_VERIFIED = "identity_verified"
+    IDENTITY_LAPSED = "identity_lapsed"
+    IDENTITY_FLAGGED = "identity_flagged"
 
 
 @dataclass(frozen=True)

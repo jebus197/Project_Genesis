@@ -244,7 +244,15 @@ class TestRecertification:
         assert any("RECERT_CORRECTNESS_MIN" in e for e in errors)
 
     def test_max_failures_triggers_decommission(self, engine: TrustEngine) -> None:
+        from datetime import datetime, timedelta, timezone
         record = _machine_record(score=0.3)
+        now = datetime.now(timezone.utc)
+        # Provide 3 recent failure timestamps within the 180-day window
+        record.recertification_failure_timestamps = [
+            now - timedelta(days=10),
+            now - timedelta(days=20),
+            now - timedelta(days=30),
+        ]
         record.recertification_failures = 3  # M_RECERT_FAIL_MAX = 3
         errors = engine.check_recertification(record)
         assert any("decommission" in e for e in errors)

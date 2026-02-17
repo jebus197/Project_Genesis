@@ -20,7 +20,7 @@ Invariants enforced:
 from __future__ import annotations
 
 import math
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from genesis.models.domain_trust import (
@@ -119,6 +119,8 @@ class TrustEngine:
             recertification_failures=record.recertification_failures,
             last_recertification_utc=record.last_recertification_utc,
             decommissioned=record.decommissioned,
+            recertification_failure_timestamps=list(record.recertification_failure_timestamps),
+            probation_tasks_completed=record.probation_tasks_completed,
             last_active_utc=record.last_active_utc,
             domain_scores=dict(record.domain_scores),
         )
@@ -149,14 +151,35 @@ class TrustEngine:
             )
 
         decomm = self._resolver.decommission_rules()
-        if record.recertification_failures >= decomm["M_RECERT_FAIL_MAX"]:
+        windowed = self.count_windowed_failures(record)
+        if windowed >= decomm["M_RECERT_FAIL_MAX"]:
             errors.append(
-                f"{record.actor_id}: recertification failures "
-                f"{record.recertification_failures} >= M_RECERT_FAIL_MAX "
+                f"{record.actor_id}: windowed recertification failures "
+                f"{windowed} >= M_RECERT_FAIL_MAX "
                 f"{decomm['M_RECERT_FAIL_MAX']} — decommission required"
             )
 
         return errors
+
+    def count_windowed_failures(
+        self,
+        record: TrustRecord,
+        now: Optional[datetime] = None,
+    ) -> int:
+        """Count recertification failures within the rolling window.
+
+        Only failures within M_RECERT_FAIL_WINDOW_DAYS (default 180) of
+        ``now`` count toward the decommission threshold. This prevents
+        unbounded liability where 3 failures *ever* trigger permanent
+        decommission regardless of when they occurred.
+        """
+        if not record.recertification_failure_timestamps:
+            return 0
+        now = now or datetime.now(timezone.utc)
+        decomm = self._resolver.decommission_rules()
+        window_days = decomm["M_RECERT_FAIL_WINDOW_DAYS"]
+        cutoff = now - timedelta(days=window_days)
+        return sum(1 for ts in record.recertification_failure_timestamps if ts >= cutoff)
 
     # ------------------------------------------------------------------
     # Domain-specific trust
@@ -249,6 +272,8 @@ class TrustEngine:
             recertification_failures=record.recertification_failures,
             last_recertification_utc=record.last_recertification_utc,
             decommissioned=record.decommissioned,
+            recertification_failure_timestamps=list(record.recertification_failure_timestamps),
+            probation_tasks_completed=record.probation_tasks_completed,
             last_active_utc=now,
             domain_scores=new_domain_scores,
         )
@@ -398,6 +423,8 @@ class TrustEngine:
             recertification_failures=record.recertification_failures,
             last_recertification_utc=record.last_recertification_utc,
             decommissioned=record.decommissioned,
+            recertification_failure_timestamps=list(record.recertification_failure_timestamps),
+            probation_tasks_completed=record.probation_tasks_completed,
             last_active_utc=record.last_active_utc,
             domain_scores=new_domain_scores,
         )

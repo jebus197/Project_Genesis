@@ -82,6 +82,14 @@
     "can_grant_privileged_routing": false,
     "can_grant_constitutional_authority": false
   },
+  "identity_verification": {
+    "verification_expiry_days": 365,
+    "reverification_required_for": [
+      "constitutional_vote",
+      "constitutional_proposal",
+      "high_risk_adjudication"
+    ]
+  },
   "poc_mode": {
     "active": true,
     "label": "Proof of Concept",

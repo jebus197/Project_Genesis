@@ -347,6 +347,24 @@ def check() -> int:
     if identity["can_grant_constitutional_authority"]:
         errors.append("identity signals must not grant constitutional authority")
 
+    # --- Machine decommission window invariant ---
+    if decomm.get("M_RECERT_FAIL_WINDOW_DAYS", 0) <= 0:
+        errors.append("M_RECERT_FAIL_WINDOW_DAYS must be > 0")
+
+    # --- Identity verification invariants ---
+    id_verify = policy.get("identity_verification", {})
+    expiry_days = id_verify.get("verification_expiry_days", 0)
+    if expiry_days <= 0:
+        errors.append("identity_verification.verification_expiry_days must be > 0")
+    required_actions = {"constitutional_vote", "constitutional_proposal"}
+    reverif_for = set(id_verify.get("reverification_required_for", []))
+    missing_actions = required_actions - reverif_for
+    if missing_actions:
+        errors.append(
+            f"reverification_required_for must include {sorted(required_actions)}, "
+            f"missing: {sorted(missing_actions)}"
+        )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:
