@@ -611,3 +611,44 @@ class TestCLIAdapterIntegration:
             "--reward", "500.00",
         ])
         assert exit_code == 1
+
+
+class TestNoEpochCrashRegression:
+    """CX P1: lifecycle methods must not crash with RuntimeError
+    when no epoch is open. They should degrade gracefully.
+    """
+
+    def test_check_first_light_achieved_no_epoch_no_crash(
+        self, resolver: PolicyResolver,
+    ) -> None:
+        """First Light achieved path must not crash without an open epoch."""
+        svc = GenesisService(resolver, event_log=EventLog())
+        # Register humans WITH an epoch (needed for registration)
+        svc.open_epoch("setup-epoch")
+        _register_humans(svc, 5)
+        svc.close_epoch(beacon_round=1)
+        # Now NO epoch is open — call check_first_light with achievable financials
+        result = svc.check_first_light(
+            monthly_revenue=Decimal("2000"),
+            monthly_costs=Decimal("500"),
+            reserve_balance=Decimal("5000"),
+        )
+        # Must not raise RuntimeError — should succeed gracefully
+        assert result.success is True
+        assert result.data["first_light"] is True
+
+    def test_record_creator_allocation_no_epoch_no_crash(
+        self, resolver: PolicyResolver,
+    ) -> None:
+        """Creator allocation recording must not crash without an open epoch."""
+        svc = GenesisService(resolver, event_log=EventLog())
+        # No epoch opened at all
+        result = svc.record_creator_allocation(
+            mission_id="test-mission",
+            creator_allocation=Decimal("10.00"),
+            mission_reward=Decimal("500.00"),
+            worker_id="worker-1",
+        )
+        # Must not raise RuntimeError — should return failure ServiceResult
+        assert result.success is False
+        assert any("RuntimeError" in e or "epoch" in e.lower() for e in result.errors)

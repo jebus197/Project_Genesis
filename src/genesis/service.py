@@ -3099,7 +3099,7 @@ class GenesisService:
                 )
                 self._event_log.append(event)
                 self._epoch_service.record_mission_event(event.event_hash)
-            except (ValueError, OSError):
+            except (ValueError, OSError, RuntimeError):
                 pass  # Event log append is best-effort for lifecycle events
 
         # 2. Disable PoC mode — First Light is irreversible
@@ -3155,7 +3155,7 @@ class GenesisService:
                 )
                 self._event_log.append(event)
                 self._epoch_service.record_mission_event(event.event_hash)
-            except (ValueError, OSError) as exc:
+            except (ValueError, OSError, RuntimeError) as exc:
                 return ServiceResult(
                     success=False,
                     errors=[f"Failed to record creator allocation: {exc}"],

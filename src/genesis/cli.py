@@ -34,11 +34,14 @@ def _make_service(config_dir: Path, data_dir: Path = DEFAULT_DATA) -> GenesisSer
     resolver = PolicyResolver.from_config_dir(config_dir)
     event_log = EventLog(storage_path=data_dir / "events.jsonl")
     state_store = StateStore(storage_path=data_dir / "state.json")
-    return GenesisService(
+    service = GenesisService(
         resolver,
         event_log=event_log,
         state_store=state_store,
     )
+    # Ensure an epoch is open so lifecycle/payment commands don't crash
+    service._epoch_service.open_epoch()
+    return service
 
 
 def cmd_status(args: argparse.Namespace) -> int:
