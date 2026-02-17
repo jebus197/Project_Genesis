@@ -34,6 +34,9 @@ class ActorStatus(str, enum.Enum):
     PROBATION = "probation"
     ON_LEAVE = "on_leave"
     MEMORIALISED = "memorialised"
+    SUSPENDED = "suspended"
+    COMPLIANCE_REVIEW = "compliance_review"
+    PERMANENTLY_DECOMMISSIONED = "permanently_decommissioned"
 
 
 class IdentityVerificationStatus(str, enum.Enum):
@@ -87,7 +90,11 @@ class RosterEntry:
     identity_method: Optional[str] = None
 
     def is_available(self) -> bool:
-        """An actor is available if provisional, active, or on probation."""
+        """An actor is available if provisional, active, or on probation.
+
+        Excluded: quarantined, decommissioned, on_leave, memorialised,
+        suspended, compliance_review, permanently_decommissioned.
+        """
         return self.status in (
             ActorStatus.PROVISIONAL, ActorStatus.ACTIVE, ActorStatus.PROBATION,
         )

@@ -98,6 +98,13 @@ class EventKind(str, enum.Enum):
     # Genesis Common Fund (GCF) events
     GCF_ACTIVATED = "gcf_activated"
     GCF_CONTRIBUTION_RECORDED = "gcf_contribution_recorded"
+    # Compliance events (Phase E-2)
+    COMPLIANCE_SCREENING_COMPLETED = "compliance_screening_completed"
+    COMPLIANCE_COMPLAINT_FILED = "compliance_complaint_filed"
+    COMPLIANCE_REVIEW_INITIATED = "compliance_review_initiated"
+    COMPLIANCE_REVIEW_COMPLETED = "compliance_review_completed"
+    ACTOR_SUSPENDED = "actor_suspended"
+    ACTOR_PERMANENTLY_DECOMMISSIONED = "actor_permanently_decommissioned"
 
 
 @dataclass(frozen=True)

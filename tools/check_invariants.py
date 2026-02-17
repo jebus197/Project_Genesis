@@ -554,6 +554,68 @@ def check() -> int:
                         f"entrenched_provisions.GCF_CONTRIBUTION_RATE ({gcf_rate_str})"
                     )
 
+    # --- Compliance invariants (Phase E-2) ---
+    compliance = policy.get("compliance", {})
+    if not compliance:
+        errors.append("compliance section must exist in runtime_policy.json")
+    else:
+        prohibited = compliance.get("prohibited_categories", [])
+        if not prohibited:
+            errors.append("compliance.prohibited_categories must not be empty")
+        # At minimum, weapons and exploitation must be prohibited
+        required_prohibited = {
+            "weapons_development", "weapons_manufacturing", "weapons_trafficking",
+            "child_exploitation", "exploitation_of_persons",
+            "biological_weapons", "chemical_weapons", "nuclear_weapons",
+        }
+        missing_prohibited = required_prohibited - set(prohibited)
+        if missing_prohibited:
+            errors.append(
+                f"compliance.prohibited_categories must include: {sorted(missing_prohibited)}"
+            )
+        # No-statute-limit categories must be a subset of prohibited
+        no_limit = set(compliance.get("no_statute_limit_categories", []))
+        if no_limit and not no_limit.issubset(set(prohibited)):
+            errors.append(
+                "compliance.no_statute_limit_categories must be subset of prohibited_categories"
+            )
+        # Statute of limitations must be > 0
+        sol = compliance.get("statute_of_limitations_days", 0)
+        if sol <= 0:
+            errors.append(
+                f"compliance.statute_of_limitations_days must be > 0, got {sol}"
+            )
+        # Penalty escalation bounds
+        pe = compliance.get("penalty_escalation", {})
+        if pe:
+            mtr = pe.get("minor_trust_reduction", 0)
+            if not (0 < mtr <= 0.50):
+                errors.append(
+                    f"compliance.penalty_escalation.minor_trust_reduction must be in (0, 0.50], got {mtr}"
+                )
+            mtn = pe.get("moderate_trust_nuke_to", 1.0)
+            if not (0 < mtn <= 0.01):
+                errors.append(
+                    f"compliance.penalty_escalation.moderate_trust_nuke_to must be in (0, 0.01], got {mtn}"
+                )
+            msd = pe.get("moderate_suspension_days", 0)
+            if msd <= 0:
+                errors.append(
+                    f"compliance.penalty_escalation.moderate_suspension_days must be > 0, got {msd}"
+                )
+            if not pe.get("severe_permanent_decommission"):
+                errors.append(
+                    "compliance.penalty_escalation.severe_permanent_decommission must be true"
+                )
+            plb = pe.get("pattern_lookback_days", 0)
+            if plb <= 0:
+                errors.append(
+                    f"compliance.penalty_escalation.pattern_lookback_days must be > 0, got {plb}"
+                )
+        # Screening must be enabled
+        if not compliance.get("screening_enabled"):
+            errors.append("compliance.screening_enabled must be true")
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

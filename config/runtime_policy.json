@@ -1,6 +1,6 @@
 {
-  "version": "0.2",
-  "updated_utc": "2026-02-13T23:00:00Z",
+  "version": "0.3",
+  "updated_utc": "2026-02-18T00:00:00Z",
   "risk_tiers": {
     "R0": {
       "reviewers_required": 1,
@@ -125,6 +125,49 @@
     "nuke_appeal_supermajority": 4,
     "nuke_appeal_window_hours": 72,
     "nuke_appeal_reviewer_min_trust": 0.70
+  },
+  "compliance": {
+    "prohibited_categories": [
+      "weapons_development",
+      "weapons_manufacturing",
+      "weapons_trafficking",
+      "surveillance_tools",
+      "exploitation_of_persons",
+      "child_exploitation",
+      "financial_fraud",
+      "identity_theft",
+      "biological_weapons",
+      "chemical_weapons",
+      "nuclear_weapons",
+      "terrorism_support",
+      "forced_labor",
+      "money_laundering",
+      "sanctions_evasion",
+      "environmental_destruction",
+      "disinformation_campaigns"
+    ],
+    "no_statute_limit_categories": [
+      "weapons_development",
+      "weapons_manufacturing",
+      "weapons_trafficking",
+      "biological_weapons",
+      "chemical_weapons",
+      "nuclear_weapons",
+      "exploitation_of_persons",
+      "child_exploitation",
+      "terrorism_support",
+      "forced_labor"
+    ],
+    "statute_of_limitations_days": 180,
+    "penalty_escalation": {
+      "minor_trust_reduction": 0.10,
+      "moderate_trust_nuke_to": 0.001,
+      "moderate_suspension_days": 90,
+      "severe_permanent_decommission": true,
+      "egregious_identity_locked": true,
+      "pattern_lookback_days": 365
+    },
+    "screening_enabled": true
   },
   "poc_mode": {
     "active": true,

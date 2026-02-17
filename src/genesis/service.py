@@ -97,6 +97,13 @@ from genesis.identity.session import SessionManager, SessionState
 from genesis.identity.quorum_verifier import QuorumVerifier
 from genesis.trust.engine import TrustEngine
 from genesis.compensation.gcf import GCFTracker
+from genesis.compliance.screener import ComplianceScreener, ComplianceVerdict
+from genesis.compliance.penalties import (
+    PenaltyEscalationEngine,
+    PenaltySeverity,
+    PriorViolation,
+    ViolationType,
+)
 
 
 @dataclass(frozen=True)
@@ -196,6 +203,12 @@ class GenesisService:
 
         # Genesis Common Fund tracker — activates at First Light
         self._gcf_tracker = GCFTracker()
+
+        # Compliance subsystem (Phase E-2)
+        self._compliance_screener = ComplianceScreener()
+        self._penalty_engine = PenaltyEscalationEngine()
+        self._prior_violations: dict[str, list[PriorViolation]] = {}
+        self._suspended_until: dict[str, datetime] = {}
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -2205,6 +2218,19 @@ class GenesisService:
             return ServiceResult(
                 success=False,
                 errors=[f"Creator not found: {creator_id}"],
+            )
+
+        # Compliance: suspended/decommissioned actors cannot post listings
+        if creator.status in (
+            ActorStatus.SUSPENDED,
+            ActorStatus.PERMANENTLY_DECOMMISSIONED,
+        ):
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor {creator_id} is {creator.status.value} and cannot "
+                    f"create listings"
+                ],
             )
 
         # Validate skill requirements against taxonomy
@@ -5270,6 +5296,262 @@ class GenesisService:
         except OSError as e:
             self._persistence_degraded = True
             return f"Persistence degraded: {e} — state committed in audit trail but StateStore is stale"
+
+    # ------------------------------------------------------------------
+    # Compliance (Phase E-2)
+    # ------------------------------------------------------------------
+
+    def screen_mission_compliance(
+        self,
+        title: str,
+        description: str,
+        tags: Optional[list[str]] = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Screen a mission proposal for compliance violations.
+
+        Returns screening result with verdict (CLEAR/FLAGGED/REJECTED).
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        result = self._compliance_screener.screen_mission(
+            title=title, description=description, tags=tags, now=now,
+        )
+
+        # Emit screening event
+        self._record_actor_lifecycle_event(
+            "system",
+            EventKind.COMPLIANCE_SCREENING_COMPLETED,
+            {
+                "verdict": result.verdict.value,
+                "categories_matched": result.categories_matched,
+                "reason": result.reason,
+                "confidence": result.confidence,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "verdict": result.verdict.value,
+                "categories_matched": result.categories_matched,
+                "reason": result.reason,
+                "confidence": result.confidence,
+            },
+        )
+
+    def file_compliance_complaint(
+        self,
+        mission_id: str,
+        complainant_id: str,
+        reason: str,
+        category: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File a post-hoc compliance complaint against a mission."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Verify complainant exists
+        complainant = self._roster.get(complainant_id)
+        if complainant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Complainant not found: {complainant_id}"],
+            )
+
+        # Verify mission exists
+        if mission_id not in self._missions:
+            return ServiceResult(
+                success=False,
+                errors=[f"Mission not found: {mission_id}"],
+            )
+
+        try:
+            complaint = self._compliance_screener.file_compliance_complaint(
+                mission_id=mission_id,
+                complainant_id=complainant_id,
+                reason=reason,
+                category=category,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit complaint event
+        self._record_actor_lifecycle_event(
+            complainant_id,
+            EventKind.COMPLIANCE_COMPLAINT_FILED,
+            {
+                "complaint_id": complaint.complaint_id,
+                "mission_id": mission_id,
+                "category": category,
+                "reason": reason,
+            },
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "complaint_id": complaint.complaint_id,
+                "mission_id": mission_id,
+                "category": category,
+            },
+        )
+
+    def apply_penalty(
+        self,
+        actor_id: str,
+        violation_type: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Apply a compliance penalty to an actor.
+
+        Computes penalty based on violation type and prior violations.
+        Updates trust, status, and emits events as appropriate.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        actor = self._roster.get(actor_id)
+        if actor is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+
+        # Resolve violation type
+        try:
+            vtype = ViolationType(violation_type)
+        except ValueError:
+            return ServiceResult(
+                success=False,
+                errors=[f"Unknown violation type: {violation_type}"],
+            )
+
+        # Compute penalty with prior violation history
+        priors = self._prior_violations.get(actor_id, [])
+        outcome = self._penalty_engine.compute_penalty(
+            actor_id=actor_id,
+            violation_type=vtype,
+            prior_violations=priors,
+            now=now,
+        )
+
+        # Apply trust action
+        trust_record = self._trust_records.get(actor_id)
+        if outcome.trust_action == "nuke":
+            actor.trust_score = outcome.trust_target
+            if trust_record is not None:
+                trust_record.score = outcome.trust_target
+        elif outcome.trust_action == "reduce" and trust_record is not None:
+            new_score = max(0.0, trust_record.score + outcome.trust_target)
+            actor.trust_score = new_score
+            trust_record.score = new_score
+
+        # Apply status change
+        if outcome.permanent:
+            actor.status = ActorStatus.PERMANENTLY_DECOMMISSIONED
+            self._record_actor_lifecycle_event(
+                actor_id,
+                EventKind.ACTOR_PERMANENTLY_DECOMMISSIONED,
+                {
+                    "severity": outcome.severity.value,
+                    "reason": outcome.reason,
+                    "identity_locked": outcome.identity_locked,
+                },
+            )
+        elif outcome.suspension_days > 0:
+            actor.status = ActorStatus.SUSPENDED
+            suspension_end = now + timedelta(days=outcome.suspension_days)
+            self._suspended_until[actor_id] = suspension_end
+            self._record_actor_lifecycle_event(
+                actor_id,
+                EventKind.ACTOR_SUSPENDED,
+                {
+                    "severity": outcome.severity.value,
+                    "reason": outcome.reason,
+                    "suspension_days": outcome.suspension_days,
+                    "suspended_until_utc": suspension_end.isoformat(),
+                },
+            )
+
+        # Record this violation for future escalation
+        self._prior_violations.setdefault(actor_id, []).append(
+            PriorViolation(
+                severity=outcome.severity,
+                violation_type=vtype,
+                occurred_utc=now,
+            )
+        )
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "actor_id": actor_id,
+                "severity": outcome.severity.value,
+                "trust_action": outcome.trust_action,
+                "trust_target": outcome.trust_target,
+                "suspension_days": outcome.suspension_days,
+                "permanent": outcome.permanent,
+                "identity_locked": outcome.identity_locked,
+                "reason": outcome.reason,
+            },
+        )
+
+    def is_actor_suspended(self, actor_id: str) -> bool:
+        """Check whether an actor is currently suspended."""
+        actor = self._roster.get(actor_id)
+        if actor is None:
+            return False
+        return actor.status in (
+            ActorStatus.SUSPENDED,
+            ActorStatus.PERMANENTLY_DECOMMISSIONED,
+        )
+
+    def check_suspension_expiry(
+        self,
+        actor_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Check and auto-expire suspensions that have elapsed.
+
+        Returns the actor's current status after check.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        actor = self._roster.get(actor_id)
+        if actor is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+
+        # Permanently decommissioned actors never expire
+        if actor.status == ActorStatus.PERMANENTLY_DECOMMISSIONED:
+            return ServiceResult(
+                success=True,
+                data={"actor_id": actor_id, "status": actor.status.value, "expired": False},
+            )
+
+        # Check if suspension has elapsed
+        if actor.status == ActorStatus.SUSPENDED and actor_id in self._suspended_until:
+            if now >= self._suspended_until[actor_id]:
+                actor.status = ActorStatus.ACTIVE
+                del self._suspended_until[actor_id]
+                return ServiceResult(
+                    success=True,
+                    data={"actor_id": actor_id, "status": actor.status.value, "expired": True},
+                )
+
+        return ServiceResult(
+            success=True,
+            data={"actor_id": actor_id, "status": actor.status.value, "expired": False},
+        )
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}

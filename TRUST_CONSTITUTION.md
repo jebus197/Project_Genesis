@@ -460,6 +460,33 @@ This is the highest amendment threshold in the constitution. It exists because t
 3. Can commission revenue influence trust scores, allocation ranking, or governance weight? If yes, reject design.
 4. Can the floor or ceiling be changed without full constitutional amendment? If yes, reject design.
 
+### Harmful Work Prevention
+
+Genesis constitutionally prohibits work that increases net human suffering. The blind veto test is: "Does this mission, evaluated in good faith, involve activity from the prohibited categories?" If yes, the mission is blocked.
+
+**Prohibited categories:** weapons development, weapons manufacturing, weapons trafficking, surveillance tools, exploitation of persons, child exploitation, financial fraud, identity theft, biological weapons, chemical weapons, nuclear weapons, terrorism support, forced labor, money laundering, sanctions evasion, environmental destruction, disinformation campaigns.
+
+**Three-layer enforcement:**
+1. **Automated screening** at mission creation. Exact keyword matches are rejected immediately; soft matches are flagged for human review.
+2. **Compliance quorum** for grey areas. Panel of 3 adjudicators with domain trust in compliance, blind review, minimum 2 organisations and 2 regions.
+3. **Post-hoc complaints** for completed missions. Any actor can file a compliance complaint. Reviewed by panel.
+
+**Penalty escalation:**
+- **Minor** (content flagged): trust reduced by 0.10, warning issued.
+- **Moderate** (prohibited category confirmed, complaint upheld): trust nuked to 0.001 (1/1000), 90-day suspension.
+- **Severe** (abuse confirmed, pattern escalation): trust nuked to 0.0, permanent decommission.
+- **Egregious** (weapons or exploitation): trust nuked to 0.0, permanent decommission, identity locked.
+
+**Pattern escalation:** Second moderate violation within 365 days escalates to severe (permanent decommission).
+
+**Statute of limitations:** 180 days for non-egregious categories. No limit for weapons, exploitation, biological/chemical/nuclear weapons, terrorism, and forced labor.
+
+**Suspension enforcement:** Suspended actors cannot post listings, submit bids, serve as reviewers, or participate in governance votes. Permanently decommissioned actors are irreversibly excluded.
+
+**Harmful work prevention design tests:**
+46. Can a prohibited-category mission pass compliance screening? If yes, reject design.
+47. Can a suspended actor post, bid, review, or vote? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.
