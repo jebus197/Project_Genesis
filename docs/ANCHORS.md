@@ -1,6 +1,6 @@
 # Project Genesis — Trust Mint Log
 
-The entries below are the founding trust-minting events of Project Genesis.
+The entries below are the constitutional anchoring record of Project Genesis.
 
 Before a single user existed, before a single mission was posted, before any revenue flowed — the rules were set in stone. Each entry is a cryptographic proof, permanently embedded in Ethereum, that the constitution existed in an exact, unalterable form at an exact moment in time.
 

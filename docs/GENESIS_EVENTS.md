@@ -171,7 +171,7 @@ Key additions to the constitution in this version:
 ## Event GE-0002: Founder Trust Record Minted
 
 **Date:** 2026-02-16
-**Type:** Founding trust-minting event
+**Type:** First actor trust record
 **Actor:** George Jackson (project founder)
 **Genesis phase:** G0 (founder stewardship)
 
