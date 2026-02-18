@@ -317,6 +317,22 @@ Changing the 1% rate requires the highest amendment threshold in the constitutio
 
 After the 50-year dormancy clause, the founder's creator allocation redirects to STEM and medical charitable recipients selected by supermajority.
 
+## What the Architecture Eliminates
+
+The mechanisms described above — escrow-first coordination, deterministic commission, earned trust, constitutional governance, and blockchain anchoring — combine to structurally eliminate entire categories of failure that plague existing platforms and financial systems.
+
+**No banks.** Genesis does not use, require, or depend on any banking institution. No bank holds Genesis funds. No bank can freeze accounts, deny service, or impose conditions. Escrow is per-mission and cryptographically managed. The Genesis Common Fund has no bank account — the distributed ledger state is the fund. There is no external custodian, no financial intermediary, and no single institution whose failure could compromise the system.
+
+**No wealth extraction.** The platform cannot extract profit. The commission formula is deterministic, bounded by a constitutional ceiling of 10%, and trends toward the floor as the system grows. No shareholder receives dividends. No investor receives returns. No executive sets their own compensation. Every unit of commission revenue is itemised in a mandatory published breakdown. The healthy state of the system is the commission rate going *down* — the structural opposite of every other platform.
+
+**No rug pulls.** There is no Genesis token to dump, no liquidity pool to drain, no market to manipulate. Every unit of value entering the system is locked in per-mission escrow before work begins and released only on verified completion. The commission formula cannot be changed by ballot — it is a constitutional constant. There is no mechanism by which an insider, founder, or coalition could extract accumulated value and disappear. The architecture makes rug pulls structurally impossible, not merely prohibited.
+
+**No bought influence.** Financial capital has zero role in governance. Money cannot increase trust, purchase voting power, buy proposal rights, or create constitutional authority. Sponsorship, donation, and investment create no privileges. This is enforced by code, not by policy — the trust engine structurally ignores financial inputs. In a world where money routinely translates into political power, Genesis treats this conversion as a corruption vector and blocks it at the architectural level.
+
+**Nothing to rob.** There is no central vault, no treasury account, no pool of funds sitting in one place waiting to be stolen. Escrow is distributed across individual missions. The Genesis Common Fund is the ledger state itself — trust-proportional but individually non-extractable, with no per-actor balance that could be targeted. No individual — including the founder — can know the precise value of their own GCF contributions, because the fund is architecturally opaque at the individual level. A bank robber targeting Genesis would find nothing to take.
+
+**Crime has no value.** Harmful work is screened out by 17 prohibited categories with three layers of enforcement. Trust decay removes access to the platform progressively and automatically. There is no secondary market for influence, no dark pool for trust, and no mechanism to monetise criminal behaviour within the system. Bad behaviour is its own punishment: trust decays, access shrinks, earning potential falls, and the system self-corrects without requiring external intervention. The penalties are not bolted on after the fact — they are consequences of the architecture itself.
+
 ## First Light
 
 Genesis transitions from Proof of Concept to live operations at "First Light" — the moment the platform becomes financially self-sustaining. First Light fires when both conditions are met:
