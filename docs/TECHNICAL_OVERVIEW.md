@@ -12,19 +12,22 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 2. [Bounded Trust Economy](#bounded-trust-economy)
 3. [Risk Tiers and Review Requirements](#risk-tiers-and-review-requirements)
 4. [Reviewer Heterogeneity](#reviewer-heterogeneity)
-5. [Normative Dispute Resolution](#normative-dispute-resolution)
+5. [Three-Tier Justice System](#three-tier-justice-system)
 6. [Anti-Capture Architecture](#anti-capture-architecture)
-7. [Genesis Bootstrap Protocol](#genesis-bootstrap-protocol)
-8. [Skill Taxonomy and Proficiency Model](#skill-taxonomy-and-proficiency-model)
-9. [Domain-Specific Trust](#domain-specific-trust)
-10. [Labour Market](#labour-market)
-11. [Skill Lifecycle](#skill-lifecycle)
-12. [Compensation Model](#compensation-model)
-13. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
-14. [Blockchain Anchoring](#blockchain-anchoring)
-15. [Identity and Security Posture](#identity-and-security-posture)
-16. [Success Metrics](#success-metrics)
-17. [Governance Engine Architecture](#governance-engine-architecture)
+7. [Compliance and Harmful Work Prevention](#compliance-and-harmful-work-prevention)
+8. [Genesis Bootstrap Protocol](#genesis-bootstrap-protocol)
+9. [Skill Taxonomy and Proficiency Model](#skill-taxonomy-and-proficiency-model)
+10. [Domain-Specific Trust](#domain-specific-trust)
+11. [Labour Market](#labour-market)
+12. [Skill Lifecycle](#skill-lifecycle)
+13. [Compensation Model](#compensation-model)
+14. [Genesis Common Fund](#genesis-common-fund)
+15. [Workflow Orchestration](#workflow-orchestration)
+16. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
+17. [Blockchain Anchoring](#blockchain-anchoring)
+18. [Identity Verification](#identity-verification)
+19. [Success Metrics](#success-metrics)
+20. [Governance Engine Architecture](#governance-engine-architecture)
 
 ---
 
@@ -169,7 +172,15 @@ These rules are enforced by code in the reviewer routing engine, not by policy d
 
 ---
 
-## Normative Dispute Resolution
+## Three-Tier Justice System
+
+Disputes are inevitable in any system where work is evaluated, money changes hands, and trust has consequences. What matters is not whether disputes happen, but how they are resolved. Most platforms handle disputes through customer support tickets, opaque internal review, or terms-of-service clauses that grant the platform unilateral authority. Genesis rejects all of these. Its justice system is formal, transparent, structurally fair, and enforced entirely by code.
+
+This is not an aspirational goal — it is a working implementation. The justice system exists because Genesis recognised that a trust-mediated economy without a formal dispute resolution mechanism is simply a dictatorship with extra steps. If the system can penalise you, the system must give you a fair hearing.
+
+The societal precedent here is significant: Genesis demonstrates that algorithmic governance can include due process, not just enforcement. If this model works at scale, it offers a template for any platform that mediates work, payments, or reputation.
+
+### Domain types
 
 Not all questions have objectively correct answers. Genesis distinguishes between three domain types:
 
@@ -177,14 +188,120 @@ Not all questions have objectively correct answers. Genesis distinguishes betwee
 - **Normative** — questions involving values, ethics, priorities, or subjective judgement (e.g., "is this policy fair?").
 - **Mixed** — questions with both objective and normative components.
 
-For normative and mixed domains, special rules apply:
+For normative and mixed domains, machine consensus alone can never close a dispute — human judgement is required. This reflects a core design principle: machines are excellent at checking objective facts but should not be the final authority on questions of values.
 
-1. If reviewer agreement falls below 60%, the dispute escalates to a human adjudication panel.
-2. Normative panels require ≥ 3 humans from ≥ 2 regions and ≥ 2 organisations.
-3. Machine consensus alone can never close a normative dispute — human judgement is required.
-4. All normative adjudications must include documented reasoning.
+### Tier 1 — Automated compliance screening
 
-This reflects a core design principle: machines are excellent at checking objective facts but should not be the final authority on questions of values.
+The first tier operates silently on every mission listing. Before any work reaches a human, the `ComplianceScreener` checks for prohibited content (see the Compliance section below). This layer handles the vast majority of cases — clear violations are rejected automatically, ambiguous cases are flagged for human review.
+
+### Tier 2 — Adjudication panels
+
+When a dispute arises — payment, compliance, abuse, conduct, or normative disagreement — it is heard by a formal adjudication panel. The implementation is in `AdjudicationEngine` (`src/genesis/legal/adjudication.py`).
+
+**Case types** (`AdjudicationType` enum):
+
+- `PAYMENT_DISPUTE` — disagreement over mission payment or escrow release.
+- `COMPLIANCE_COMPLAINT` — allegation of prohibited content or harmful work.
+- `ABUSE_COMPLAINT` — allegation of verifier or participant misconduct.
+- `CONDUCT_COMPLAINT` — broader conduct violations.
+- `NORMATIVE_RESOLUTION` — disputes involving subjective judgement calls.
+
+**How a case proceeds:**
+
+1. **Case opened** (`open_case()`): both parties are assigned pseudonyms (`party-{secrets.token_hex(8)}`) — the panel never sees real identities. This blind adjudication prevents bias based on reputation, history, or personal relationships.
+
+2. **Response period** (72 hours): the accused has a structural right to respond before any panel forms. This is not a courtesy — it is a gate enforced by the `RightsEnforcer` (`src/genesis/legal/rights.py`). The `validate_panel_formation_allowed()` method checks that either the response deadline has elapsed or the accused has submitted a response, and that evidence has been disclosed. The panel literally cannot be assembled until these conditions are met.
+
+3. **Panel formation** (`form_panel()`): 5 panelists are selected from the eligible pool. Selection enforces diversity: at least 2 geographic regions and at least 2 organisations. Panelists must have trust ≥ 0.60 (configurable via `min_panelist_trust`). The complainant, accused, and (for appeals) the original panel are excluded.
+
+4. **Deliberation**: each panelist submits a verdict (`UPHELD`, `DISMISSED`, `PARTIAL`, or `ESCALATED_TO_COURT`) with a mandatory written attestation. The attestation requirement forces panelists to articulate their reasoning — it cannot be empty.
+
+5. **Verdict** (`evaluate_verdict()`): a **3/5 supermajority** is required to uphold a complaint or escalate to the Constitutional Court. If no supermajority is reached, the complaint is dismissed. This threshold ensures that marginal cases default to no action.
+
+**Accused rights** (enforced by `RightsEnforcer`):
+
+The rights of the accused are not policy guidelines — they are structural gates that the system enforces before allowing proceedings to advance:
+
+| Right | Enforcement mechanism |
+|---|---|
+| Right to respond | 72-hour deadline before panel can form |
+| Right to evidence | `evidence_disclosed` flag must be True |
+| Right to appeal | One appeal within 72 hours of verdict |
+| Presumption of good faith | Default in `AccusedRightsRecord` |
+
+**Appeal** (`file_appeal()`): either party may appeal within 72 hours. The appeal creates a new case heard by an entirely different panel — no overlap with the original panelists. Only one appeal per case is permitted. The appeal panel applies the same diversity and supermajority requirements.
+
+**Configuration** (from `config/runtime_policy.json`):
+
+| Parameter | Value | Purpose |
+|---|---|---|
+| `panel_size` | 5 | Adjudication panel members |
+| `panel_min_regions` | 2 | Geographic diversity |
+| `panel_min_organizations` | 2 | Organisational diversity |
+| `min_panelist_trust` | 0.60 | Minimum trust for panelists |
+| `response_period_hours` | 72 | Accused's response window |
+| `appeal_window_hours` | 72 | Window to file appeal |
+| `supermajority_threshold` | 0.60 | 3/5 for verdict |
+
+### Tier 3 — Constitutional Court
+
+Cases of constitutional significance can be escalated from Tier 2 to the Constitutional Court. This is the highest adjudicative body in the system — its decisions carry the weight of constitutional interpretation. The implementation is in `ConstitutionalCourt` (`src/genesis/legal/constitutional_court.py`).
+
+**Why it exists:** Some disputes transcend individual cases. A disagreement about whether a particular type of work violates the "no harm" principle, or whether a penalty was proportionate to the offence, may have implications for how the constitution is interpreted going forward. These questions need a different kind of tribunal — one with higher trust requirements, stricter diversity rules, and the authority to set advisory precedent.
+
+**Court panel:**
+
+- **7 justices** (not 5 — the higher number reflects the greater significance).
+- **Human only** — machines are structurally excluded from constitutional interpretation (`human_only = true`).
+- **Trust ≥ 0.70** — higher than Tier 2's 0.60 threshold.
+- **Diversity**: at least 3 geographic regions and at least 3 organisations (stricter than Tier 2's 2/2).
+
+**Verdicts:** justices may vote `"uphold"` (affirm Tier 2), `"overturn"` (reverse), or `"remand"` (return for reconsideration). A **5/7 supermajority** is required to overturn a Tier 2 decision — overturning is deliberately harder than affirming.
+
+**Soft precedent:** when a case is decided, the court may record a `PrecedentEntry` — a summary of the question, the ruling, and the rationale. Crucially, precedent in Genesis is **advisory only** (`advisory_only = True`). Each case is decided on its own merits. This is a deliberate design choice: rigid precedent creates power structures around interpretation, where those who can cite prior rulings gain procedural advantage over those who cannot. Genesis prefers principled judgement over institutional inertia.
+
+Precedents can be searched via `search_precedents()` using keyword matching, so that future panels can consider prior reasoning without being bound by it.
+
+**Configuration** (from `config/runtime_policy.json`):
+
+| Parameter | Value | Purpose |
+|---|---|---|
+| `panel_size` | 7 | Court justices |
+| `supermajority_threshold` | 5 | 5/7 to overturn |
+| `min_justice_trust` | 0.70 | Minimum trust for justices |
+| `min_regions` | 3 | Geographic diversity |
+| `min_organizations` | 3 | Organisational diversity |
+| `human_only` | true | Machines excluded |
+
+### Rehabilitation
+
+Genesis believes in second chances — but only where the harm was moderate and the system's integrity is not at risk. The `RehabilitationEngine` (`src/genesis/legal/rehabilitation.py`) provides a structured path back for actors who received moderate penalties.
+
+**Why it exists:** Permanent exclusion for every offence creates a system that is punitive without being restorative. People make mistakes. A platform that offers no path back from a moderate error is not just harsh — it is wasteful, because it permanently loses the future contributions of someone who may have learned from the experience. But rehabilitation must be earned, not assumed, and the bar must be high enough that the system's trust in the outcome is justified.
+
+**How it works:**
+
+1. After a moderate-severity suspension expires, the actor enters `PROBATION` status (not ACTIVE).
+2. The actor must complete **5 supervised probation tasks** within **180 days** (`rehab_window_days`).
+3. If successful, trust is partially restored — capped at the lower of **half the original trust** or **0.30** (`trust_restoration_fraction = 0.50`, `max_restoration_score = 0.30`).
+4. If the 180-day window expires without completing the tasks, rehabilitation fails and the actor remains at their penalty trust level.
+
+**What is excluded:** severe and egregious violations have **no rehabilitation path**. Permanent decommission means permanent decommission. The system distinguishes between people who made a mistake and people who demonstrated a pattern of harm — and it does not pretend that the distinction is difficult.
+
+**Event trail:**
+
+| Event | Trigger |
+|---|---|
+| `ADJUDICATION_OPENED` | Case filed |
+| `ADJUDICATION_RESPONSE_SUBMITTED` | Accused responds |
+| `ADJUDICATION_PANEL_FORMED` | Panel assembled |
+| `ADJUDICATION_VOTE_CAST` | Individual vote |
+| `ADJUDICATION_DECIDED` | Verdict reached |
+| `ADJUDICATION_APPEAL_FILED` | Appeal filed |
+| `ADJUDICATION_CLOSED` | Case closed |
+| `CONSTITUTIONAL_COURT_OPENED` | Case escalated to court |
+| `CONSTITUTIONAL_COURT_DECIDED` | Court verdict |
+| `REHABILITATION_STARTED` | Probation begins |
 
 ---
 
@@ -230,6 +347,95 @@ Financial capital has zero role in Genesis governance:
 - Sponsorship, donation, or investment create no governance privileges.
 
 This is a deliberate break from most real-world governance systems, where money eventually translates into influence. Genesis treats this as a corruption vector and blocks it structurally.
+
+---
+
+## Compliance and Harmful Work Prevention
+
+Genesis is a white market. It exists to coordinate legitimate, beneficial work — and it enforces this boundary structurally, not aspirationally. The compliance system is not a content moderation layer bolted on after the fact. It is a constitutional constraint that operates at the point of mission creation, before any work reaches a worker, before any escrow is locked, and before any trust is at stake.
+
+### Why this matters
+
+Every platform eventually faces the question of what it will and will not permit. Most answer this question reactively — banning content after it causes harm, suspending accounts after complaints accumulate. Genesis answers it proactively. The prohibited categories are defined upfront, the screening is automated, and the penalties are structural. This means the system's values are not subject to interpretation by a trust-and-safety team or a content moderation contractor — they are encoded in the constitution and enforced by code.
+
+The broader implication is that Genesis provides a model for how a labour platform can have values without having censorship. The prohibited categories are not about taste or opinion — they are about preventing demonstrable harm. A platform that refuses to facilitate weapons development or human trafficking is not being censorious; it is being responsible.
+
+### Prohibited categories
+
+The `ComplianceScreener` (`src/genesis/compliance/screener.py`) defines **17 constitutionally prohibited categories**:
+
+1. Weapons development
+2. Weapons manufacturing
+3. Weapons trafficking
+4. Surveillance tools
+5. Exploitation of persons
+6. Child exploitation
+7. Financial fraud
+8. Identity theft
+9. Biological weapons
+10. Chemical weapons
+11. Nuclear weapons
+12. Terrorism support
+13. Forced labour
+14. Money laundering
+15. Sanctions evasion
+16. Environmental destruction
+17. Disinformation campaigns
+
+**Ten categories carry no statute of limitations** for complaints: all weapons categories, exploitation of persons, child exploitation, biological/chemical/nuclear weapons, terrorism support, and forced labour. These are categories where the harm is so severe that the passage of time does not diminish the system's obligation to act. The remaining categories have a 180-day statute of limitations (`statute_of_limitations_days = 180`).
+
+### Three-layer enforcement
+
+Every mission listing passes through three layers of screening:
+
+1. **Automated screening** (`screen_mission()`): the listing title, description, and tags are checked against category-specific keywords. Exact matches produce a `REJECTED` verdict (confidence 1.0). Contextual or partial matches produce a `FLAGGED` verdict (confidence 0.6). Clear listings receive `CLEAR`. This layer handles the vast majority of cases without human involvement.
+
+2. **Human compliance quorum**: flagged listings are reviewed by a blind quorum of qualified legal professionals, compensated from the commission pool and evaluated by the same trust machinery as all other work. This catches cases where automated screening cannot determine intent.
+
+3. **Post-hoc complaints** (`file_compliance_complaint()`): any participant can file a compliance complaint against a live or completed mission. Complaints are tracked by `ComplianceComplaint` records with a `ComplaintStatus` lifecycle (`FILED → UNDER_REVIEW → UPHELD / DISMISSED`).
+
+### Penalty escalation
+
+Confirmed violations trigger a four-tier penalty system implemented in `PenaltyEscalationEngine` (`src/genesis/compliance/penalties.py`).
+
+| Severity | Trust action | Suspension | Permanent | Identity locked |
+|---|---|---|---|---|
+| **Minor** | Reduced by 0.10 | None | No | No |
+| **Moderate** | Nuked to 0.001 | 90 days | No | No |
+| **Severe** | Nuked to 0.0 | Permanent | Yes | No |
+| **Egregious** | Nuked to 0.0 | Permanent | Yes | Yes (cannot re-register) |
+
+**Violation types** (`ViolationType` enum) map to base severities:
+
+| Violation | Base severity |
+|---|---|
+| `CONTENT_FLAGGED` | Minor |
+| `REPEATED_FLAGGING` | Moderate |
+| `PROHIBITED_CATEGORY_CONFIRMED` | Moderate |
+| `COMPLAINT_UPHELD` | Moderate |
+| `ABUSE_CONFIRMED` | Severe |
+| `WEAPONS_OR_EXPLOITATION` | Egregious |
+
+**Pattern escalation**: a second moderate violation within 365 days (`PATTERN_LOOKBACK_DAYS`) automatically escalates to severe — permanent decommission. The system has zero tolerance for patterns of harmful behaviour. This is not a bug or an edge case; it is a deliberate design choice that values platform integrity over individual second chances for repeat offenders.
+
+**Suspension enforcement**: suspended actors (`SUSPENDED` or `PERMANENTLY_DECOMMISSIONED` status) are blocked from all platform participation. The service layer checks suspension status before permitting any meaningful action.
+
+**Actor status values** added for compliance:
+
+| Status | Meaning |
+|---|---|
+| `SUSPENDED` | Temporarily blocked (moderate penalty) |
+| `COMPLIANCE_REVIEW` | Under compliance investigation |
+| `PERMANENTLY_DECOMMISSIONED` | Irreversibly removed |
+
+**Event trail:**
+
+| Event | Trigger |
+|---|---|
+| `COMPLIANCE_SCREENING_COMPLETED` | Automated screening result |
+| `COMPLIANCE_COMPLAINT_FILED` | Post-hoc complaint filed |
+| `ACTOR_SUSPENDED` | Moderate penalty applied |
+| `ACTOR_PERMANENTLY_DECOMMISSIONED` | Severe/egregious penalty |
 
 ---
 
@@ -481,6 +687,125 @@ All commission parameters are constitutional constants requiring 3-chamber super
 
 ---
 
+## Genesis Common Fund
+
+One percent of every completed mission's value is automatically directed to a shared commons fund. This is not a tax, a fee, or a discretionary allocation. It is a constitutional commitment — a structural deduction that occurs before any participant receives payment, without any vote or approval process.
+
+### Why this matters
+
+Most platforms extract value for shareholders. Some pledge charitable donations. None structurally embed a commons contribution into the economic machinery itself. The Genesis Common Fund (GCF) is different in kind: it is not a promise, it is an invariant. The 1% deduction is as much a part of the commission calculation as the commission rate itself. It cannot be turned off, reduced, or redirected without clearing the highest amendment threshold in the constitution.
+
+The societal implication is that Genesis creates a model for automatic, non-discretionary collective contribution — a commons fund that grows in proportion to the value the platform creates, without requiring anyone to choose generosity. The scope is deliberately broad: "all meaningful human activity that doesn't increase net human suffering." This encompasses education, healthcare, infrastructure, arts, community development, and scientific research.
+
+### How it works
+
+The `GCFTracker` (`src/genesis/compensation/gcf.py`) manages the fund state:
+
+- **Activation**: the fund activates at First Light (financial sustainability trigger). Before First Light, no contributions are collected. Activation is a one-time event — once activated, it cannot be deactivated.
+- **Contribution**: on every successful mission completion, 1% of the `mission_reward` (gross value) is deducted from the worker's payout and recorded as a `GCFContribution`. The contribution rate is loaded from `config/commission_policy.json` (`gcf_contribution_rate = "0.01"`).
+- **Accounting invariant**: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`. This invariant is tested automatically.
+- **Non-extractability**: the fund tracks total balance, total contributed, and contribution count — but it has **no per-actor balance method**. No individual can determine the precise value of their own contributions, because the fund is trust-proportional and architecturally opaque at the individual level. The distributed ledger state is the fund. There is no bank account, no custodian, no external financial intermediary.
+
+**GCFState fields:**
+
+| Field | Type | Purpose |
+|---|---|---|
+| `balance` | Decimal | Current fund balance |
+| `total_contributed` | Decimal | Lifetime total |
+| `contribution_count` | int | Number of contributions |
+| `activated` | bool | Whether First Light has been reached |
+| `activated_utc` | datetime | When activation occurred |
+
+### Entrenched provision
+
+The GCF contribution rate is one of four **entrenched provisions** — constitutional parameters protected by the highest amendment threshold in the system:
+
+1. `GCF_CONTRIBUTION_RATE` — the 1% commons contribution.
+2. `TRUST_FLOOR_H_POSITIVE` — human trust can never decay to zero.
+3. `NO_BUY_TRUST` — financial capital cannot purchase trust.
+4. `MACHINE_VOTING_EXCLUSION` — machines permanently excluded from constitutional voting.
+
+Changing any entrenched provision requires: **80% supermajority** across three independent chambers, **50% participation**, a **90-day cooling-off period**, and a **confirmation vote**. This is deliberately harder to change than any other parameter in the system.
+
+### Founder dormancy
+
+After the 50-year dormancy clause, the founder's creator allocation (the 5% both-sides mechanism) redirects to STEM and medical charitable recipients selected by supermajority. This ensures that the founder's economic interest in the platform has a finite lifetime, and that after that lifetime, the value flows to public benefit rather than to an estate or successor.
+
+**Event trail:**
+
+| Event | Trigger |
+|---|---|
+| `GCF_ACTIVATED` | First Light reached |
+| `GCF_CONTRIBUTION_RECORDED` | Mission payment processed |
+
+---
+
+## Workflow Orchestration
+
+The systems described above — trust, skills, labour market, escrow, compliance, justice — are powerful individually but must be coordinated to produce a coherent workflow. The `WorkflowOrchestrator` (`src/genesis/workflow/orchestrator.py`) is the thin stateful coordinator that bridges these subsystems into a single, auditable lifecycle for every piece of work on the platform.
+
+### Why this matters
+
+Without a coordinator, each subsystem operates independently. Escrow might lock funds for a listing that fails compliance screening. A worker might be allocated to a mission that has no escrow backing. A completed mission might trigger payment without compliance clearance. The workflow orchestrator exists to prevent these inconsistencies — to ensure that every mission follows the correct sequence of gates, and that no step can be skipped.
+
+This is also the layer that makes Genesis's "escrow-first" guarantee meaningful. The claim that "no listing goes live without staked funds" is not a policy — it is enforced by the orchestrator's state machine. The system literally cannot advance a listing to the `LISTING_LIVE` state without a confirmed escrow record.
+
+### Workflow lifecycle
+
+Every mission follows a defined state machine (`WorkflowStatus` enum):
+
+```
+LISTING_CREATED → ESCROW_FUNDED → LISTING_LIVE → BIDS_OPEN → WORKER_ALLOCATED
+    → WORK_IN_PROGRESS → WORK_SUBMITTED → IN_REVIEW → APPROVED
+    → PAYMENT_PROCESSING → COMPLETED
+
+    (from most states) → CANCELLED → REFUNDED
+    (from WORK_IN_PROGRESS onward) → DISPUTED → COMPLETED / REFUNDED
+```
+
+**Key transitions:**
+
+| Method | From → To | What happens |
+|---|---|---|
+| `create_funded_listing()` | — → LISTING_CREATED | Creates listing + escrow + runs compliance screening |
+| `fund_and_publish()` | ESCROW_FUNDED → LISTING_LIVE | Publishes listing (only after escrow confirmed) |
+| `allocate_worker()` | BIDS_OPEN → WORK_IN_PROGRESS | Assigns worker, creates mission, sets deadline |
+| `submit_work()` | WORK_IN_PROGRESS → WORK_SUBMITTED | Worker submits deliverables with evidence hashes |
+| `complete_and_pay()` | APPROVED → COMPLETED | Triggers escrow release, commission, GCF, creator allocation |
+| `cancel()` | Most states → CANCELLED | Returns full escrow including employer creator fee |
+| `file_dispute()` | Post-allocation → DISPUTED | Opens Tier 2 adjudication case |
+| `resolve_dispute()` | DISPUTED → COMPLETED/REFUNDED | Adjudication verdict determines outcome |
+
+**Escrow-first guarantee**: the `create_funded_listing()` method creates the escrow record and locks funds (`mission_reward + employer_creator_fee`) before creating the workflow. A preflight check prevents duplicate escrow records for the same listing. If escrow creation fails, the listing is never created.
+
+**Compliance gate**: all listings are screened by the `ComplianceScreener` before publication. A listing that receives a `REJECTED` verdict cannot advance to `LISTING_LIVE`.
+
+**Dispute bridge**: payment disputes filed through the workflow are automatically routed to the Tier 2 adjudication system. The adjudication verdict determines whether escrow is released to the worker or refunded to the employer.
+
+**Persistence**: the orchestrator supports durable state through `WorkflowOrchestrator.from_records()` and `StateStore.save_workflows()` / `load_workflows()`. All 8 workflow methods call `_safe_persist_post_audit()` after state changes.
+
+**Configuration** (from `config/runtime_policy.json`):
+
+| Parameter | Value | Purpose |
+|---|---|---|
+| `default_deadline_days` | 30 | Default mission deadline |
+| `require_compliance_screening` | true | Compliance gate active |
+| `require_escrow_before_publish` | true | Escrow-first enforcement |
+| `auto_start_bids_on_publish` | true | Bids open when listing goes live |
+
+**Event trail:**
+
+| Event | Trigger |
+|---|---|
+| `WORKFLOW_CREATED` | New workflow initialised |
+| `ESCROW_WORKFLOW_FUNDED` | Escrow confirmed for listing |
+| `WORK_SUBMITTED` | Worker submits deliverables |
+| `WORKFLOW_CANCELLED` | Mission cancelled |
+| `PAYMENT_DISPUTE_FILED` | Dispute opened |
+| `DISPUTE_RESOLVED` | Adjudication verdict applied |
+
+---
+
 ## Cryptographic Implementation Profile
 
 This section describes the specific cryptographic mechanisms Genesis uses. Version: v0.2.
@@ -661,22 +986,138 @@ For a project whose foundational principle is that trust must be earned rather t
 
 ---
 
-## Identity and Security Posture
+## Identity Verification
 
-Genesis supports layered identity assurance but treats identity signals with deliberate caution.
+Genesis needs to know that each participant is real — present, alive, and not a duplicate. But it does not need to know who they are. The verification system is designed as an anti-Sybil defence: it proves personhood without collecting personal information. This distinction matters deeply. In a world where identity systems routinely become surveillance infrastructure, Genesis demonstrates that you can verify a person's existence without cataloguing their life.
 
-### What identity checks can do
+Identity verification tells you that someone is a distinct participant. It does not tell you whether they should be trusted. Trust comes from behaviour over time. Passing an identity check cannot mint trust, grant voting power, or create constitutional authority — it simply opens the door to earning those things through verified contribution.
 
-- Proof-of-personhood and proof-of-agenthood can serve as anti-abuse controls (e.g., preventing mass creation of fake accounts).
-- Timing-based challenge methods can add useful friction against automated attacks.
+### Why this matters
 
-### What identity checks cannot do
+Most identity verification systems today — KYC, facial recognition, government ID databases — trade privacy for certainty. They work by accumulating personal data, which creates a target for theft, a tool for surveillance, and a barrier for people who lack conventional documentation. Genesis rejects this trade-off. Its verification system asks one question: "Is this a real, present human being?" It deliberately does not ask "Who are they?" This is a design philosophy, not a technical limitation.
 
-- Identity signals alone cannot mint trust, grant privileged routing, or grant constitutional authority.
-- Passing an identity check does not make someone trustworthy — it makes them verified as a distinct participant.
-- High-stakes decisions require layered evidence and independent review, not identity checks.
+The societal implication is significant: Genesis creates a model for identity verification that could work for the stateless, the undocumented, and the privacy-conscious — anyone excluded from systems that demand government-issued credentials. If this model proves viable at scale, it has implications far beyond Genesis itself.
 
-The position is: identity verification tells you *who someone is*, not *whether they should be trusted*. Trust comes from behaviour over time.
+### The liveness challenge
+
+The participant is presented with a sequence of randomly selected words and asked to read them aloud on video. The words are drawn from the BIP39 wordlist — the same 2,048-word cryptographic standard that underpins Bitcoin wallet recovery phrases. This connection is deliberate: Genesis roots its proof-of-personhood in the same cryptographic heritage that made trustless digital currency possible.
+
+Technical implementation:
+
+- **ChallengeGenerator** (`src/genesis/identity/challenge.py`) selects words using a cryptographic Fisher-Yates shuffle with Python's `secrets` module. Each challenge produces a `LivenessChallenge` — a frozen (immutable) dataclass containing the word sequence, a unique `challenge_id`, and a single-use `nonce` (anti-replay token generated via `secrets.token_hex(16)`).
+- **Stage 1** presents 6 words. If the participant fails after 3 attempts, the challenge escalates to **Stage 2** with 12 words and 3 more attempts. This escalation raises the bar for automated attacks without penalising honest participants who stumble on their first try.
+- Each challenge expires after **120 seconds**. The nonce is consumed on first verification attempt and cannot be reused — preventing replay attacks where a recording of a previous session is submitted.
+- **VoiceVerifier** (`src/genesis/identity/voice_verifier.py`) performs positional word matching: did the participant say the right words in the right order? The `word_match_threshold` is 0.85 (5 of 6 words correct). A `naturalness_threshold` of 0.70 is defined but currently returns a stub value — actual speech-to-text and spectral analysis are infrastructure items for production deployment.
+- **SessionManager** (`src/genesis/identity/session.py`) tracks the full lifecycle: `CHALLENGE_ISSUED → RESPONSE_SUBMITTED → PASSED / FAILED / EXPIRED`. On pass, it automatically triggers identity verification completion.
+
+Configuration parameters (from `config/runtime_policy.json`):
+
+| Parameter | Value | Purpose |
+|---|---|---|
+| `stage_1_word_count` | 6 | Words in initial challenge |
+| `stage_2_word_count` | 12 | Words in escalated challenge |
+| `max_attempts_per_stage` | 3 | Retries before escalation/failure |
+| `session_timeout_seconds` | 120 | Challenge expiry |
+| `word_match_threshold` | 0.85 | Minimum word accuracy |
+| `naturalness_threshold` | 0.70 | Minimum naturalness score |
+
+### Identity verification lifecycle
+
+Every actor's identity follows a tracked lifecycle managed through the `IdentityVerificationStatus` enum (`src/genesis/review/roster.py`):
+
+```
+UNVERIFIED → PENDING → VERIFIED → LAPSED (after 365 days)
+                                 ↘ FLAGGED (anti-abuse)
+```
+
+- **UNVERIFIED**: initial state for all new registrations.
+- **PENDING**: verification has been requested and is in progress (liveness challenge active or quorum panel forming).
+- **VERIFIED**: passed liveness or quorum verification. Sets `identity_verified_utc` and `identity_expires_utc` (365 days from verification). Records `identity_method` ("voice_liveness" or "quorum_verification").
+- **LAPSED**: verification expired. Must re-verify for constitutional actions.
+- **FLAGGED**: manually flagged for anti-abuse investigation.
+
+Constitutional actions — voting, proposing amendments, high-risk adjudication — require VERIFIED status with a non-expired verification. This is a structural gate enforced by the service layer (`check_identity_for_high_stakes`), not a policy recommendation.
+
+### Disability accommodation: the quorum verification path
+
+Not everyone can read words aloud on video. Speech impediments, deafness, motor disabilities, cognitive conditions, and other circumstances can make the standard liveness challenge impossible. Genesis does not treat this as an edge case to be handled later — it treats it as a constitutional design requirement that must be solved before the system can claim to serve all humans.
+
+This decision reflects a deeper principle: a system that claims to be intelligence-agnostic and universally accessible cannot exclude people based on physical ability. The disability accommodation protocol exists because Genesis takes its own stated values seriously.
+
+When a participant cannot complete the voice challenge, a quorum of verified humans conducts a live verification session. The implementation is in `QuorumVerifier` (`src/genesis/identity/quorum_verifier.py`).
+
+**Panel formation:**
+
+- Panel size: 3 to 5 members (configurable via `min_quorum_size` / `max_quorum_size`).
+- All panelists must have trust ≥ 0.70, be ACTIVE, HUMAN, with a minted trust profile.
+- Same geographic region as the applicant (`geographic_region_required = true`).
+- **Diversity enforcement**: at least 2 different organisations and at least 1 distinct region must be represented. The `_select_diverse_panel()` method uses greedy diversity-first selection from the eligible pool.
+- **Blind adjudication**: the applicant is identified only by a pseudonym (`participant-{UUID[:8]}`). Panelists never see the real `actor_id`.
+
+**Pre-session preparation (Phase D-5b):**
+
+Before the live session begins, the participant receives a versioned briefing (`PRE_SESSION_BRIEFING_V1`) that explains the process, their rights, and what to expect. A 6-word BIP39 challenge phrase is generated as a proof-of-interaction token — evidence that the session actually occurred.
+
+The participant has **unlimited preparation time**. The session timer does not start until they explicitly signal readiness via `signal_participant_ready()`. This is a deliberate accommodation: someone with a cognitive disability, anxiety, or unfamiliarity with video calls should never be penalised for needing extra time to prepare.
+
+**The live session:**
+
+A versioned scripted introduction (`SCRIPTED_INTRO_V1`) is read by the verifier to ensure consistency across all sessions. The participant completes the same word challenge that the voice system uses — but they may do so by speaking, writing, or through a caregiver. The method of interaction is adapted to the participant's circumstances.
+
+- **Session maximum**: 4 minutes (from ready signal, not from session creation). Configurable via `session_max_seconds = 240`.
+- **Recording**: every session is recorded. Recordings are retained for **72 hours** (`recording_retention_hours = 72`), then automatically deleted unless a complaint has been filed.
+- **Vote**: each panelist submits a vote (approve/reject) with a mandatory written attestation (`require_vote_attestation = true`). The result must be **unanimous** — any single rejection means the verification fails.
+
+**Verifier safeguards:**
+
+The system prevents panelist fatigue, burnout, and abuse of the verification role:
+
+| Control | Value | Purpose |
+|---|---|---|
+| `verifier_cooldown_hours` | 168 (7 days) | Minimum gap between panel assignments |
+| `max_panels_per_verifier_per_month` | 10 | Monthly workload cap |
+| `max_concurrent_panels_per_verifier` | 3 | Prevents overcommitment |
+| `appeal_window_hours` | 72 | Window for rejected applicants to appeal |
+
+**Recusal**: any panelist can withdraw for any reason via `declare_recusal()`, provided the remaining panel still meets the minimum quorum size.
+
+**Abuse handling:**
+
+If a participant believes a verifier acted improperly during a session, they can file an abuse complaint (`file_abuse_complaint()`). The complaint preserves the session recording past the normal 72-hour auto-delete window.
+
+A review panel of 3 high-trust (≥ 0.70) reviewers examines the complaint. If a majority confirms abuse:
+
+- The offending verifier's trust is reduced to **0.001** (1/1000th of its maximum value). This is not a slap on the wrist — it effectively removes the verifier from all meaningful participation.
+- The pre-nuke trust score is stored for potential restoration.
+
+The nuked verifier may appeal once (`appeal_trust_nuke()`). The appeal goes to a 5-member panel requiring a **4/5 supermajority** to overturn. The appeal panel must have **no overlap** with the original abuse review panel. This is a one-shot mechanism — there is no second appeal.
+
+If the appeal succeeds, the verifier's trust is restored to its pre-nuke value. The complainant's trust is never affected regardless of outcome.
+
+**Appeal for rejected applicants:**
+
+A rejected applicant can appeal within 72 hours via `request_appeal()`. The appeal creates an entirely new verification request with a completely different panel — no overlap with the original panelists. The same diversity and trust requirements apply.
+
+### Event trail
+
+Every identity verification action produces a durable audit event:
+
+| Event | Trigger |
+|---|---|
+| `IDENTITY_VERIFICATION_REQUESTED` | Actor requests verification |
+| `IDENTITY_VERIFIED` | Liveness or quorum verification passed |
+| `IDENTITY_LAPSED` | 365-day expiry reached |
+| `IDENTITY_FLAGGED` | Manual anti-abuse flag |
+| `QUORUM_PANEL_FORMED` | Panel assembled for quorum verification |
+| `QUORUM_VOTE_CAST` | Individual panelist vote recorded |
+| `QUORUM_RECUSAL_DECLARED` | Panelist withdraws |
+| `QUORUM_VERIFICATION_COMPLETED` | Final outcome (approved/rejected) |
+| `QUORUM_APPEAL_FILED` | Rejected applicant appeals |
+| `QUORUM_SESSION_EVIDENCE` | Session recording hash attached |
+| `QUORUM_ABUSE_COMPLAINT` | Abuse complaint filed |
+| `QUORUM_ABUSE_CONFIRMED` | Abuse review upheld |
+| `QUORUM_NUKE_APPEAL_FILED` | Nuked verifier appeals |
+| `QUORUM_NUKE_APPEAL_RESOLVED` | Nuke appeal outcome |
 
 ---
 
@@ -705,7 +1146,7 @@ The runtime software implements the governance framework described above. The co
 
 ```
 src/genesis/
-├── models/          Data models (mission, trust, commitment, governance, market, skill)
+├── models/          Data models (mission, trust, commitment, governance, market, skill, leave)
 ├── policy/          Policy resolver (loads constitutional, runtime, and market config)
 ├── engine/          Mission state machine, evidence validation, reviewer routing
 ├── trust/           Trust scoring, domain trust, decay, quality gates, fast-elevation control
@@ -716,6 +1157,13 @@ src/genesis/
 ├── crypto/          Merkle trees, commitment builder, blockchain anchoring, epoch service
 ├── review/          Actor roster, skill-aware constrained-random reviewer selector
 ├── persistence/     Event log (append-only JSONL) and state store (JSON)
+├── identity/        BIP39 challenge, voice verifier, session manager, quorum verifier
+├── compliance/      Compliance screener (17 categories), penalty escalation engine
+├── legal/           Adjudication panels, Constitutional Court, rights enforcer, rehabilitation
+├── compensation/    Commission calculator, escrow manager, GCF tracker
+├── workflow/        Workflow orchestrator (escrow-first coordination layer)
+├── leave/           Protected leave engine, adjudication, trust freeze
+├── countdown/       First Light estimator
 ├── service.py       Unified service facade (orchestrates all subsystems)
 └── cli.py           Command-line interface
 ```
@@ -729,7 +1177,7 @@ Key design principles:
 5. **Engine purity**: computation engines (trust, quality, matching, decay, endorsement, allocation) are pure functions with no side effects. The service layer handles all persistence and event recording.
 6. **Transactional safety**: every mutating service operation either fully succeeds or fully rolls back. Post-audit operations degrade rather than roll back to prevent audit/state mismatch.
 
-All constitutional invariants are tested automatically. The test suite (580 tests) covers every critical rule described in this document — including the labour market, skill lifecycle, domain trust, and persistence safety.
+All constitutional invariants are tested automatically. The test suite (1244 tests) covers every critical rule described in this document — including identity verification, compliance screening, three-tier justice, the genesis common fund, workflow orchestration, the labour market, skill lifecycle, domain trust, and persistence safety.
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite
@@ -746,6 +1194,6 @@ The project includes containerised deployment and continuous integration:
 
 ---
 
-*This document describes the technical architecture as of the labour market implementation (2026-02-14). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
+*This document describes the technical architecture as of Genesis Block 6 (2026-02-18). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, identity verification (BIP39 liveness and quorum verification with disability accommodation), compliance screening (17 prohibited categories and penalty escalation), three-tier justice (adjudication panels, Constitutional Court, and rehabilitation), the Genesis Common Fund, workflow orchestration (escrow-first coordination), cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
 
 \* subject to review
