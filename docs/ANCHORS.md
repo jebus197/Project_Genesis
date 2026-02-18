@@ -12,6 +12,12 @@ Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan
 
 ---
 
+## Genesis Block 6
+
+- `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284` → [tx c8ef384a81...](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10282284 | Minted: 2026-02-17T23:57:49Z
+  **Genesis Common Fund, harmful work prevention, three-tier justice, workflow orchestration — the constitutional infrastructure for a functioning economy. 1244 tests. CX-reviewed.**
+
 ## Genesis Block 5
 
 - `f2c5381d48b3c467341997b69916aaa82d30d5f160982b69a09942f3a16865c8` → [tx 8d2152dc5f...](https://sepolia.etherscan.io/tx/8d2152dc5f6f51c35d7f0b5b4624377b3e9c178c4fa4851d4eba7a650064df6d)

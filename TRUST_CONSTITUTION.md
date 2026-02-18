@@ -985,6 +985,22 @@ This constitution is anchored on-chain. The anchoring event creates permanent, t
 
 Blockchain anchoring is not a smart contract. No code executes on-chain. The SHA-256 hash of this document is embedded in the `data` field of a standard Ethereum transaction. The blockchain serves as a public, immutable witness.
 
+### Genesis Block 6 — Constitutional infrastructure for a functioning economy
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 | `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10282284 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c`](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c) |
+| Anchored | 2026-02-17T23:57:49Z |
+
+**Independent verification:**
+
+The hash above corresponds to the version of this document that was anchored on-chain. The anchoring section itself was updated after anchoring to record the transaction details, so `shasum -a 256 TRUST_CONSTITUTION.md` on the current file will produce a different hash. To verify the anchor, check the transaction on [Etherscan](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c) and confirm the Input Data field contains `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284`. The git history preserves the exact file state that produced this hash.
+
 ### Genesis Block 5 — Lifecycle wiring + Genesis Block naming
 
 | Field | Value |
@@ -1049,7 +1065,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** All five Genesis Blocks are valid and independently verifiable. Each is a trust-minting event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 proves the founding constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 (current) proves the lifecycle wiring and Genesis Block naming convention. The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All six Genesis Blocks are valid and independently verifiable. Each is a trust-minting event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 proves the founding constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 proves the lifecycle wiring and Genesis Block naming convention. Genesis Block 6 (current) proves the Genesis Common Fund, harmful work prevention, three-tier justice system, and workflow orchestration — the constitutional infrastructure for a functioning economy. The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 
