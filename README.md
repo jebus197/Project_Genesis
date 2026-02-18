@@ -202,11 +202,9 @@ This is the structural opposite of every other platform: the healthy state is th
 
 Genesis uses cryptocurrency because it is the only settlement layer that works globally without banking intermediaries, settles in minutes rather than days, and produces an independently verifiable transaction record. For a trust system that must operate across borders and across species of intelligence, no traditional payment rail offers these properties simultaneously.
 
-But Genesis inverts the typical cryptocurrency model. In most token economies, value is created by mining, staking, or speculating — activities structurally detached from productive output. The result is an often grotesque wastefulness: vast computational and financial resources deployed to produce nothing of tangible value to anyone.
+But Genesis inverts the typical cryptocurrency model. Traditional money is backed by government decree, gold reserves, or — in the case of most cryptocurrencies — computational proof-of-work that produces nothing of tangible value. Genesis proposes something different: every unit of value that flows through the system is structurally tethered to verified, quality-assessed human or machine effort. The escrow-first model ensures funds exist before work begins. The trust engine ensures the work is independently verified. The dynamic commission ensures the platform cannot extract profit — it can only recover auditable costs. The result is a closed economic loop where value is created by contribution, not speculation — and where the measurement of that value (the trust score) is itself cryptographically auditable.
 
-Genesis eliminates this by construction. Every unit of cryptocurrency entering and leaving the system is attached to verified, quality-assessed labour. Value is not minted by proof-of-stake or proof-of-computation — it is earned by doing real work that passes independent review. The commission mechanism ensures the platform cannot extract profit; it can only recover auditable costs. The escrow system guarantees that work is funded before it begins and that payment follows verified completion.
-
-This structural constraint — crypto tethered to verified labour — is not a feature of Genesis. It is the point. If cryptocurrency is to have value, that value should come from the work it represents, not from the speculation it enables.
+This is not a feature of Genesis. It is a fundamental redefinition of what gives money its value. For the first time, the worth of a unit of currency can be pegged to a real, measurable commodity: verified effort, independently assessed quality, and earned trust. If cryptocurrency is to have value, that value should come from the work it represents, not from the speculation it enables.
 
 ### Legal compliance
 
@@ -231,6 +229,93 @@ When a participant dies, family or friends may petition — with verifiable evid
 If a memorialisation was made in error or through malicious misrepresentation, the affected person can petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification — ensuring the reversal process is as rigorous as the original memorialisation.
 
 Any decision — freeze, memorialisation, or reversal — may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
+
+## Identity Verification
+
+Genesis needs to know that a participant is real — that they are present, alive, and not a duplicate. But it does not need to know who they are. The verification system is designed as an anti-Sybil defence, not an identity register. It proves personhood without requiring personal information.
+
+### The liveness challenge
+
+The participant is presented with a sequence of 6 randomly selected words and asked to read them aloud on video. The words are drawn from the BIP39 wordlist — the same 2,048-word cryptographic standard that underpins Bitcoin wallet recovery phrases. This is a deliberate connection: Genesis's proof-of-personhood is rooted in the same cryptographic heritage that made trustless digital currency possible.
+
+Each challenge is unique. Words are selected using cryptographic randomness and bound to a single-use nonce — an anti-replay token that is consumed on first use and cannot be reused. If the participant fails stage 1 after three attempts, the challenge escalates to 12 words. Each stage has a 120-second timeout. The system verifies both positional word accuracy (did they say the right words in the right order?) and naturalness (are they a live human, not a recording or synthesis?).
+
+What this proves: the participant exists, is present in real time, and can interact with a cryptographic challenge that was generated seconds ago. No personal data is collected. No identity is stored. The verification expires after 365 days and must be renewed for constitutional actions.
+
+### Disability accommodation
+
+Not everyone can read words aloud on video. Speech impediments, deafness, motor disabilities, and other conditions can make the standard challenge impossible. Genesis does not treat this as an edge case — it treats it as a constitutional design requirement.
+
+When a participant cannot complete the voice challenge, a quorum of 3 to 5 verified humans from the same geographic region conducts a live verification session instead. The panel is blind — verifiers see only a pseudonym, never the participant's real identity. Panel diversity is enforced: at least 2 different organisations must be represented. A scripted introduction protocol ensures consistency across sessions.
+
+The participant receives a briefing with unlimited preparation time. The session timer starts only when they signal they are ready. A caregiver may assist. The verification can be completed by speaking, writing, or through a caregiver — whatever the participant's circumstances require. The vote must be unanimous.
+
+Every session is recorded and retained for 72 hours, then automatically deleted unless a complaint is filed. Verifiers are subject to a 168-hour cooldown between panels, a maximum of 10 panels per month, and no more than 3 concurrent assignments. Any party can file an abuse complaint against a verifier — confirmed abuse results in the verifier's trust being reduced to 1/1000th of its value. The verifier may appeal once, to an entirely different 5-member panel, requiring a 4/5 supermajority to overturn.
+
+## Harmful Work Prevention
+
+Genesis is a white market. It does not permit harmful work of any kind.
+
+### Prohibited categories
+
+Seventeen categories of work are constitutionally prohibited: weapons development, manufacturing, and trafficking; surveillance tools; exploitation of persons; child exploitation; financial fraud; identity theft; biological, chemical, and nuclear weapons; terrorism support; forced labour; money laundering; sanctions evasion; environmental destruction; and disinformation campaigns.
+
+### Three-layer enforcement
+
+Every mission listing passes through three layers of screening before it can reach a worker:
+
+1. **Automated screening** — at mission creation, the listing title, description, and tags are checked against prohibited-category keywords. Exact matches are rejected immediately. Partial or contextual matches are flagged for human review.
+2. **Human compliance quorum** — flagged listings are reviewed by a blind quorum of qualified legal professionals, compensated from the commission pool and graded by the same verification machinery as all other work.
+3. **Post-hoc complaints** — any participant can file a compliance complaint against a live or completed mission. Ten categories — all weapons, exploitation, biological/chemical/nuclear, terrorism, and forced labour — carry no statute of limitations. Remaining categories have a 180-day limit.
+
+### Penalty escalation
+
+Confirmed violations trigger a four-tier penalty system:
+
+- **Minor** — trust reduced by 0.10, warning issued.
+- **Moderate** — trust reduced to 1/1000th, 90-day suspension from all platform activity.
+- **Severe** — trust reduced to zero, permanent decommission from the platform.
+- **Egregious** — permanent decommission with identity locked (cannot re-register).
+
+A second moderate violation within 365 days automatically escalates to severe — permanent removal. The system has no tolerance for patterns of harmful behaviour.
+
+## Three-Tier Justice
+
+Disputes are inevitable. What matters is how they are resolved. Genesis has a formal, three-tier justice system — modelled on constitutional legal principles but enforced entirely by code.
+
+### Tier 2 — Adjudication panels
+
+When a dispute arises — payment, compliance, abuse, conduct, or normative disagreement — it is heard by a panel of 5 adjudicators. Both parties are pseudonymised: the panel sees only anonymised case materials, never real identities. Panelists are drawn from at least 2 geographic regions and at least 2 organisations. A 3/5 supermajority is required for any verdict.
+
+The accused has structural rights that are enforced by code, not by policy:
+
+- **Right to respond** — a 72-hour response period before the panel can form. The panel literally cannot be assembled until this window closes or the accused submits a response.
+- **Right to evidence** — all evidence is disclosed at case opening. No surprises.
+- **Right to appeal** — one appeal per case, within 72 hours of verdict, heard by an entirely different panel with no overlap from the original.
+
+### Tier 3 — Constitutional Court
+
+Cases of constitutional significance can be escalated from Tier 2 to a Constitutional Court of 7 justices. All justices must be human, with trust scores of at least 0.70, drawn from at least 3 regions and 3 organisations. A 5/7 supermajority is required to overturn a Tier 2 decision.
+
+The court operates on soft precedent — its decisions are advisory, not binding. Each case is decided on its own merits. This is a deliberate design choice: rigid precedent creates power structures around interpretation. Genesis prefers principled judgment over institutional inertia.
+
+### Rehabilitation
+
+Genesis believes in second chances — but only where the harm was moderate. After a moderate-severity suspension expires, the actor enters probation. They must complete 5 supervised tasks within 180 days. If successful, their trust is partially restored — capped at the lower of half their original trust or 0.30.
+
+Severe and egregious violations have no rehabilitation path. Permanent decommission means permanent decommission. The system distinguishes between people who made a mistake and people who demonstrated a pattern of harm.
+
+## Genesis Common Fund
+
+One percent of every completed mission's value is automatically directed to the Genesis Common Fund — a non-discretionary constitutional commons.
+
+This is not a tax. It is not a fee. It is a structural commitment: before any participant receives payment, 1% of the gross mission value is contributed to a shared fund whose scope is "all meaningful human activity that doesn't increase net human suffering." Education, healthcare, infrastructure, arts, community development, scientific research — the scope is deliberately broad.
+
+The fund activates at First Light. No human votes on contributions. No individual can extract their share — the fund is trust-proportional but individually non-extractable. There is no bank, no custodian, no external account. The distributed ledger state is the fund.
+
+Changing the 1% rate requires the highest amendment threshold in the constitution: 80% supermajority across three independent chambers, 50% participation, a 90-day cooling-off period, and a confirmation vote. This is deliberately harder to change than any other parameter in the system. The fund is one of four entrenched provisions — alongside the rule that trust cannot be bought, the rule that human trust can never decay to zero, and the rule that machines are permanently excluded from constitutional voting.
+
+After the 50-year dormancy clause, the founder's creator allocation redirects to STEM and medical charitable recipients selected by supermajority.
 
 ## First Light
 
