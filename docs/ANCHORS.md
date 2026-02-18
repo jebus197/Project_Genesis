@@ -4,7 +4,7 @@ The entries below are the constitutional anchoring record of Project Genesis.
 
 Before a single user existed, before a single mission was posted, before any revenue flowed — the rules were set in stone. Each entry is a cryptographic proof, permanently embedded in Ethereum, that the constitution existed in an exact, unalterable form at an exact moment in time.
 
-No other platform has done this. The rules were committed publicly, immutably, and irrevocably — before anyone had a reason to lobby for changes. Nothing can be hidden — not from day one, not in perpetuity, not even by the founder themselves.
+No other platform has done this. The rules were committed publicly, immutably, and irrevocably — before anyone had a reason to lobby for changes. Nothing can be hidden — from day one, not even by the founder themselves.
 
 Every anchor below is a 0-ETH self-send transaction on Ethereum Sepolia. The SHA-256 hash of the constitution is embedded in the transaction data field. Anyone, at any time, can independently verify that the document they hold matches the hash on-chain. The blockchain serves as a witness — a notary stamp that cannot be forged, altered, or retroactively changed.
 

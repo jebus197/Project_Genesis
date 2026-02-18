@@ -132,7 +132,7 @@ The first document anchored in Genesis is its own constitution — the foundatio
 
 This anchor captures: Genesis Common Fund (1% constitutional contribution), harmful work prevention (17 prohibited categories), three-tier justice system (adjudication panels + Constitutional Court), workflow orchestration (escrow-first coordination), and four entrenched provisions with the highest amendment threshold in the constitution. 1244 tests. Independently reviewed.
 
-The complete anchoring history — all six Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — not from day one, not in perpetuity, not even by the founder themselves.
+The complete anchoring history — all six Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
 
 ### How to Verify It Yourself
 
