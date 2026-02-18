@@ -154,13 +154,13 @@ Complete runtime foundation created with constitutional-parameter-driven design:
 6. Cryptographic layer: `src/genesis/crypto/` — Merkle tree, commitment builder, blockchain anchoring.
 7. Test suite: 80 tests across 7 test files, all passing.
 
-## 14) First blockchain anchoring event — first trust-minting event (same date)
+## 14) First blockchain anchoring event — constitutional anchoring (same date)
 
 This entry records the most significant event of the founding session.
 
 The Genesis constitution (`TRUST_CONSTITUTION.md`) was anchored on the Ethereum Sepolia blockchain, creating permanent, tamper-evident, independently verifiable proof that the founding governance document exists in a specific, immutable form.
 
-Under the constitution's own rules, this qualifies as **the first trust-minting event** in Project Genesis history:
+Under the constitution's own rules, this qualifies as **the first constitutional anchoring** in Project Genesis history:
 
 - **Proof-of-work:** The constitution was drafted, reviewed, corrected across multiple rounds, hardened against identified gaps, and committed to a public repository.
 - **Proof-of-trust:** The anchoring event binds the project to its own governance rules in a way that cannot be retroactively altered by any party, including the project owner. Independent verification requires no trust in Genesis infrastructure — only a SHA-256 hash computation and a public blockchain lookup.

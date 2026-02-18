@@ -1053,7 +1053,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a`](https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a) |
 | Anchored | 2026-02-16 |
 
-### Genesis Block 1 — The founding constitution
+### Genesis Block 1 — The first constitutional anchoring
 
 | Field | Value |
 |---|---|
@@ -1065,7 +1065,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** All six Genesis Blocks are valid and independently verifiable. Each is a trust-minting event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 proves the founding constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 proves the lifecycle wiring and Genesis Block naming convention. Genesis Block 6 (current) proves the Genesis Common Fund, harmful work prevention, three-tier justice system, and workflow orchestration — the constitutional infrastructure for a functioning economy. The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All six Genesis Blocks are valid and independently verifiable. Each is a constitutional anchoring event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 records the earliest version of the constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 proves the lifecycle wiring and Genesis Block naming convention. Genesis Block 6 (current) proves the Genesis Common Fund, harmful work prevention, three-tier justice system, and workflow orchestration — the constitutional infrastructure for a functioning economy. The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 

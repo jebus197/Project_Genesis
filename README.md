@@ -116,7 +116,7 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution. This serves as both a governance act and a concrete demonstration of how anchoring works. The constitution has been anchored six times — each recording the rules at a new stage of the platform's evolution. All six are independently verifiable. The founding anchor is the first trust-minting event in the platform's history: the rules were committed publicly and immutably before any user existed to lobby for changes.
+The first document anchored in Genesis is its own constitution — the foundational document of the entire project. This serves as both a governance act and a concrete demonstration of how anchoring works. Like any foundational document, it evolved: the constitution has been anchored six times, each version recording the rules at a new stage of the platform's evolution. All six are independently verifiable on the blockchain. The rules were committed publicly and immutably before any user existed to lobby for changes.
 
 **Current anchor (Genesis Block 6 — constitutional infrastructure for a functioning economy):**
 
@@ -132,18 +132,7 @@ The first document anchored in Genesis is its own constitution. This serves as b
 
 This anchor captures: Genesis Common Fund (1% constitutional contribution), harmful work prevention (17 prohibited categories), three-tier justice system (adjudication panels + Constitutional Court), workflow orchestration (escrow-first coordination), and four entrenched provisions with the highest amendment threshold in the constitution. 1244 tests. Independently reviewed.
 
-**Founding anchor (Genesis Block 1 — the founding constitution):**
-
-| Field | Value |
-|---|---|
-| SHA-256 Hash | `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` |
-| Block | 10255231 |
-| Transaction | [`031617e3...`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
-| Anchored | 2026-02-13T23:47:25Z |
-
-This is the founding act. The core rule — trust cannot be bought — was committed to an immutable public record before the platform had users, revenue, or any reason for anyone to lobby for changes.
-
-Every field above is publicly verifiable. The sender address links to the wallet's full transaction history on Etherscan. The transaction link shows the exact data that was recorded on-chain. The complete chain of all six Genesis Blocks is maintained in the [Trust Mint Log](docs/ANCHORS.md).
+The complete anchoring history — all six Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — not from day one, not in perpetuity, not even by the founder themselves.
 
 ### How to Verify It Yourself
 
@@ -155,7 +144,7 @@ Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/c8ef
 
 **Step 2 — Verify earlier anchors:**
 
-The [Trust Mint Log](docs/ANCHORS.md) records all six Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process. The [founding transaction](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) (`33f2b003...`) records the original constitution — the moment the rules became immutable.
+The [Trust Mint Log](docs/ANCHORS.md) records all six Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process — from the earliest draft to the current version.
 
 **What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 
@@ -308,7 +297,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | [Foundational Note](HANDOFF_NOTE.md) | Original project brief and context. |
 | [Contribution Governance](CONTRIBUTING.md) | Rules for contributing to the project. |
 | [Blockchain Anchor Log](docs/ANCHORS.md) | Record of all blockchain anchoring events. |
-| [Trust Event Ledger](docs/GENESIS_EVENTS.md) | Formally recognised trust-minting events. |
+| [Trust Event Ledger](docs/GENESIS_EVENTS.md) | Formally recognised trust events. |
 
 **Machine-readable governance artifacts:**
 

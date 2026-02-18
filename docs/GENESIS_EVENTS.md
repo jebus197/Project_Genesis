@@ -1,6 +1,6 @@
 # Project Genesis — Trust Event Ledger
 
-This file records formally recognized trust-minting events in Project Genesis.
+This file records formally recognised trust events in Project Genesis.
 
 Each entry documents a verified action that contributes to the project's earned legitimacy under its own constitutional rules. Trust events are distinguished from ordinary work by two requirements:
 
@@ -12,7 +12,7 @@ Each entry documents a verified action that contributes to the project's earned 
 ## Event GE-0001: Constitutional Blockchain Anchoring
 
 **Date:** 2026-02-13T23:47:25Z
-**Type:** Founding trust-minting event
+**Type:** Constitutional anchoring
 **Actor:** George Jackson (project founder)
 **Genesis phase:** G0 (founder stewardship)
 
@@ -20,7 +20,7 @@ Each entry documents a verified action that contributes to the project's earned 
 
 The Genesis constitution (`TRUST_CONSTITUTION.md`) was anchored on the Ethereum Sepolia blockchain. A SHA-256 hash of the document was embedded in the `data` field of a standard Ethereum transaction, creating permanent, tamper-evident proof that the constitution existed in its exact byte-for-byte form at the recorded time.
 
-### Why this qualifies as a trust-minting event
+### Why this qualifies as a trust event
 
 Under the constitution's foundational rule:
 
@@ -77,11 +77,11 @@ The block number (10255231) and its timestamp on Sepolia prove the document exis
 
 ### Significance
 
-This is the founding act of Project Genesis. Every future trust event builds on this anchor. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
+This is the foundational document of Project Genesis, first anchored in its earliest form. The constitution evolved through six publicly verifiable iterations — each witnessed on the blockchain before any user existed. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
 
 ### Re-anchoring note — v2 (2026-02-16)
 
-The constitution was re-anchored after the addition of the compensation model, real-time dynamic commission mechanism, and associated constitutional parameters. This re-anchoring is **not** a new trust-minting event — GE-0001 remains the founding event. The re-anchoring simply records that the constitution has evolved and its current form is also blockchain-witnessed.
+The constitution was re-anchored after the addition of the compensation model, real-time dynamic commission mechanism, and associated constitutional parameters. This re-anchoring is **not** a new constitutional anchoring event — GE-0001 remains the foundational anchoring. The re-anchoring simply records that the constitution has evolved and its current form is also blockchain-witnessed.
 
 | Field | Value |
 |---|---|
@@ -98,7 +98,7 @@ Key additions to the constitution in this version:
 
 ### Re-anchoring note — v3 (2026-02-16)
 
-The constitution was re-anchored after codifying creator provisions, founder legacy, PoC mode, and First Light. This is **not** a new trust-minting event — GE-0001 remains the founding event. The anchoring narrative is: v1 (founding) → v2 (compensation) → v3 (creator provisions + founder legacy).
+The constitution was re-anchored after codifying creator provisions, founder legacy, PoC mode, and First Light. This is **not** a new constitutional anchoring event — GE-0001 remains the foundational anchoring. The anchoring narrative is: v1 (founding) → v2 (compensation) → v3 (creator provisions + founder legacy).
 
 | Field | Value |
 |---|---|
@@ -116,7 +116,7 @@ Key additions to the constitution in this version:
 
 ### Re-anchoring note — v4 (2026-02-16)
 
-The constitution was re-anchored after codifying First Light as a decoupled sustainability trigger and enforcing machine registration through verified human operators. This is **not** a new trust-minting event — GE-0001 remains the founding event. The anchoring narrative continues: v1 (founding) → v2 (compensation) → v3 (creator provisions + founder legacy) → v4 (First Light + machine registration).
+The constitution was re-anchored after codifying First Light as a decoupled sustainability trigger and enforcing machine registration through verified human operators. This is **not** a new constitutional anchoring event — GE-0001 remains the foundational anchoring. The anchoring narrative continues: v1 (founding) → v2 (compensation) → v3 (creator provisions + founder legacy) → v4 (First Light + machine registration).
 
 | Field | Value |
 |---|---|
@@ -131,7 +131,7 @@ Key additions to the constitution in this version:
 
 ### Re-anchoring note — v5 (2026-02-17)
 
-The constitution was re-anchored after wiring lifecycle events and establishing the Genesis Block naming convention. This is **not** a new trust-minting event — GE-0001 remains the founding event. The anchoring narrative continues: v1 → v2 → v3 → v4 → v5 (lifecycle wiring + Genesis Block naming).
+The constitution was re-anchored after wiring lifecycle events and establishing the Genesis Block naming convention. This is **not** a new constitutional anchoring event — GE-0001 remains the foundational anchoring. The anchoring narrative continues: v1 → v2 → v3 → v4 → v5 (lifecycle wiring + Genesis Block naming).
 
 | Field | Value |
 |---|---|
@@ -148,7 +148,7 @@ Key additions to the constitution in this version:
 
 ### Re-anchoring note — v6 (2026-02-17)
 
-The constitution was re-anchored after building the constitutional infrastructure for a functioning economy: Genesis Common Fund, harmful work prevention, three-tier justice, and workflow orchestration. This is **not** a new trust-minting event — GE-0001 remains the founding event. The anchoring narrative continues: v1 → v2 → v3 → v4 → v5 → v6 (economic infrastructure).
+The constitution was re-anchored after building the constitutional infrastructure for a functioning economy: Genesis Common Fund, harmful work prevention, three-tier justice, and workflow orchestration. This is **not** a new constitutional anchoring event — GE-0001 remains the foundational anchoring. The anchoring narrative continues: v1 → v2 → v3 → v4 → v5 → v6 (economic infrastructure).
 
 | Field | Value |
 |---|---|
@@ -189,7 +189,7 @@ George Jackson's identity was formally minted as the first trust record in the G
 
 ### Why this matters
 
-Every trust chain needs a first link. George Jackson designed the constitution, the trust model, the governance framework, the compensation model, and the white market thesis. The quality and scope of that work constitutes the evidence for the founding trust record. By the system's own rules, trust is earned through verified work — and the work that created the system is itself the first piece of verified work.
+Every trust chain needs a first link. George Jackson designed the constitution, the trust model, the governance framework, the compensation model, and the white market thesis. The quality and scope of that work constitutes the evidence for the first trust record. By the system's own rules, trust is earned through verified work — and the work that created the system is itself the first piece of verified work.
 
 ### Constitutional provisions anchored with this minting
 
@@ -327,4 +327,4 @@ The Input Data field contains `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170
 
 ---
 
-*Future trust-minting events will be appended to this ledger as the project progresses through its genesis phases.*
+*Future trust events will be appended to this ledger as the project progresses through its genesis phases.*

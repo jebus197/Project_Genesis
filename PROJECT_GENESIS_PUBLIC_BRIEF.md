@@ -74,7 +74,7 @@ Design position:
 4. Identity signals alone cannot mint trust, grant privileged routing, or grant constitutional authority.
 
 ## Constitutional Blockchain Commitment and Amendment Control
-Genesis treats its founding constitution as a publicly governed artifact.
+Genesis treats its constitution as a publicly governed artifact.
 
 1. The canonical constitution text is hashed and committed on-chain on a public blockchain.
 2. Every amendment is versioned, hashed, and committed on-chain with a public change record.

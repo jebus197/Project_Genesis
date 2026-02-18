@@ -637,7 +637,7 @@ Genesis adopts and formalises blockchain anchoring as a core governance primitiv
 2. No party — including the project owner — can alter the anchored version without the mismatch being publicly detectable.
 3. The proof is permanent, does not expire, and does not depend on any Genesis infrastructure.
 
-This anchoring event is formally recognised as the first trust-minting event in Genesis history (see [`docs/GENESIS_EVENTS.md`](GENESIS_EVENTS.md)).
+The constitution is the foundational document of Genesis, first anchored on the blockchain before any user existed (see [`docs/GENESIS_EVENTS.md`](GENESIS_EVENTS.md) for the full anchoring history).
 
 ### Verification process
 

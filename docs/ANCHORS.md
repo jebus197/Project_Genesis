@@ -4,7 +4,7 @@ The entries below are the constitutional anchoring record of Project Genesis.
 
 Before a single user existed, before a single mission was posted, before any revenue flowed — the rules were set in stone. Each entry is a cryptographic proof, permanently embedded in Ethereum, that the constitution existed in an exact, unalterable form at an exact moment in time.
 
-No other platform has done this. The rules were committed publicly, immutably, and irrevocably — before anyone had a reason to lobby for changes. This is not a technical formality. This is the founding act.
+No other platform has done this. The rules were committed publicly, immutably, and irrevocably — before anyone had a reason to lobby for changes. Nothing can be hidden — not from day one, not in perpetuity, not even by the founder themselves.
 
 Every anchor below is a 0-ETH self-send transaction on Ethereum Sepolia. The SHA-256 hash of the constitution is embedded in the transaction data field. Anyone, at any time, can independently verify that the document they hold matches the hash on-chain. The blockchain serves as a witness — a notary stamp that cannot be forged, altered, or retroactively changed.
 
@@ -50,4 +50,4 @@ Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan
 
 - `33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06` → [tx 031617e3...](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb)
   Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10255231 | Minted: 2026-02-13T23:47:25Z
-  **The founding constitution.** Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted. Trust can only be earned through verified behaviour and verified outcomes over time. This is the moment the rules became immutable.
+  **The first constitutional anchoring.** Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted. Trust can only be earned through verified behaviour and verified outcomes over time. This is the moment the rules became immutable.
