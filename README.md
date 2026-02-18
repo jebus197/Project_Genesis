@@ -116,23 +116,23 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution — the foundational document of the entire project. This serves as both a governance act and a concrete demonstration of how anchoring works. Like any foundational document, it evolved: the constitution has been anchored six times, each version recording the rules at a new stage of the platform's evolution. All six are independently verifiable on the blockchain. The rules were committed publicly and immutably before any user existed to lobby for changes.
+The first document anchored in Genesis is its own constitution — the foundational document of the entire project. This serves as both a governance act and a concrete demonstration of how anchoring works. Like any foundational document, it evolved: the constitution has been anchored seven times, each version recording the rules at a new stage of the platform's evolution. All seven are independently verifiable on the blockchain. The rules were committed publicly and immutably before any user existed to lobby for changes.
 
-**Current anchor (Genesis Block 6 — constitutional infrastructure for a functioning economy):**
+**Current anchor (Genesis Block 7 — narrative alignment + comprehensive docs update):**
 
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
-| SHA-256 Hash | `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284` |
+| SHA-256 Hash | `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca` |
 | Chain | Ethereum Sepolia (Chain ID 11155111) |
-| Block | 10282284 |
+| Block | 10287422 |
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
-| Transaction | [`c8ef384a...`](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c) |
-| Anchored | 2026-02-17T23:57:49Z |
+| Transaction | [`efd7fd2a...`](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c) |
+| Anchored | 2026-02-18T18:04:12Z |
 
-This anchor captures: Genesis Common Fund (1% constitutional contribution), harmful work prevention (17 prohibited categories), three-tier justice system (adjudication panels + Constitutional Court), workflow orchestration (escrow-first coordination), and four entrenched provisions with the highest amendment threshold in the constitution. 1244 tests. Independently reviewed.
+This anchor captures: the full constitutional substance from Genesis Block 6 (Genesis Common Fund, harmful work prevention, three-tier justice, workflow orchestration, four entrenched provisions) plus narrative alignment and comprehensive documentation update. 1244 tests. Independently reviewed.
 
-The complete anchoring history — all six Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
+The complete anchoring history — all seven Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
 
 ### How to Verify It Yourself
 
@@ -140,11 +140,11 @@ You don't need to trust this project to verify the anchor. You only need a termi
 
 **Step 1 — Check the current anchor against the blockchain:**
 
-Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `4d71a0ea...`. The git history preserves the exact file state that produced this hash.
+Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `29abc8a6...`. The git history preserves the exact file state that produced this hash.
 
 **Step 2 — Verify earlier anchors:**
 
-The [Trust Mint Log](docs/ANCHORS.md) records all six Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process — from the earliest draft to the current version.
+The [Trust Mint Log](docs/ANCHORS.md) records all seven Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process — from the earliest draft to the current version.
 
 **What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 

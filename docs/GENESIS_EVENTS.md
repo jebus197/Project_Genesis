@@ -77,7 +77,7 @@ The block number (10255231) and its timestamp on Sepolia prove the document exis
 
 ### Significance
 
-This is the foundational document of Project Genesis, first anchored in its earliest form. The constitution evolved through six publicly verifiable iterations — each witnessed on the blockchain before any user existed. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
+This is the foundational document of Project Genesis, first anchored in its earliest form. The constitution evolved through seven publicly verifiable iterations — each witnessed on the blockchain before any user existed. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
 
 ### Re-anchoring note — v2 (2026-02-16)
 
@@ -302,7 +302,7 @@ This anchor was preceded by a full independent review cycle (CX). Three P1 (crit
 
 ### Key code changes in this version
 
-- 1244 tests passing (up from 890), 339 new tests across phases E-1 through E-4
+- 1244 tests passing (up from 890), 354 new tests across phases E-1 through E-4 plus CX regression fixes
 - Genesis Common Fund: `src/genesis/compensation/gcf.py`
 - Compliance screening: `src/genesis/compliance/screener.py`
 - Penalty escalation: `src/genesis/compliance/penalties.py`
@@ -324,6 +324,47 @@ Check the transaction on Etherscan:
 [https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c)
 
 The Input Data field contains `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284`. The git history preserves the exact file state that produced this hash.
+
+---
+
+## Event GE-0006: Constitution Anchored v7 — Narrative Alignment + Docs Update
+
+**Date:** 2026-02-18T18:04:12Z
+**Type:** Constitutional lifecycle event
+**Actor:** George Jackson (project founder)
+**Genesis phase:** G0 (founder stewardship)
+
+### What happened
+
+The Genesis constitution was re-anchored to Ethereum Sepolia after:
+
+1. **Narrative alignment (05cf7f7):** Two cosmetic wording changes in the anchor history section — "founding constitution" → "first constitutional anchoring", "trust-minting event" → "constitutional anchoring event" — to match what the blockchain actually reveals (multiple iterations, not a single founding act).
+
+2. **Technical Overview comprehensive update (739f685):** The Technical Overview was brought to GB6 parity, expanding from 752 to 1199 lines. Five new sections added with plain-English rationale alongside technical detail: Identity Verification, Three-Tier Justice, Compliance and Harmful Work Prevention, Genesis Common Fund, Workflow Orchestration. Code tree updated (+7 directories), test count corrected (580→1244).
+
+3. **README expansion (56d35cf, 4f99a2c):** Feature coverage expanded — identity verification, harmful work prevention, three-tier justice, Genesis Common Fund, and "What the Architecture Eliminates" (6 structural eliminations).
+
+The constitution itself is unchanged in substance from GB6. The re-anchoring was triggered because the narrative rework modified two phrases in the anchor history section, causing the file hash to diverge from the GB6 anchored hash.
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 Hash | `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10287422 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c`](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c) |
+
+### Independent verification
+
+```bash
+shasum -a 256 TRUST_CONSTITUTION.md
+```
+
+Check the transaction on Etherscan:
+[https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c)
+
+The Input Data field contains `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca`. The git history preserves the exact file state that produced this hash.
 
 ---
 

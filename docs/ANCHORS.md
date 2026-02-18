@@ -12,6 +12,12 @@ Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan
 
 ---
 
+## Genesis Block 7
+
+- `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca` → [tx efd7fd2ab8...](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10287422 | Minted: 2026-02-18T18:04:12Z
+  **Narrative alignment + Technical Overview comprehensive update + docs audit. Constitution unchanged in substance from GB6; two cosmetic wording changes in anchor history section. Technical Overview brought to GB6 parity (752→1199 lines). README expanded with architectural eliminations. 1244 tests.**
+
 ## Genesis Block 6
 
 - `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284` → [tx c8ef384a81...](https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c)

@@ -1194,6 +1194,6 @@ The project includes containerised deployment and continuous integration:
 
 ---
 
-*This document describes the technical architecture as of Genesis Block 6 (2026-02-18). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, identity verification (BIP39 liveness and quorum verification with disability accommodation), compliance screening (17 prohibited categories and penalty escalation), three-tier justice (adjudication panels, Constitutional Court, and rehabilitation), the Genesis Common Fund, workflow orchestration (escrow-first coordination), cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
+*This document describes the technical architecture as of Genesis Block 7 (2026-02-18). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, identity verification (BIP39 liveness and quorum verification with disability accommodation), compliance screening (17 prohibited categories and penalty escalation), three-tier justice (adjudication panels, Constitutional Court, and rehabilitation), the Genesis Common Fund, workflow orchestration (escrow-first coordination), cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
 
 \* subject to review
