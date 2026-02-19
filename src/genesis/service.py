@@ -294,6 +294,14 @@ class GenesisService:
                 self._workflow_orchestrator = WorkflowOrchestrator.from_records(
                     resolver.workflow_config(), workflow_records,
                 )
+            # Restore disbursement engine state
+            disb_proposals, disb_votes = state_store.load_disbursements()
+            if disb_proposals:
+                self._disbursement_engine = DisbursementEngine.from_records(
+                    resolver.gcf_disbursement_config(),
+                    disb_proposals,
+                    disb_votes,
+                )
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -5452,6 +5460,10 @@ class GenesisService:
         )
         self._state_store.save_escrows(self._escrow_manager._escrows)
         self._state_store.save_workflows(self._workflow_orchestrator._workflows)
+        self._state_store.save_disbursements(
+            self._disbursement_engine._proposals,
+            self._disbursement_engine._votes,
+        )
 
     def _safe_persist(
         self,

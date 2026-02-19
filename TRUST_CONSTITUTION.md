@@ -531,6 +531,23 @@ Genesis workflow orchestration bridges the four independent subsystems (market, 
 52. Can a payment dispute be filed without an adjudication case being created? If yes, reject design.
 53. Can work be approved and paid without evidence being submitted? If yes, reject design.
 
+### GCF Disbursement Governance
+
+The Genesis Common Fund accumulates 1% of all mission rewards. Disbursement governance controls how the fund is spent. The mechanism is: propose, vote, execute.
+
+**Proposal gates:** Only ACTIVE humans with trust >= tau_prop can propose disbursements. Proposals require at least one measurable deliverable and must pass compliance screening (same 17-category screening as mission listings). Proposers are limited to 3 active proposals at a time.
+
+**Trust-weighted voting:** Only humans vote (MACHINE_VOTING_EXCLUSION is entrenched). Voters must be ACTIVE with trust >= tau_vote. Each vote carries the voter's trust score as weight. Simple majority by trust weight (not headcount) determines outcome. Ties reject (conservative default). A 30% quorum of eligible voters is required.
+
+**Compute ceiling:** GCF_COMPUTE_CEILING (0.25) is a constitutional constant limiting compute infrastructure spending to 25% of the GCF balance. This is amendable by standard constitutional process but is NOT entrenched — it's an operational parameter, not a structural safeguard.
+
+**Execution and routing:** Approved proposals are executed by reducing the GCF balance and creating a funded listing through the existing workflow orchestrator. The GCF acts as a virtual staker (staker_id="gcf") — it is not an actor in the roster. Cancelled GCF-funded listings return funds to the GCF via credit_refund (which does not count as a contribution).
+
+**GCF disbursement design tests:**
+54. Can a machine vote on GCF disbursement? If yes, reject design. (MACHINE_VOTING_EXCLUSION is entrenched.)
+55. Can compute infrastructure spending exceed GCF_COMPUTE_CEILING? If yes, reject design.
+56. Can a disbursement proposal bypass compliance screening? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

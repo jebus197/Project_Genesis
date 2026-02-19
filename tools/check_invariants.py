@@ -665,6 +665,67 @@ def check() -> int:
                 f"constitutional_court.min_justice_trust must be >= 0.70, got {court_mjt}"
             )
 
+    # --- GCF disbursement invariants (E-5) ---
+    gcf_disb = policy.get("gcf_disbursement", {})
+    if not gcf_disb:
+        errors.append("gcf_disbursement section must exist in runtime_policy.json")
+    else:
+        vwd = gcf_disb.get("voting_window_days", 0)
+        if not (1 <= vwd <= 90):
+            errors.append(
+                f"gcf_disbursement.voting_window_days must be in [1, 90], got {vwd}"
+            )
+        qf = gcf_disb.get("quorum_fraction", 0)
+        if not (0 < qf <= 1):
+            errors.append(
+                f"gcf_disbursement.quorum_fraction must be in (0, 1], got {qf}"
+            )
+        cc_ceil = gcf_disb.get("compute_ceiling", 0)
+        if not (0 < cc_ceil <= 1):
+            errors.append(
+                f"gcf_disbursement.compute_ceiling must be in (0, 1], got {cc_ceil}"
+            )
+        mpt = gcf_disb.get("min_proposer_trust", 0)
+        tau_prop_val = eligibility.get("tau_prop", 0)
+        if mpt < tau_prop_val:
+            errors.append(
+                f"gcf_disbursement.min_proposer_trust ({mpt}) must be >= "
+                f"tau_prop ({tau_prop_val})"
+            )
+        mvt_d = gcf_disb.get("min_voter_trust", 0)
+        tau_vote_val = eligibility.get("tau_vote", 0)
+        if mvt_d < tau_vote_val:
+            errors.append(
+                f"gcf_disbursement.min_voter_trust ({mvt_d}) must be >= "
+                f"tau_vote ({tau_vote_val})"
+            )
+        if not gcf_disb.get("human_only_voting"):
+            errors.append("gcf_disbursement.human_only_voting must be true")
+        md = gcf_disb.get("min_deliverables", 0)
+        if md < 1:
+            errors.append(
+                f"gcf_disbursement.min_deliverables must be >= 1, got {md}"
+            )
+        mpp = gcf_disb.get("max_proposals_per_proposer_active", 0)
+        if mpp < 1:
+            errors.append(
+                f"gcf_disbursement.max_proposals_per_proposer_active must be >= 1, got {mpp}"
+            )
+
+    # GCF_COMPUTE_CEILING cross-check: constitutional param must match runtime config
+    gcf_compute = params.get("gcf_compute", {})
+    if gcf_compute:
+        const_ceiling = float(gcf_compute.get("GCF_COMPUTE_CEILING", "0"))
+        if gcf_disb:
+            runtime_ceiling = gcf_disb.get("compute_ceiling", 0)
+            if not math.isclose(const_ceiling, runtime_ceiling, rel_tol=1e-9):
+                errors.append(
+                    f"gcf_compute.GCF_COMPUTE_CEILING ({const_ceiling}) must match "
+                    f"gcf_disbursement.compute_ceiling ({runtime_ceiling})"
+                )
+    else:
+        errors.append("gcf_compute section must exist in constitutional_params.json")
+
     # --- Workflow orchestration invariants (E-4) ---
     wf = policy.get("workflow", {})
     if wf:

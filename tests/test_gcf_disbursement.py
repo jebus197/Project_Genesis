@@ -1157,3 +1157,122 @@ class TestDisbursementEventKinds:
         ]
         for val in expected:
             assert EventKind(val) is not None
+
+
+# ======================================================================
+# Invariant checks
+# ======================================================================
+
+
+class TestDisbursementInvariants:
+    """Verify check_invariants.py passes with the E-5 config additions."""
+
+    def test_invariants_pass(self) -> None:
+        """Invariant checker must pass with current config."""
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "check_invariants",
+            Path(__file__).resolve().parents[1] / "tools" / "check_invariants.py",
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        assert mod.check() == 0, "Invariant check failed"
+
+    def test_gcf_disbursement_config_exists(self, resolver: PolicyResolver) -> None:
+        """gcf_disbursement_config() must return valid config."""
+        config = resolver.gcf_disbursement_config()
+        assert config["human_only_voting"] is True
+        assert config["min_deliverables"] >= 1
+        assert 0 < config["compute_ceiling"] <= 1
+
+    def test_compute_ceiling_constitutional_match(self) -> None:
+        """GCF_COMPUTE_CEILING in constitutional params must match runtime config."""
+        import json
+        root = Path(__file__).resolve().parents[1]
+        with (root / "config" / "constitutional_params.json").open() as f:
+            params = json.load(f)
+        with (root / "config" / "runtime_policy.json").open() as f:
+            policy = json.load(f)
+        const_val = float(params["gcf_compute"]["GCF_COMPUTE_CEILING"])
+        runtime_val = policy["gcf_disbursement"]["compute_ceiling"]
+        assert const_val == runtime_val
+
+    def test_human_only_voting_enforced(self, resolver: PolicyResolver) -> None:
+        """Disbursement engine must enforce human-only voting."""
+        config = resolver.gcf_disbursement_config()
+        engine = DisbursementEngine(config)
+        p = engine.create_proposal(
+            proposer_id="h1",
+            title="Test",
+            description="Testing human gate",
+            requested_amount=Decimal("10"),
+            recipient_description="Test",
+            category=DisbursementCategory.PUBLIC_GOOD_MISSION,
+            measurable_deliverables=["d1"],
+            compliance_verdict="clear",
+        )
+        engine.open_voting(p.proposal_id, eligible_voter_count=10)
+        with pytest.raises(ValueError, match="Only humans"):
+            engine.cast_vote(
+                p.proposal_id, "m1", Decimal("0.70"), "machine",
+                DisbursementVoteChoice.APPROVE, "I vote yes",
+            )
+
+
+# ======================================================================
+# Persistence round-trip
+# ======================================================================
+
+
+class TestDisbursementPersistence:
+    """Verify disbursement state survives save/load cycle."""
+
+    def test_save_load_proposals_round_trip(self, resolver: PolicyResolver) -> None:
+        """Proposals and votes persist and restore correctly."""
+        from genesis.persistence.state_store import StateStore
+        import tempfile
+
+        config = resolver.gcf_disbursement_config()
+        engine = DisbursementEngine(config)
+
+        # Create a proposal
+        p = engine.create_proposal(
+            proposer_id="h1",
+            title="Fund compute",
+            description="Buy GPUs for the network",
+            requested_amount=Decimal("500.00"),
+            recipient_description="Infrastructure team",
+            category=DisbursementCategory.COMPUTE_INFRASTRUCTURE,
+            measurable_deliverables=["Deploy 10 nodes"],
+            compliance_verdict="clear",
+        )
+        engine.open_voting(p.proposal_id, eligible_voter_count=10)
+        engine.cast_vote(
+            p.proposal_id, "voter1", Decimal("0.80"), "human",
+            DisbursementVoteChoice.APPROVE, "I support this",
+        )
+
+        # Persist
+        with tempfile.TemporaryDirectory() as td:
+            store = StateStore(Path(td) / "state.json")
+            store.save_disbursements(engine._proposals, engine._votes)
+
+            # Load into new engine
+            prop_records, vote_records = store.load_disbursements()
+            restored = DisbursementEngine.from_records(
+                config, prop_records, vote_records,
+            )
+
+        # Verify
+        rp = restored.get_proposal(p.proposal_id)
+        assert rp is not None
+        assert rp.title == "Fund compute"
+        assert rp.requested_amount == Decimal("500.00")
+        assert rp.status == DisbursementStatus.VOTING
+        assert rp.votes_cast == 1
+        assert rp.total_trust_for == Decimal("0.80")
+
+        votes = restored.get_votes(p.proposal_id)
+        assert len(votes) == 1
+        assert votes[0].voter_id == "voter1"
+        assert votes[0].attestation == "I support this"

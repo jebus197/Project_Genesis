@@ -63,6 +63,13 @@ from genesis.review.roster import (
     IdentityVerificationStatus,
     RosterEntry,
 )
+from genesis.compensation.gcf_disbursement import (
+    DisbursementCategory,
+    DisbursementProposal,
+    DisbursementStatus,
+    DisbursementVote,
+    DisbursementVoteChoice,
+)
 from genesis.workflow.orchestrator import WorkflowState, WorkflowStatus
 
 
@@ -1144,3 +1151,83 @@ class StateStore:
                 completed_utc=_parse_ts("completed_utc"),
             )
         return workflows
+
+    # ------------------------------------------------------------------
+    # GCF Disbursement persistence
+    # ------------------------------------------------------------------
+
+    def save_disbursements(
+        self,
+        proposals: dict[str, DisbursementProposal],
+        votes: dict[str, list[DisbursementVote]],
+    ) -> None:
+        """Serialize disbursement proposals and votes to state."""
+        _TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+        def _fmt_ts(dt: Optional[datetime]) -> Optional[str]:
+            return dt.strftime(_TS_FMT) if dt else None
+
+        prop_entries: dict[str, dict[str, Any]] = {}
+        for pid, p in proposals.items():
+            prop_entries[pid] = {
+                "proposal_id": p.proposal_id,
+                "proposer_id": p.proposer_id,
+                "title": p.title,
+                "description": p.description,
+                "requested_amount": str(p.requested_amount),
+                "recipient_description": p.recipient_description,
+                "category": p.category.value,
+                "measurable_deliverables": p.measurable_deliverables,
+                "compliance_verdict": p.compliance_verdict,
+                "status": p.status.value,
+                "created_utc": _fmt_ts(p.created_utc),
+                "voting_opens_utc": _fmt_ts(p.voting_opens_utc),
+                "voting_closes_utc": _fmt_ts(p.voting_closes_utc),
+                "total_trust_for": str(p.total_trust_for),
+                "total_trust_against": str(p.total_trust_against),
+                "eligible_voter_count": p.eligible_voter_count,
+                "votes_cast": p.votes_cast,
+                "decided_utc": _fmt_ts(p.decided_utc),
+                "disbursed_utc": _fmt_ts(p.disbursed_utc),
+                "disbursement_id": p.disbursement_id,
+                "listing_id": p.listing_id,
+                "workflow_id": p.workflow_id,
+            }
+
+        vote_entries: dict[str, list[dict[str, Any]]] = {}
+        for pid, vote_list in votes.items():
+            vote_entries[pid] = [
+                {
+                    "vote_id": v.vote_id,
+                    "proposal_id": v.proposal_id,
+                    "voter_id": v.voter_id,
+                    "choice": v.choice.value,
+                    "trust_weight": str(v.trust_weight),
+                    "cast_utc": _fmt_ts(v.cast_utc),
+                    "attestation": v.attestation,
+                }
+                for v in vote_list
+            ]
+
+        self._state["disbursement_proposals"] = prop_entries
+        self._state["disbursement_votes"] = vote_entries
+        self._save()
+
+    def load_disbursements(
+        self,
+    ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+        """Deserialize disbursement proposals and votes from state.
+
+        Returns (proposal_records, vote_records) in the format expected
+        by DisbursementEngine.from_records().
+        """
+        proposals: list[dict[str, Any]] = []
+        for _pid, data in self._state.get("disbursement_proposals", {}).items():
+            proposals.append(data)
+
+        votes: list[dict[str, Any]] = []
+        for _pid, vote_list in self._state.get("disbursement_votes", {}).items():
+            for v in vote_list:
+                votes.append(v)
+
+        return proposals, votes
