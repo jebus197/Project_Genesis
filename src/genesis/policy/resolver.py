@@ -795,6 +795,42 @@ class PolicyResolver:
         config = self._policy.get("gcf_disbursement", {})
         return {**defaults, **config}
 
+    def amendment_config(self) -> dict[str, Any]:
+        """Return constitutional amendment configuration.
+
+        Keys: entrenched_amendment_threshold, entrenched_participation_minimum,
+              entrenched_cooling_off_days, entrenched_confirmation_vote_required.
+        Reads from constitutional_params.json entrenched_provisions section.
+        """
+        entrenched = self._params.get("entrenched_provisions", {})
+        return {
+            "entrenched_amendment_threshold": entrenched.get(
+                "entrenched_amendment_threshold", 0.80
+            ),
+            "entrenched_participation_minimum": entrenched.get(
+                "entrenched_participation_minimum", 0.50
+            ),
+            "entrenched_cooling_off_days": entrenched.get(
+                "entrenched_cooling_off_days", 90
+            ),
+            "entrenched_confirmation_vote_required": entrenched.get(
+                "entrenched_confirmation_vote_required", True
+            ),
+        }
+
+    def entrenched_provision_keys(self) -> set[str]:
+        """Return the set of entrenched provision names.
+
+        These are the 4 constitutional provisions that require the full
+        amendment pathway: 80% supermajority + 50% participation + 90-day
+        cooling-off + confirmation vote.
+        """
+        entrenched = self._params.get("entrenched_provisions", {})
+        return {
+            k for k in entrenched
+            if not k.startswith("entrenched_")  # skip config keys
+        }
+
     def poc_mode(self) -> dict[str, Any]:
         """Return PoC mode configuration.
 

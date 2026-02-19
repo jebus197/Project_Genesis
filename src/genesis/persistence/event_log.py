@@ -131,6 +131,15 @@ class EventKind(str, enum.Enum):
     GCF_DISBURSEMENT_REJECTED = "gcf_disbursement_rejected"
     GCF_DISBURSEMENT_EXECUTED = "gcf_disbursement_executed"
     GCF_FUNDED_LISTING_CREATED = "gcf_funded_listing_created"
+    # Constitutional amendment events (Phase E-6)
+    AMENDMENT_PROPOSED = "amendment_proposed"
+    AMENDMENT_CHAMBER_VOTE_CAST = "amendment_chamber_vote_cast"
+    AMENDMENT_CHAMBER_PASSED = "amendment_chamber_passed"
+    AMENDMENT_CHAMBER_FAILED = "amendment_chamber_failed"
+    AMENDMENT_CHALLENGED = "amendment_challenged"
+    AMENDMENT_COOLING_OFF_STARTED = "amendment_cooling_off_started"
+    AMENDMENT_CONFIRMED = "amendment_confirmed"
+    AMENDMENT_REJECTED = "amendment_rejected"
 
 
 @dataclass(frozen=True)

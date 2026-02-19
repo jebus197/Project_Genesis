@@ -105,6 +105,12 @@ from genesis.compensation.gcf_disbursement import (
     DisbursementVoteChoice,
 )
 from genesis.compensation.escrow import EscrowManager
+from genesis.governance.amendment import (
+    AmendmentEngine,
+    AmendmentProposal,
+    AmendmentStatus,
+    ConstitutionalViolation,
+)
 from genesis.compliance.screener import ComplianceScreener, ComplianceVerdict
 from genesis.compliance.penalties import (
     PenaltyEscalationEngine,
@@ -253,6 +259,12 @@ class GenesisService:
             resolver.workflow_config()
         )
         self._workflows: dict[str, Any] = {}  # workflow_id → WorkflowState
+
+        # Constitutional amendment engine (Phase E-6)
+        self._amendment_engine = AmendmentEngine(
+            resolver.amendment_config(),
+            resolver._params,
+        )
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -7424,6 +7436,129 @@ class GenesisService:
                 "gcf_balance_after": str(self._gcf_tracker.get_state().balance),
             },
         )
+
+    # ------------------------------------------------------------------
+    # Constitutional amendments (Phase E-6)
+    # ------------------------------------------------------------------
+
+    def propose_amendment(
+        self,
+        proposer_id: str,
+        provision_key: str,
+        proposed_value: Any,
+        justification: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Propose a constitutional amendment.
+
+        Validates:
+        - Proposer is ACTIVE, HUMAN, trust >= tau_prop.
+        - Delegates to AmendmentEngine for content validation.
+
+        Returns ServiceResult with proposal data.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate proposer
+        entry = self._roster.get(proposer_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=["Actor not found"])
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can propose constitutional amendments"],
+            )
+        if entry.status != ActorStatus.ACTIVE:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {proposer_id} is not ACTIVE (status: {entry.status.value})"],
+            )
+
+        # Trust check
+        _, tau_prop = self._resolver.eligibility_thresholds()
+        trust_record = self._trust_records.get(proposer_id)
+        proposer_trust = trust_record.score if trust_record else 0.0
+        if proposer_trust < tau_prop:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Proposer trust {proposer_trust:.3f} below threshold "
+                    f"{tau_prop:.3f}"
+                ],
+            )
+
+        # Look up current value for the provision
+        # Check constitutional_params first, then runtime_policy
+        current_value = self._resolve_provision_value(provision_key)
+
+        try:
+            proposal = self._amendment_engine.create_amendment(
+                proposer_id=proposer_id,
+                provision_key=provision_key,
+                current_value=current_value,
+                proposed_value=proposed_value,
+                justification=justification,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.AMENDMENT_PROPOSED,
+                    actor_id=proposer_id,
+                    payload={
+                        "proposal_id": proposal.proposal_id,
+                        "provision_key": provision_key,
+                        "proposed_value": str(proposed_value),
+                        "is_entrenched": proposal.is_entrenched,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal.proposal_id,
+                "provision_key": provision_key,
+                "is_entrenched": proposal.is_entrenched,
+                "status": proposal.status.value,
+            },
+        )
+
+    def _resolve_provision_value(self, provision_key: str) -> Any:
+        """Resolve the current value of a constitutional provision.
+
+        Checks constitutional_params first (dot-navigated), then
+        runtime_policy. Returns None if not found.
+        """
+        # Try constitutional_params
+        keys = provision_key.split(".")
+        target: Any = self._resolver._params
+        try:
+            for key in keys:
+                target = target[key]
+            return target
+        except (KeyError, TypeError):
+            pass
+
+        # Try runtime_policy
+        target = self._resolver._policy
+        try:
+            for key in keys:
+                target = target[key]
+            return target
+        except (KeyError, TypeError):
+            return None
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}
