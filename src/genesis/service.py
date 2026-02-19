@@ -32,7 +32,7 @@ from genesis.engine.state_machine import MissionStateMachine
 from genesis.engine.evidence import EvidenceValidator
 from genesis.governance.genesis_controller import GenesisPhaseController, PhaseState
 from genesis.models.commitment import CommitmentRecord, CommitmentTier
-from genesis.models.governance import GenesisPhase
+from genesis.models.governance import ChamberKind, GenesisPhase
 from genesis.models.mission import (
     DomainType,
     EvidenceRecord,
@@ -7559,6 +7559,263 @@ class GenesisService:
             return target
         except (KeyError, TypeError):
             return None
+
+    def open_amendment_chamber(
+        self,
+        proposal_id: str,
+        chamber_kind: ChamberKind,
+        phase: GenesisPhase,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Select a chamber panel and open voting on an amendment.
+
+        Gathers eligible voters from the roster (ACTIVE humans with
+        trust >= tau_vote), enforces geographic diversity, and delegates
+        panel selection to the AmendmentEngine.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        proposal = self._amendment_engine.get_amendment(proposal_id)
+        if proposal is None:
+            return ServiceResult(success=False, errors=["Amendment not found"])
+
+        # Gather eligible voters: ACTIVE humans with trust >= tau_vote
+        tau_vote, _ = self._resolver.eligibility_thresholds()
+        eligible: list[dict[str, Any]] = []
+        for entry in self._roster.all_actors():
+            if (entry.actor_kind == ActorKind.HUMAN
+                    and entry.status == ActorStatus.ACTIVE
+                    and entry.trust_score >= tau_vote):
+                eligible.append({
+                    "actor_id": entry.actor_id,
+                    "region": entry.region,
+                    "organization": entry.organization,
+                })
+
+        # Get chamber definition and geo constraints for phase
+        try:
+            chambers = self._resolver.chambers_for_phase(phase)
+            chamber_def = chambers[chamber_kind]
+            r_min, c_max = self._resolver.geo_constraints_for_phase(phase)
+        except (ValueError, KeyError) as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        try:
+            panel_ids = self._amendment_engine.select_chamber_panel(
+                proposal_id=proposal_id,
+                chamber_kind=chamber_kind,
+                eligible_voters=eligible,
+                chamber_def=chamber_def,
+                r_min=r_min,
+                c_max=c_max,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "chamber": chamber_kind.value,
+                "panel_size": len(panel_ids),
+                "panel_ids": panel_ids,
+            },
+        )
+
+    def vote_on_amendment(
+        self,
+        proposal_id: str,
+        voter_id: str,
+        chamber_kind: ChamberKind,
+        vote: bool,
+        attestation: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cast a vote on a constitutional amendment in a chamber.
+
+        Validates voter is ACTIVE human, then delegates to engine.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        entry = self._roster.get(voter_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=["Voter not found"])
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can vote on constitutional amendments"],
+            )
+
+        try:
+            amendment_vote = self._amendment_engine.cast_chamber_vote(
+                proposal_id=proposal_id,
+                voter_id=voter_id,
+                chamber_kind=chamber_kind,
+                vote=vote,
+                attestation=attestation,
+                region=entry.region,
+                organization=entry.organization,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.AMENDMENT_CHAMBER_VOTE_CAST,
+                    actor_id=voter_id,
+                    payload={
+                        "proposal_id": proposal_id,
+                        "chamber": chamber_kind.value,
+                        "vote": vote,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "vote_id": amendment_vote.vote_id,
+                "chamber": chamber_kind.value,
+            },
+        )
+
+    def close_amendment_chamber(
+        self,
+        proposal_id: str,
+        chamber_kind: ChamberKind,
+        phase: GenesisPhase,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Close voting in a chamber and determine outcome."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            chambers = self._resolver.chambers_for_phase(phase)
+            chamber_def = chambers[chamber_kind]
+        except (ValueError, KeyError) as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        try:
+            proposal, passed = self._amendment_engine.close_chamber_voting(
+                proposal_id=proposal_id,
+                chamber_kind=chamber_kind,
+                chamber_def=chamber_def,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        event_kind = (
+            EventKind.AMENDMENT_CHAMBER_PASSED if passed
+            else EventKind.AMENDMENT_CHAMBER_FAILED
+        )
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=event_kind,
+                    actor_id="system",
+                    payload={
+                        "proposal_id": proposal_id,
+                        "chamber": chamber_kind.value,
+                        "passed": passed,
+                        "status": proposal.status.value,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "chamber": chamber_kind.value,
+                "passed": passed,
+                "status": proposal.status.value,
+            },
+        )
+
+    def challenge_amendment(
+        self,
+        proposal_id: str,
+        challenger_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File a challenge during the challenge window."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            self._amendment_engine.file_challenge(
+                proposal_id=proposal_id,
+                challenger_id=challenger_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.AMENDMENT_CHALLENGED,
+                    actor_id=challenger_id,
+                    payload={"proposal_id": proposal_id},
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+        self._safe_persist_post_audit()
+
+        return ServiceResult(success=True, data={"proposal_id": proposal_id})
+
+    def advance_amendment_past_challenge(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Advance an amendment past the challenge window (no challenge filed)."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal = self._amendment_engine.advance_past_challenge_window(
+                proposal_id=proposal_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "status": proposal.status.value,
+            },
+        )
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}

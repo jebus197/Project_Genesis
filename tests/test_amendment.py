@@ -26,6 +26,7 @@ its own entrenched process? If yes, reject design.
 import pytest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import Any
 
 from genesis.governance.amendment import (
     AmendmentEngine,
@@ -35,7 +36,7 @@ from genesis.governance.amendment import (
     ConstitutionalViolation,
     FORMULA_ONLY_PARAMS,
 )
-from genesis.models.governance import Chamber, ChamberKind
+from genesis.models.governance import Chamber, ChamberKind, GenesisPhase
 from genesis.models.trust import ActorKind
 from genesis.persistence.event_log import EventKind, EventLog
 from genesis.policy.resolver import PolicyResolver
@@ -306,3 +307,367 @@ class TestResolverAmendmentConfig:
         assert "NO_BUY_TRUST" in keys
         assert "MACHINE_VOTING_EXCLUSION" in keys
         assert len(keys) == 4
+
+
+# =====================================================================
+# E-6b: Chamber Panel Selection + Voting
+# =====================================================================
+
+def _make_eligible_voters(count: int, regions: list[str] | None = None) -> list[dict[str, Any]]:
+    """Create a list of eligible voter dicts for panel selection."""
+    if regions is None:
+        # Default: spread across many regions
+        base_regions = ["eu", "na", "ap", "af", "sa", "me", "oc", "ea"]
+        regions = [base_regions[i % len(base_regions)] for i in range(count)]
+    orgs = [f"org_{i % 5}" for i in range(count)]
+    return [
+        {"actor_id": f"v_{i}", "region": regions[i], "organization": orgs[i]}
+        for i in range(count)
+    ]
+
+
+class TestChamberPanelSelection:
+    """Engine-level tests for select_chamber_panel()."""
+
+    def test_phase_appropriate_sizes_g1(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """G1 proposal chamber selects 11 members."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(50)
+
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        assert len(panel) == 11
+        assert proposal.status == AmendmentStatus.PROPOSAL_CHAMBER_VOTING
+
+    def test_geographic_diversity_enforced(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Panel selection fails if not enough regions are available."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Only 2 regions when G1 needs R_min=3
+        eligible = _make_eligible_voters(50, ["eu"] * 25 + ["na"] * 25)
+
+        with pytest.raises(ValueError, match="regional diversity"):
+            engine.select_chamber_panel(
+                proposal.proposal_id, ChamberKind.PROPOSAL,
+                eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+            )
+
+    def test_non_overlap_between_chambers(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """No voter can serve in more than one chamber for the same amendment."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(100)
+
+        # Select proposal panel (11 members)
+        proposal_panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+
+        # Manually pass proposal chamber to enable ratification
+        # First fill in enough yes votes and close
+        for vid in proposal_panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Select ratification panel (17 members)
+        ratif_panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+
+        # Verify no overlap
+        overlap = set(proposal_panel) & set(ratif_panel)
+        assert len(overlap) == 0
+
+    def test_insufficient_candidates(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Panel selection fails with too few eligible voters."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        # G1 proposal needs 11, provide only 5
+        eligible = _make_eligible_voters(5)
+
+        with pytest.raises(ValueError, match="Not enough eligible"):
+            engine.select_chamber_panel(
+                proposal.proposal_id, ChamberKind.PROPOSAL,
+                eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+            )
+
+    def test_wrong_status_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Cannot select proposal panel if not in PROPOSED status."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(50)
+
+        # Select proposal panel (moves to PROPOSAL_CHAMBER_VOTING)
+        engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+
+        # Try to select proposal panel again — should fail
+        with pytest.raises(ValueError, match="Cannot select proposal panel"):
+            engine.select_chamber_panel(
+                proposal.proposal_id, ChamberKind.PROPOSAL,
+                eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+            )
+
+    def test_c_max_enforced(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """c_max concentration limit prevents over-representation from one region."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # G1: c_max=0.40, panel size=11 → max 4 per region
+        # Provide 3 regions with exactly enough, but one region dominates
+        regions = (["eu"] * 3 + ["na"] * 3 + ["ap"] * 3 +
+                   ["af"] * 1 + ["sa"] * 1)
+        eligible = _make_eligible_voters(11, regions)
+
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        # Check no region has more than c_max * panel_size
+        region_counts: dict[str, int] = {}
+        for pid in panel:
+            for v in eligible:
+                if v["actor_id"] == pid:
+                    region_counts[v["region"]] = region_counts.get(v["region"], 0) + 1
+        max_per_region = max(1, int(11 * c_max))  # 4
+        for count in region_counts.values():
+            assert count <= max_per_region
+
+
+class TestChamberVoting:
+    """Engine-level tests for cast_chamber_vote() and close_chamber_voting()."""
+
+    def _setup_voting(self, engine, resolver):
+        """Helper: create amendment and open proposal chamber voting."""
+        proposal = engine.create_amendment("h1", "NO_BUY_TRUST", True, True,
+                                           "Test", now=_now())
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(100)
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        return proposal, panel, chambers
+
+    def test_happy_path_pass(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """All panel members vote yes → chamber passes."""
+        proposal, panel, chambers = self._setup_voting(engine, resolver)
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        result, passed = engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+        assert passed is True
+        assert result.status == AmendmentStatus.RATIFICATION_CHAMBER_VOTING
+
+    def test_rejection(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """All panel members vote no → chamber fails."""
+        proposal, panel, chambers = self._setup_voting(engine, resolver)
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                False, "I reject", "eu", "org_0", _now(),
+            )
+        result, passed = engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+        assert passed is False
+        assert result.status == AmendmentStatus.REJECTED
+
+    def test_non_member_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Non-panel member cannot vote."""
+        proposal, panel, chambers = self._setup_voting(engine, resolver)
+        with pytest.raises(ValueError, match="not a member"):
+            engine.cast_chamber_vote(
+                proposal.proposal_id, "outsider", ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+
+    def test_duplicate_vote_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Same voter cannot vote twice in the same chamber."""
+        proposal, panel, chambers = self._setup_voting(engine, resolver)
+        engine.cast_chamber_vote(
+            proposal.proposal_id, panel[0], ChamberKind.PROPOSAL,
+            True, "I approve", "eu", "org_0", _now(),
+        )
+        with pytest.raises(ValueError, match="already voted"):
+            engine.cast_chamber_vote(
+                proposal.proposal_id, panel[0], ChamberKind.PROPOSAL,
+                True, "I approve again", "eu", "org_0", _now(),
+            )
+
+    def test_empty_attestation_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Empty attestation is rejected."""
+        proposal, panel, chambers = self._setup_voting(engine, resolver)
+        with pytest.raises(ValueError, match="attestation must not be empty"):
+            engine.cast_chamber_vote(
+                proposal.proposal_id, panel[0], ChamberKind.PROPOSAL,
+                True, "  ", "eu", "org_0", _now(),
+            )
+
+
+class TestChamberProgression:
+    """Tests for the sequential chamber progression."""
+
+    def _pass_chamber(self, engine, proposal, panel, chamber_kind, chamber_def):
+        """Helper: all panel members vote yes and close voting."""
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, chamber_kind,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        return engine.close_chamber_voting(
+            proposal.proposal_id, chamber_kind, chamber_def, _now(),
+        )
+
+    def test_full_progression_non_entrenched(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Non-entrenched: proposal → ratification → challenge window → confirmed."""
+        proposal = engine.create_amendment(
+            "h1", "gcf_compute.GCF_COMPUTE_CEILING", "0.25", "0.30",
+            "Increase ceiling", now=_now(),
+        )
+        assert proposal.is_entrenched is False
+
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(200)
+
+        # Proposal chamber
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel, ChamberKind.PROPOSAL,
+                           chambers[ChamberKind.PROPOSAL])
+        assert proposal.status == AmendmentStatus.RATIFICATION_CHAMBER_VOTING
+
+        # Ratification chamber
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel2, ChamberKind.RATIFICATION,
+                           chambers[ChamberKind.RATIFICATION])
+        assert proposal.status == AmendmentStatus.CHALLENGE_WINDOW
+
+        # No challenge → confirmed
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        assert proposal.status == AmendmentStatus.CONFIRMED
+
+    def test_challenge_triggers_voting(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Filing a challenge moves to CHALLENGE_CHAMBER_VOTING."""
+        proposal = engine.create_amendment(
+            "h1", "gcf_compute.GCF_COMPUTE_CEILING", "0.25", "0.30",
+            "Increase ceiling", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(200)
+
+        # Pass proposal and ratification
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel, ChamberKind.PROPOSAL,
+                           chambers[ChamberKind.PROPOSAL])
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel2, ChamberKind.RATIFICATION,
+                           chambers[ChamberKind.RATIFICATION])
+        assert proposal.status == AmendmentStatus.CHALLENGE_WINDOW
+
+        # File challenge
+        engine.file_challenge(proposal.proposal_id, "challenger_1", _now())
+        assert proposal.status == AmendmentStatus.CHALLENGE_CHAMBER_VOTING
+        assert proposal.challenge_filed is True
+
+    def test_failed_proposal_kills_amendment(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """If proposal chamber fails, the amendment is REJECTED."""
+        proposal = engine.create_amendment(
+            "h1", "NO_BUY_TRUST", True, True, "Test", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(100)
+
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        # All vote no
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                False, "I reject", "eu", "org_0", _now(),
+            )
+        result, passed = engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+        assert passed is False
+        assert result.status == AmendmentStatus.REJECTED
+
+    def test_entrenched_goes_to_cooling_off(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Entrenched amendment: after challenge window → COOLING_OFF (not CONFIRMED)."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        assert proposal.is_entrenched is True
+
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+        eligible = _make_eligible_voters(200)
+
+        # Pass proposal + ratification
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel, ChamberKind.PROPOSAL,
+                           chambers[ChamberKind.PROPOSAL])
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        self._pass_chamber(engine, proposal, panel2, ChamberKind.RATIFICATION,
+                           chambers[ChamberKind.RATIFICATION])
+
+        # Advance past challenge window
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        assert proposal.status == AmendmentStatus.COOLING_OFF  # NOT CONFIRMED

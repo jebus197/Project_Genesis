@@ -344,11 +344,12 @@ class AmendmentEngine:
             ChamberKind.CHALLENGE: AmendmentStatus.CHALLENGE_WINDOW,
         }
         # Ratification panel is selected after proposal passes
+        # (close_chamber_voting advances PROPOSAL → RATIFICATION_CHAMBER_VOTING)
         if chamber_kind == ChamberKind.RATIFICATION:
-            if proposal.status != AmendmentStatus.PROPOSAL_CHAMBER_VOTING:
+            if proposal.status != AmendmentStatus.RATIFICATION_CHAMBER_VOTING:
                 raise ValueError(
                     f"Cannot select ratification panel in status {proposal.status.value} "
-                    f"(expected proposal_chamber_voting after proposal passes)"
+                    f"(expected ratification_chamber_voting after proposal passes)"
                 )
         elif chamber_kind == ChamberKind.CHALLENGE:
             if proposal.status != AmendmentStatus.CHALLENGE_WINDOW:
