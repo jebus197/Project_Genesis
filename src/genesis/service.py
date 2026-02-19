@@ -321,6 +321,8 @@ class GenesisService:
                 self._workflow_orchestrator = WorkflowOrchestrator.from_records(
                     resolver.workflow_config(), workflow_records,
                 )
+                # Open Work Principle: lapse any expired visibility restrictions
+                self.lapse_expired_visibility_restrictions()
             # Restore disbursement engine state
             disb_proposals, disb_votes = state_store.load_disbursements()
             if disb_proposals:
@@ -6308,6 +6310,23 @@ class GenesisService:
                     success=False,
                     errors=["Deliverable restriction requires justification (Open Work Principle)"],
                 )
+            # Constitutional requirement: restrictions must be genuinely time-limited
+            max_expiry = wf_cfg.get("max_visibility_expiry_days", 1825)
+            if visibility_expiry_days is not None:
+                if visibility_expiry_days < 1:
+                    return ServiceResult(
+                        success=False,
+                        errors=[
+                            f"visibility_expiry_days must be >= 1, got {visibility_expiry_days}"
+                        ],
+                    )
+                if visibility_expiry_days > max_expiry:
+                    return ServiceResult(
+                        success=False,
+                        errors=[
+                            f"visibility_expiry_days must be <= {max_expiry}, got {visibility_expiry_days}"
+                        ],
+                    )
 
         # Step 2: Preflight — check listing doesn't already exist (before creating escrow)
         if listing_id in self._listings:

@@ -250,6 +250,54 @@ class TestCreateFundedListingVisibility:
         assert last.payload["listing_id"] == "L-EVT"
         assert last.payload["justification"] == "Proprietary algorithm under review"
 
+    def test_negative_expiry_rejected(self, service):
+        """Negative visibility_expiry_days is rejected (P1 boundary fix)."""
+        result = service.create_funded_listing(
+            listing_id="L-NEG-EXP",
+            title="Negative expiry test",
+            description="Should be rejected",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+            visibility=WorkVisibility.METADATA_ONLY,
+            visibility_justification="Valid justification",
+            visibility_expiry_days=-10,
+            now=_now(),
+        )
+        assert not result.success
+        assert "visibility_expiry_days" in result.errors[0]
+
+    def test_zero_expiry_rejected(self, service):
+        """Zero visibility_expiry_days is rejected (P1 boundary fix)."""
+        result = service.create_funded_listing(
+            listing_id="L-ZERO-EXP",
+            title="Zero expiry test",
+            description="Should be rejected",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+            visibility=WorkVisibility.METADATA_ONLY,
+            visibility_justification="Valid justification",
+            visibility_expiry_days=0,
+            now=_now(),
+        )
+        assert not result.success
+        assert "visibility_expiry_days" in result.errors[0]
+
+    def test_over_max_expiry_rejected(self, service):
+        """Expiry exceeding max_visibility_expiry_days is rejected (P1 boundary fix)."""
+        result = service.create_funded_listing(
+            listing_id="L-HUGE-EXP",
+            title="Huge expiry test",
+            description="Should be rejected",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+            visibility=WorkVisibility.METADATA_ONLY,
+            visibility_justification="Valid justification",
+            visibility_expiry_days=100000,
+            now=_now(),
+        )
+        assert not result.success
+        assert "visibility_expiry_days" in result.errors[0]
+
 
 # ======================================================================
 # 4. Visibility Restriction Lapse
@@ -497,16 +545,60 @@ class TestVisibilityPersistence:
         store = StateStore(state_path)
 
         # Load listings — missing visibility should default to PUBLIC
-        listings = store.load_listings()
-        if "L-LEGACY" in listings:
-            listing = listings["L-LEGACY"]
-            assert listing.visibility == WorkVisibility.PUBLIC
+        listings, _bids = store.load_listings()
+        assert "L-LEGACY" in listings, "Legacy listing must load"
+        listing = listings["L-LEGACY"]
+        assert listing.visibility == WorkVisibility.PUBLIC
 
         # Load workflows — missing visibility should default to "public"
         workflows = store.load_workflows()
-        if "wf-legacy" in workflows:
-            wf = workflows["wf-legacy"]
-            assert wf.visibility == "public"
+        assert "wf-legacy" in workflows, "Legacy workflow must load"
+        wf = workflows["wf-legacy"]
+        assert wf.visibility == "public"
+
+    def test_expired_restriction_lapsed_on_restart(self, resolver, tmp_path):
+        """Expired METADATA_ONLY restrictions are auto-lapsed during service init (P2 fix)."""
+        svc1, store_path, log_path = self._make_service_with_store(resolver, tmp_path, "3")
+
+        # Create the restriction far enough in the past that it's already expired
+        # by the time the second service starts (which uses wall-clock now)
+        past = datetime(2025, 1, 1, 12, 0, 0, tzinfo=timezone.utc)
+        result = svc1.create_funded_listing(
+            listing_id="L-RESTART-LAPSE",
+            title="Restart lapse test",
+            description="Restriction should lapse on restart",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+            visibility=WorkVisibility.METADATA_ONLY,
+            visibility_justification="Temporary restriction",
+            visibility_expiry_days=1,
+            now=past,
+        )
+        assert result.success
+        wf_id = result.data["workflow_id"]
+
+        # Verify it's restricted now
+        wf1 = svc1.get_workflow(wf_id)
+        assert wf1.visibility == "metadata_only"
+        # Expiry is 2025-01-02 — well in the past relative to wall-clock time
+
+        # Restart service — init calls lapse_expired_visibility_restrictions()
+        # which uses datetime.now() (wall clock), so the 2025-01-02 expiry is past
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        svc2 = GenesisService(
+            PolicyResolver.from_config_dir(CONFIG_DIR),
+            event_log=log2,
+            state_store=store2,
+        )
+        svc2.open_epoch("epoch-2")
+
+        # The restriction should have been auto-lapsed during init
+        wf2 = svc2._workflow_orchestrator.get_workflow(wf_id)
+        assert wf2 is not None, "Workflow must survive restart"
+        assert wf2.visibility == "public", "Expired restriction must auto-lapse on restart"
+        assert wf2.visibility_justification is None
+        assert wf2.visibility_expiry_utc is None
 
 
 # ======================================================================
