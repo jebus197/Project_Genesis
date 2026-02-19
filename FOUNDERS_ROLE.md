@@ -64,6 +64,31 @@ There is no middle ground. The community either explicitly endorses the founder'
 
 ---
 
+## How governance scales — The four phases
+
+Genesis governance grows in stages, each unlocked by the community reaching a size where more sophisticated democratic structures become practical. The phases exist because governance panels need enough diverse people to function — you can't run a 51-person geographically-distributed challenge chamber with 40 members.
+
+**G0 → G1 (founding period ends):** The transition is time-limited — up to 365 days, with one possible 180-day extension. The founder decides when the system is ready, or the clock runs out. This is NOT gated on reaching a specific number of humans. It makes no sense to trap the founder in G0 indefinitely if growth is slow.
+
+**G1 → G2 (early governance → growth governance):** Triggered when 500 verified humans have joined, or after 730 days as a safety fallback. G2 governance uses larger panels (21 for proposals, 31 for ratification, 51 for challenges) and requires representation from at least 5 geographic regions. You need a substantial, geographically-distributed community to make this work. The time fallback exists so the system doesn't get permanently stuck in G1 if growth plateaus.
+
+**G2 → G3 (growth → full constitutional governance):** Triggered when 2000 verified humans have joined. No time fallback — the system stays in G2 until the population genuinely supports full-scale governance. G3 demands 101-person challenge chambers across 8 geographic regions, with no single region holding more than 15% of any panel. Forcing the system into G3 governance without the population to staff it would make the panels structurally unsound.
+
+**First Light** is deliberately decoupled from all of this. First Light measures financial sustainability (revenue ≥ 1.5× costs with a 3-month reserve). Phase transitions measure governance capacity (enough diverse humans to fill panels). You could reach First Light during G1, or not until G3 — the two are structurally independent events that measure different things.
+
+Only verified human participants count toward phase thresholds. Machine registrations do not contribute. This is consistent with the principle that machines cannot vote or hold constitutional governance roles.
+
+### Phase transitions at a glance
+
+| Transition | Trigger | Why |
+|-----------|---------|-----|
+| **G0 → G1** | Time (365 days max, extendable once to 545) | Founding period ends; democratic governance begins |
+| **G1 → G2** | 500 verified humans (or 730 days) | Panels grow to 21/31/51; need 5 geographic regions |
+| **G2 → G3** | 2000 verified humans (no time fallback) | Full constitution; 8 regions, panels up to 101 members |
+| **First Light** | Revenue ≥ 1.5× costs + 3-month reserve | Financial sustainability proven; founder's veto expires |
+
+---
+
 ## Phase G1 — The founder as a regular participant
 
 Once G1 begins, the founder becomes an ordinary participant with exactly the same rights as everyone else. Governance decisions are now made by randomly selected panels of community members, not by any individual.
@@ -96,7 +121,13 @@ First Light is deliberately decoupled from headcount. Having 10,000 registered u
 
 ## Phases G2 and G3 — Full independence
 
-In G2 (larger community) and G3 (full constitutional governance), the founder has no special powers whatsoever. The founder is one participant among many, subject to the same rules, earning trust through the same mechanisms, and holding exactly the same voting weight as any other verified human.
+In G2 and G3, the founder has no special powers whatsoever. The founder is one participant among many, subject to the same rules, earning trust through the same mechanisms, and holding exactly the same voting weight as any other verified human.
+
+**What governance looks like at these scales:**
+
+In G2, every constitutional action passes through three chambers: a 21-member proposal panel, a 31-member ratification panel, and a 51-member challenge panel. Members are drawn from at least 5 geographic regions, with no region holding more than 25% of any panel. This makes capture by any single faction or geography structurally impossible.
+
+In G3 (full constitutional governance), the chambers grow further: 41 for proposals, 61 for ratification, and 101 for challenges, spanning at least 8 geographic regions with no region exceeding 15%. At this scale, the system governs itself through genuinely global democratic representation. No individual — founder or otherwise — can influence outcomes through anything other than the quality of their proposals and the trust they have earned.
 
 If the founder wants to change something about the system at this point, they must propose a constitutional amendment through the standard process — the same multi-chamber, geographically-diverse, independently-verified process that applies to everyone.
 
