@@ -38,6 +38,14 @@ class DomainTrustScore:
     mission_count: int = 0
     last_active_utc: Optional[datetime] = None
 
+    def display_score(self) -> int:
+        """Return domain trust score on the 1-1000 display scale.
+
+        Internal math stays 0.0-1.0. This multiplies by 1000 and
+        returns an integer for display purposes.
+        """
+        return int(round(self.score * 1000))
+
 
 @dataclass(frozen=True)
 class DomainTrustDelta:

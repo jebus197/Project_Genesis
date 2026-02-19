@@ -89,6 +89,14 @@ class SkillProficiency:
                 f"source must be one of {valid_sources}, got '{self.source}'"
             )
 
+    def display_score(self) -> int:
+        """Return proficiency on the 1-1000 display scale.
+
+        Internal math stays 0.0-1.0. This multiplies by 1000 and
+        returns an integer for display purposes.
+        """
+        return int(round(self.proficiency_score * 1000))
+
 
 @dataclass
 class ActorSkillProfile:

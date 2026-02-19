@@ -133,6 +133,31 @@ class TestSkillProficiency:
             )
             assert sp.source == source
 
+    def test_display_score(self) -> None:
+        """display_score() maps internal 0.0-1.0 to display 0-1000."""
+        cases = [
+            (0.0, 0),
+            (0.001, 1),
+            (0.010, 10),
+            (0.100, 100),
+            (0.500, 500),
+            (0.750, 750),
+            (1.000, 1000),
+            (0.0005, 0),      # round(0.5) = 0 (banker's rounding)
+            (0.0015, 2),      # round(1.5) = 2 (banker's rounding)
+            (0.9999, 1000),   # rounds 999.9 -> 1000
+        ]
+        for internal, expected in cases:
+            sp = SkillProficiency(
+                skill_id=SkillId("se", "python"),
+                proficiency_score=internal,
+                evidence_count=1,
+            )
+            assert sp.display_score() == expected, (
+                f"display_score({internal}) = {sp.display_score()}, "
+                f"expected {expected}"
+            )
+
     def test_with_timestamp(self) -> None:
         now = datetime.now(timezone.utc)
         sp = SkillProficiency(

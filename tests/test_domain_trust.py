@@ -624,3 +624,31 @@ class TestDomainScoresBackwardCompat:
         )
         assert "se" in new_record.domain_scores
         assert new_record.domain_scores["se"].score == 0.7
+
+
+# ===================================================================
+# DomainTrustScore.display_score
+# ===================================================================
+
+class TestDomainTrustScoreDisplayScore:
+    """display_score() maps internal 0.0-1.0 to display 0-1000."""
+
+    def test_display_score_standard_values(self) -> None:
+        cases = [
+            (0.0, 0),
+            (0.001, 1),
+            (0.010, 10),
+            (0.100, 100),
+            (0.500, 500),
+            (0.750, 750),
+            (1.000, 1000),
+            (0.0005, 0),      # round(0.5) = 0 (banker's rounding)
+            (0.0015, 2),      # round(1.5) = 2 (banker's rounding)
+            (0.9999, 1000),   # rounds 999.9 -> 1000
+        ]
+        for internal, expected in cases:
+            ds = DomainTrustScore(domain="test", score=internal)
+            assert ds.display_score() == expected, (
+                f"display_score({internal}) = {ds.display_score()}, "
+                f"expected {expected}"
+            )
