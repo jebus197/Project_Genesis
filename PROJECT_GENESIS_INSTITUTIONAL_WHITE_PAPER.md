@@ -542,9 +542,6 @@ To keep governance concrete (not narrative-only), Genesis maintains machine-chec
 4. Worked-example policy validation:
 - `python3 tools/verify_examples.py`
 
-5. Automated invariant verification:
-- `python3 tools/check_invariants.py`
-
 Governance changes are not considered complete unless the policy artifacts and executable checks pass together.
 
 ## 13. Measurement and Assurance Framework

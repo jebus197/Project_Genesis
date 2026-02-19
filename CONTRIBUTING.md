@@ -31,7 +31,7 @@ Every pull request must include:
 - what risk is reduced,
 - what remains unresolved.
 3. Invariant impact statement:
-- list affected invariants from `THREAT_MODEL_AND_INVARIANTS.md`.
+- list affected invariants from `tools/check_invariants.py`.
 4. Test/evidence statement:
 - what was validated,
 - what was not validated,
@@ -49,12 +49,12 @@ Every pull request must include:
 - Must include calibration impact summary for affected thresholds.
 
 2. Operational changes:
-- Must update `GENESIS_SYSTEM_BLUEPRINT.md` and/or `GENESIS_ROADMAP.md` if behavior changes.
+- Must update `docs/TECHNICAL_OVERVIEW.md` if behavior changes.
 - Must include fail-closed behavior notes.
 - Must update `config/runtime_policy.json` when risk-tier mapping behavior changes.
 
 3. Documentation changes:
-- Must not contradict constitutional and blueprint documents.
+- Must not contradict constitutional and technical documents.
 - Must avoid absolute claims ("bulletproof", "impossible", "guaranteed truth").
 
 ## 5) Style and claim discipline
