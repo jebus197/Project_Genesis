@@ -314,6 +314,14 @@ class GenesisService:
                     disb_proposals,
                     disb_votes,
                 )
+            # Restore amendment engine state
+            amend_proposals = state_store.load_amendments()
+            if amend_proposals:
+                self._amendment_engine = AmendmentEngine.from_records(
+                    resolver.amendment_config(),
+                    resolver._params,
+                    amend_proposals,
+                )
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -5475,6 +5483,9 @@ class GenesisService:
         self._state_store.save_disbursements(
             self._disbursement_engine._proposals,
             self._disbursement_engine._votes,
+        )
+        self._state_store.save_amendments(
+            self._amendment_engine._proposals,
         )
 
     def _safe_persist(

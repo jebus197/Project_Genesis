@@ -1322,3 +1322,58 @@ class TestAmendmentApplicationService:
         result = service.apply_confirmed_amendment(proposal_id)
         assert result.success is False
         assert "not CONFIRMED" in result.errors[0]
+
+
+# ======================================================================
+# E-6e: Persistence + invariants
+# ======================================================================
+
+class TestAmendmentPersistence:
+    """Round-trip persistence tests for amendment state."""
+
+    def test_save_load_round_trip(self, resolver: PolicyResolver) -> None:
+        """Amendments survive save/load cycle."""
+        import tempfile
+        from genesis.persistence.state_store import StateStore
+
+        with tempfile.TemporaryDirectory() as tmp:
+            store_path = Path(tmp) / "state.json"
+            store = StateStore(store_path)
+
+            engine = AmendmentEngine(
+                resolver.amendment_config(), resolver._params,
+            )
+            proposal = engine.create_amendment(
+                "h1", "tau_vote", "0.60", "0.65",
+                "Test persistence", now=_now(),
+            )
+
+            # Save
+            store.save_amendments(engine._proposals)
+
+            # Load into new engine
+            records = store.load_amendments()
+            assert len(records) == 1
+            assert records[0]["proposal_id"] == proposal.proposal_id
+            assert records[0]["provision_key"] == "tau_vote"
+            assert records[0]["status"] == "proposed"
+
+            # Reconstruct engine
+            engine2 = AmendmentEngine.from_records(
+                resolver.amendment_config(), resolver._params, records,
+            )
+            restored = engine2.get_amendment(proposal.proposal_id)
+            assert restored is not None
+            assert restored.provision_key == "tau_vote"
+            assert restored.proposed_value == "0.65"
+
+    def test_invariants_pass(self) -> None:
+        """check_invariants.py passes with current config."""
+        import subprocess
+        result = subprocess.run(
+            ["python3", "tools/check_invariants.py"],
+            capture_output=True,
+            text=True,
+            cwd=str(Path(__file__).resolve().parents[1]),
+        )
+        assert result.returncode == 0, f"Invariants failed: {result.stdout}{result.stderr}"

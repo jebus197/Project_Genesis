@@ -1231,3 +1231,93 @@ class StateStore:
                 votes.append(v)
 
         return proposals, votes
+
+    # ------------------------------------------------------------------
+    # Amendment persistence (Phase E-6)
+    # ------------------------------------------------------------------
+
+    def save_amendments(
+        self,
+        proposals: dict[str, Any],
+    ) -> None:
+        """Serialize amendment proposals to state.
+
+        Follows the same pattern as save_disbursements: converts dataclass
+        fields to JSON-safe dicts keyed by proposal_id.
+        """
+        _TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+        def _fmt_ts(dt: Any) -> Any:
+            if dt is None:
+                return None
+            if hasattr(dt, "strftime"):
+                return dt.strftime(_TS_FMT)
+            return str(dt)
+
+        entries: dict[str, dict[str, Any]] = {}
+        for pid, p in proposals.items():
+            # Serialize chamber votes
+            chamber_votes_data: dict[str, list[dict[str, Any]]] = {}
+            for ck, votes in p.chamber_votes.items():
+                chamber_votes_data[ck] = [
+                    {
+                        "vote_id": v.vote_id,
+                        "voter_id": v.voter_id,
+                        "chamber": v.chamber,
+                        "vote": v.vote,
+                        "attestation": v.attestation,
+                        "cast_utc": _fmt_ts(v.cast_utc),
+                        "region": v.region,
+                        "organization": v.organization,
+                    }
+                    for v in votes
+                ]
+
+            # Serialize confirmation votes
+            conf_votes_data = [
+                {
+                    "vote_id": v.vote_id,
+                    "voter_id": v.voter_id,
+                    "chamber": v.chamber,
+                    "vote": v.vote,
+                    "attestation": v.attestation,
+                    "cast_utc": _fmt_ts(v.cast_utc),
+                    "region": v.region,
+                    "organization": v.organization,
+                }
+                for v in (p.confirmation_votes or [])
+            ]
+
+            entries[pid] = {
+                "proposal_id": p.proposal_id,
+                "proposer_id": p.proposer_id,
+                "provision_key": p.provision_key,
+                "current_value": p.current_value,
+                "proposed_value": p.proposed_value,
+                "justification": p.justification,
+                "is_entrenched": p.is_entrenched,
+                "status": p.status.value,
+                "created_utc": _fmt_ts(p.created_utc),
+                "decided_utc": _fmt_ts(p.decided_utc),
+                "chamber_panels": p.chamber_panels,
+                "chamber_votes": chamber_votes_data,
+                "challenge_filed": p.challenge_filed,
+                "cooling_off_starts_utc": _fmt_ts(p.cooling_off_starts_utc),
+                "cooling_off_ends_utc": _fmt_ts(p.cooling_off_ends_utc),
+                "confirmation_panel": p.confirmation_panel,
+                "confirmation_votes": conf_votes_data,
+            }
+
+        self._state["amendment_proposals"] = entries
+        self._save()
+
+    def load_amendments(self) -> list[dict[str, Any]]:
+        """Deserialize amendment proposals from state.
+
+        Returns list of proposal dicts in the format expected by
+        AmendmentEngine.from_records().
+        """
+        proposals: list[dict[str, Any]] = []
+        for _pid, data in self._state.get("amendment_proposals", {}).items():
+            proposals.append(data)
+        return proposals

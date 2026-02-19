@@ -548,6 +548,24 @@ The Genesis Common Fund accumulates 1% of all mission rewards. Disbursement gove
 55. Can compute infrastructure spending exceed GCF_COMPUTE_CEILING? If yes, reject design.
 56. Can a disbursement proposal bypass compliance screening? If yes, reject design.
 
+### Constitutional Amendment Process
+
+Genesis provisions can be changed through a structured three-chamber amendment process. Four provisions are **entrenched** and require elevated safeguards: GCF_CONTRIBUTION_RATE, TRUST_FLOOR_H_POSITIVE, NO_BUY_TRUST, and MACHINE_VOTING_EXCLUSION.
+
+**Standard amendments** (non-entrenched provisions): Proposal chamber → Ratification chamber → Challenge window → Confirmed (if no challenge) or Challenge chamber → Confirmed/Rejected.
+
+**Entrenched amendments** (the four provisions above): Same chamber sequence, plus 90-day cooling-off period (no acceleration, no exceptions) → Fresh confirmation vote by a new panel (no overlap with ratification panel) requiring 80% supermajority and 50% participation.
+
+Commission rates (commission_floor, commission_ceiling, etc.) are **formula-determined** and cannot be changed by ballot. This is by design: commission follows costs, not politics.
+
+Each chamber panel is selected using greedy diversity-first selection with geographic constraints (R_min regions, c_max concentration). No voter can serve on more than one chamber for the same amendment.
+
+**Constitutional amendment design tests:**
+57. Can a non-entrenched amendment bypass chamber voting? If yes, reject design.
+58. Can an entrenched amendment skip the 90-day cooling-off? If yes, reject design.
+59. Can a commission rate be changed by ballot? If yes, reject design.
+60. Can the cooling-off period be shortened without going through its own entrenched process? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

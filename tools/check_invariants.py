@@ -743,6 +743,60 @@ def check() -> int:
                 f"workflow.default_deadline_days must be <= 365, got {wf_deadline}"
             )
 
+    # ------------------------------------------------------------------
+    # Constitutional Amendment invariants (Phase E-6)
+    # ------------------------------------------------------------------
+    entrenched = params.get("entrenched_provisions", {})
+    if not entrenched:
+        errors.append("entrenched_provisions section missing from constitutional_params")
+    else:
+        required_entrenched = {
+            "GCF_CONTRIBUTION_RATE",
+            "TRUST_FLOOR_H_POSITIVE",
+            "NO_BUY_TRUST",
+            "MACHINE_VOTING_EXCLUSION",
+        }
+        actual_keys = {k for k in entrenched if not k.startswith("entrenched_")}
+        missing = required_entrenched - actual_keys
+        if missing:
+            errors.append(
+                f"entrenched_provisions missing required keys: {missing}"
+            )
+
+        # Amendment threshold invariants
+        threshold = entrenched.get("entrenched_amendment_threshold")
+        if threshold != 0.80:
+            errors.append(
+                f"entrenched_amendment_threshold must be 0.80, got {threshold}"
+            )
+
+        participation = entrenched.get("entrenched_participation_minimum")
+        if participation != 0.50:
+            errors.append(
+                f"entrenched_participation_minimum must be 0.50, got {participation}"
+            )
+
+        cooling_days = entrenched.get("entrenched_cooling_off_days")
+        if cooling_days != 90:
+            errors.append(
+                f"entrenched_cooling_off_days must be 90, got {cooling_days}"
+            )
+
+        confirmation = entrenched.get("entrenched_confirmation_vote_required")
+        if confirmation is not True:
+            errors.append(
+                f"entrenched_confirmation_vote_required must be true, got {confirmation}"
+            )
+
+    # All 3 chamber kinds defined for phases G1, G2, full
+    for phase_label in ("G1_chambers", "G2_chambers", "full_chambers"):
+        key = f"genesis.{phase_label}"
+        phase_chambers = params.get("genesis", {}).get(phase_label)
+        if phase_chambers:
+            for kind in ("proposal", "ratification", "challenge"):
+                if kind not in phase_chambers:
+                    errors.append(f"{key} missing chamber: {kind}")
+
     if errors:
         print("Invariant check failed:")
         for err in errors:
