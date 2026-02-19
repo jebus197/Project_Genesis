@@ -671,3 +671,311 @@ class TestChamberProgression:
         # Advance past challenge window
         engine.advance_past_challenge_window(proposal.proposal_id, _now())
         assert proposal.status == AmendmentStatus.COOLING_OFF  # NOT CONFIRMED
+
+
+# ======================================================================
+# E-6c: Cooling-off + confirmation vote
+# ======================================================================
+
+class TestCoolingOff:
+    """Cooling-off period tests — design test #58."""
+
+    @pytest.fixture
+    def engine(self, resolver: PolicyResolver) -> AmendmentEngine:
+        return AmendmentEngine(resolver.amendment_config(), resolver._params)
+
+    def _pass_through_chambers(
+        self,
+        engine: AmendmentEngine,
+        resolver: PolicyResolver,
+        proposal: AmendmentProposal,
+        eligible: list[dict[str, Any]],
+    ) -> None:
+        """Drive an amendment through proposal + ratification + challenge window."""
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Proposal
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Ratification
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "I ratify", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+
+        # Advance past challenge
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+
+    def test_cooling_off_timer_enforced(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """90-day cooling-off is enforced — cannot be shortened."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        eligible = _make_eligible_voters(200)
+        self._pass_through_chambers(engine, resolver, proposal, eligible)
+
+        assert proposal.status == AmendmentStatus.COOLING_OFF
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+
+        # 89 days later — should NOT be complete
+        day_89 = now + timedelta(days=89)
+        assert engine.check_cooling_off_complete(proposal.proposal_id, day_89) is False
+
+        # 90 days later — should be complete
+        day_90 = now + timedelta(days=90)
+        assert engine.check_cooling_off_complete(proposal.proposal_id, day_90) is True
+
+    def test_premature_confirmation_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Cannot start confirmation vote before cooling-off completes."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        eligible = _make_eligible_voters(200)
+        self._pass_through_chambers(engine, resolver, proposal, eligible)
+
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Try to start confirmation 30 days in — should fail
+        day_30 = now + timedelta(days=30)
+        with pytest.raises(ValueError, match="Cooling-off period has not elapsed"):
+            engine.start_confirmation_vote(
+                proposal.proposal_id, eligible,
+                chambers[ChamberKind.RATIFICATION], r_min, c_max, day_30,
+            )
+
+    def test_full_90_day_cooling_off(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """After 90 days, confirmation vote can proceed."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        eligible = _make_eligible_voters(200)
+        self._pass_through_chambers(engine, resolver, proposal, eligible)
+
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+
+        day_91 = now + timedelta(days=91)
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        panel = engine.start_confirmation_vote(
+            proposal.proposal_id, eligible,
+            chambers[ChamberKind.RATIFICATION], r_min, c_max, day_91,
+        )
+        assert len(panel) == chambers[ChamberKind.RATIFICATION].size
+        assert proposal.status == AmendmentStatus.CONFIRMATION_VOTE
+
+    def test_non_entrenched_skips_cooling_off(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Non-entrenched amendments skip cooling-off entirely."""
+        proposal = engine.create_amendment(
+            "h1", "tau_vote", "0.60", "0.65",
+            "Raise voting threshold slightly", now=_now(),
+        )
+        assert proposal.is_entrenched is False
+
+        eligible = _make_eligible_voters(200)
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Proposal
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Ratification
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "I ratify", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+
+        # Advance past challenge → CONFIRMED directly (no cooling-off)
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        assert proposal.status == AmendmentStatus.CONFIRMED
+
+        # Trying to start cooling-off on a CONFIRMED amendment → error
+        with pytest.raises(ValueError, match="Cannot start cooling-off"):
+            engine.start_cooling_off(proposal.proposal_id, _now())
+
+
+class TestConfirmationVote:
+    """Confirmation vote tests — the entrenched safety net."""
+
+    @pytest.fixture
+    def engine(self, resolver: PolicyResolver) -> AmendmentEngine:
+        return AmendmentEngine(resolver.amendment_config(), resolver._params)
+
+    def _pass_to_confirmation(
+        self,
+        engine: AmendmentEngine,
+        resolver: PolicyResolver,
+        eligible: list[dict[str, Any]],
+    ) -> AmendmentProposal:
+        """Drive an entrenched amendment to CONFIRMATION_VOTE status."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Proposal
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Ratification
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "I ratify", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+
+        # Advance past challenge
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+
+        # Start and wait out cooling-off
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+        day_91 = now + timedelta(days=91)
+
+        # Start confirmation vote
+        engine.start_confirmation_vote(
+            proposal.proposal_id, eligible,
+            chambers[ChamberKind.RATIFICATION], r_min, c_max, day_91,
+        )
+        return proposal
+
+    def test_fresh_panel_no_overlap(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Confirmation panel has NO overlap with original ratification panel."""
+        eligible = _make_eligible_voters(200)
+        proposal = self._pass_to_confirmation(engine, resolver, eligible)
+
+        ratification_panel = set(proposal.chamber_panels.get("ratification", []))
+        confirmation_panel = set(proposal.confirmation_panel or [])
+
+        assert len(ratification_panel & confirmation_panel) == 0
+
+    def test_passes_with_supermajority(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Confirmation passes with >=80% yes + >=50% participation."""
+        eligible = _make_eligible_voters(200)
+        proposal = self._pass_to_confirmation(engine, resolver, eligible)
+        panel = proposal.confirmation_panel
+
+        # All vote yes
+        for vid in panel:
+            engine.cast_confirmation_vote(
+                proposal.proposal_id, vid, True, "I confirm",
+                "eu", "org_0", _now(),
+            )
+
+        result, confirmed = engine.close_confirmation_vote(
+            proposal.proposal_id, _now(),
+        )
+        assert confirmed is True
+        assert result.status == AmendmentStatus.CONFIRMED
+
+    def test_fails_kills_amendment(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Confirmation failure rejects the amendment (even though all chambers passed)."""
+        eligible = _make_eligible_voters(200)
+        proposal = self._pass_to_confirmation(engine, resolver, eligible)
+        panel = proposal.confirmation_panel
+
+        # All vote no
+        for vid in panel:
+            engine.cast_confirmation_vote(
+                proposal.proposal_id, vid, False, "Changed my mind",
+                "eu", "org_0", _now(),
+            )
+
+        result, confirmed = engine.close_confirmation_vote(
+            proposal.proposal_id, _now(),
+        )
+        assert confirmed is False
+        assert result.status == AmendmentStatus.REJECTED
+
+    def test_participation_minimum_enforced(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """If fewer than 50% of panel votes, confirmation fails."""
+        eligible = _make_eligible_voters(200)
+        proposal = self._pass_to_confirmation(engine, resolver, eligible)
+        panel = proposal.confirmation_panel
+
+        # Only ~30% vote yes (e.g., 5 of 17)
+        voting_count = max(1, len(panel) // 3)
+        for vid in panel[:voting_count]:
+            engine.cast_confirmation_vote(
+                proposal.proposal_id, vid, True, "I confirm",
+                "eu", "org_0", _now(),
+            )
+
+        result, confirmed = engine.close_confirmation_vote(
+            proposal.proposal_id, _now(),
+        )
+        assert confirmed is False
+        assert result.status == AmendmentStatus.REJECTED

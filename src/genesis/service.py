@@ -7817,6 +7817,251 @@ class GenesisService:
             },
         )
 
+    # ------------------------------------------------------------------
+    # E-6c: Cooling-off + confirmation vote
+    # ------------------------------------------------------------------
+
+    def start_amendment_cooling_off(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Start the 90-day cooling-off period for an entrenched amendment.
+
+        Only valid after all chambers have passed and the challenge window
+        has closed. The timer cannot be accelerated or bypassed.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal = self._amendment_engine.start_cooling_off(
+                proposal_id=proposal_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event = EventRecord.create(
+            event_id=event_id,
+            event_kind=EventKind.AMENDMENT_COOLING_OFF_STARTED,
+            actor_id="system",
+            payload={
+                "proposal_id": proposal_id,
+                "provision_key": proposal.provision_key,
+                "cooling_off_starts_utc": proposal.cooling_off_starts_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+                "cooling_off_ends_utc": proposal.cooling_off_ends_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+            },
+            timestamp_utc=now,
+        )
+        if self._event_log is not None:
+            try:
+                self._epoch_service.record_mission_event(event)
+                self._event_log.append(event)
+            except Exception:
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "cooling_off_starts_utc": proposal.cooling_off_starts_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+                "cooling_off_ends_utc": proposal.cooling_off_ends_utc.strftime(
+                    "%Y-%m-%dT%H:%M:%SZ"
+                ),
+            },
+        )
+
+    def open_amendment_confirmation(
+        self,
+        proposal_id: str,
+        phase: GenesisPhase,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Select a fresh confirmation panel and open confirmation voting.
+
+        The confirmation panel has NO overlap with the original ratification
+        panel, preventing the same group from rubber-stamping their decision.
+        Only callable after the cooling-off period has elapsed.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Gather eligible voters (ACTIVE humans with trust >= tau_vote)
+        tau_vote = self._resolver.eligibility_thresholds()["tau_vote"]
+        all_actors = self._roster.all_actors()
+        eligible = []
+        for entry in all_actors:
+            if (
+                entry.actor_kind == ActorKind.HUMAN
+                and entry.status == ActorStatus.ACTIVE
+                and entry.trust_score >= tau_vote
+            ):
+                eligible.append({
+                    "actor_id": entry.actor_id,
+                    "region": entry.region,
+                    "organization": entry.organization,
+                })
+
+        # Use ratification chamber definition for confirmation panel
+        chambers = self._resolver.chambers_for_phase(phase)
+        chamber_def = chambers[ChamberKind.RATIFICATION]
+        r_min, c_max = self._resolver.geo_constraints_for_phase(phase)
+
+        try:
+            panel = self._amendment_engine.start_confirmation_vote(
+                proposal_id=proposal_id,
+                eligible_voters=eligible,
+                chamber_def=chamber_def,
+                r_min=r_min,
+                c_max=c_max,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "confirmation_panel": panel,
+                "panel_size": len(panel),
+            },
+        )
+
+    def vote_on_amendment_confirmation(
+        self,
+        proposal_id: str,
+        voter_id: str,
+        vote: bool,
+        attestation: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cast a vote in the confirmation round of an entrenched amendment."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate voter is human
+        entry = self._roster.get_actor(voter_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {voter_id}"])
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can vote on amendments"],
+            )
+
+        try:
+            amendment_vote = self._amendment_engine.cast_confirmation_vote(
+                proposal_id=proposal_id,
+                voter_id=voter_id,
+                vote=vote,
+                attestation=attestation,
+                region=entry.region,
+                organization=entry.organization,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event = EventRecord.create(
+            event_id=event_id,
+            event_kind=EventKind.AMENDMENT_CHAMBER_VOTE_CAST,
+            actor_id=voter_id,
+            payload={
+                "proposal_id": proposal_id,
+                "chamber": "confirmation",
+                "vote": vote,
+                "vote_id": amendment_vote.vote_id,
+            },
+            timestamp_utc=now,
+        )
+        if self._event_log is not None:
+            try:
+                self._epoch_service.record_mission_event(event)
+                self._event_log.append(event)
+            except Exception:
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "vote_id": amendment_vote.vote_id,
+                "chamber": "confirmation",
+            },
+        )
+
+    def close_amendment_confirmation(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Close the confirmation vote and determine final outcome.
+
+        Requires 80% supermajority + 50% participation of the confirmation
+        panel. If this fails, the amendment is REJECTED even though all
+        chambers passed — this is the deliberate safety net.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal, confirmed = self._amendment_engine.close_confirmation_vote(
+                proposal_id=proposal_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        event_kind = (
+            EventKind.AMENDMENT_CONFIRMED if confirmed
+            else EventKind.AMENDMENT_REJECTED
+        )
+        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event = EventRecord.create(
+            event_id=event_id,
+            event_kind=event_kind,
+            actor_id="system",
+            payload={
+                "proposal_id": proposal_id,
+                "provision_key": proposal.provision_key,
+                "confirmed": confirmed,
+                "is_entrenched": proposal.is_entrenched,
+            },
+            timestamp_utc=now,
+        )
+        if self._event_log is not None:
+            try:
+                self._epoch_service.record_mission_event(event)
+                self._event_log.append(event)
+            except Exception:
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "confirmed": confirmed,
+                "status": proposal.status.value,
+            },
+        )
+
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}
         for m in self._missions.values():
