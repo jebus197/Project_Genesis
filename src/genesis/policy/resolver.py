@@ -694,10 +694,16 @@ class PolicyResolver:
         }
 
     def founder_veto_active(self) -> bool:
-        """Return whether the founder veto is active (G0 only).
+        """Return whether the founder veto is currently active.
 
-        The founder retains transparent veto authority during the G0
-        bootstrap phase. This authority expires irrevocably at G1.
+        The founder retains transparent veto authority during the
+        pre-sustainability bootstrap phase. This authority expires
+        irreversibly at First Light (the financial sustainability
+        trigger: revenue >= 1.5x costs AND 3-month reserve).
+
+        A self-sustaining system no longer needs a single person
+        holding emergency powers. The system tells you when it
+        doesn't need you anymore — by proving it can stand on its own.
         """
         return bool(self._params.get("genesis", {}).get("founder_veto_active", False))
 

@@ -680,7 +680,7 @@ The constitutional governance model requires chamber sizes, geographic diversity
 
 1. Phase G0 — Founder stewardship (0 to 50 verified humans):
 - The founder (or a small founding group of up to 5 verified humans) holds provisional governance authority.
-- During G0, the founder retains transparent veto authority over all governance and operational decisions. Every exercise of veto authority is logged, signed, and committed on-chain with the tag `founder_veto`. This veto authority expires automatically and irrevocably at the G0→G1 transition.
+- During the pre-sustainability bootstrap phase, the founder retains transparent veto authority over all governance and operational decisions. Every exercise of veto authority is logged, signed, and committed on-chain with the tag `founder_veto`. This veto authority expires automatically and irrevocably at First Light — the moment the system achieves financial sustainability (revenue ≥ 1.5× costs AND 3-month reserve). A self-sustaining system no longer needs a single person holding emergency powers. The veto is a rejection-only power: the founder can block proposals but cannot force them through.
 - All governance decisions made during G0 are logged, signed, and committed on-chain with the tag `genesis_provisional`.
 - No constitutional amendments are permitted during G0. The founding constitution is frozen.
 - Operational risk tiers R0 and R1 are active. R2 operates with reduced reviewer requirements (see genesis parameter overrides below). R3 (constitutional changes) is locked.
@@ -723,7 +723,7 @@ The constitutional governance model requires chamber sizes, geographic diversity
 3. Quality gates for trust minting are active from day one.
 4. All governance actions are signed, committed on-chain, and publicly auditable from day one.
 5. No genesis phase may extend indefinitely; all have hard time limits.
-6. The founder has no constitutional veto power once G1 activates.
+6. The founder has no constitutional veto power once First Light is achieved.
 7. Every G0 provisional decision must face retroactive ratification in G1.
 8. Phase transitions are one-way; the system cannot regress to an earlier genesis phase.
 
@@ -757,7 +757,7 @@ At First Light:
 3. The event is logged as `EventKind.FIRST_LIGHT` in the audit trail.
 4. The event is committed to L1 as a constitutional lifecycle event.
 
-Note: The founder's veto authority expires at the G0→G1 phase transition (a governance event), not at First Light (a financial sustainability event). Constitutional governance activation is likewise tied to G0→G1.
+Note: The founder's veto authority expires at First Light (the financial sustainability trigger). This is an outcome-based expiry — the system proves it can sustain itself, and emergency powers are no longer needed. Constitutional governance activation (chamber sizes, geographic requirements) remains tied to the G0→G1→G2→G3 phase transitions, which are headcount-based.
 
 First Light is irreversible — once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
 
@@ -953,7 +953,7 @@ For R2 normative disputes:
 28. Can identity-signal tests alone grant trust or constitutional authority? If yes, reject design.
 29. Can the system operate without a defined genesis phase when participant count is below full constitutional thresholds? If yes, reject design.
 30. Can a genesis phase extend indefinitely without a hard time limit? If yes, reject design.
-31. Can the founder retain veto power after provisional chambers activate in G1? If yes, reject design.
+31. Can the founder retain veto power after First Light is achieved? If yes, reject design.
 32. Can G0 provisional decisions survive without retroactive ratification in G1? If yes, reject design.
 33. Can the system regress from a later genesis phase to an earlier one? If yes, reject design.
 34. Can all reviewers on an R2 task share the same model family and verification method? If yes, reject design.

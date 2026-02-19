@@ -2,7 +2,7 @@
 
 Covers:
 - Creator allocation (CostCategory, commission_params, event kind)
-- Founder's veto (config flag, event kind)
+- Founder's veto (config flag, event kind, exercise, First Light expiry)
 - PoC mode (config, PolicyResolver)
 - First Light event (event kind)
 """
@@ -15,7 +15,8 @@ from pathlib import Path
 import pytest
 
 from genesis.models.compensation import CostCategory, OperationalCostEntry
-from genesis.persistence.event_log import EventKind, EventRecord
+from genesis.models.trust import ActorKind
+from genesis.persistence.event_log import EventKind, EventLog, EventRecord
 
 
 # ---------------------------------------------------------------------------
@@ -194,6 +195,158 @@ class TestFounderVeto:
         )
         assert record.event_kind == EventKind.FOUNDER_VETO_EXERCISED
         assert record.event_hash.startswith("sha256:")
+
+    def test_founder_veto_expired_event_kind(self) -> None:
+        assert EventKind.FOUNDER_VETO_EXPIRED == "founder_veto_expired"
+
+    def test_founder_veto_expiry_config(self, resolver) -> None:
+        """Config documents that veto expires at First Light."""
+        genesis = resolver._params.get("genesis", {})
+        assert genesis.get("founder_veto_expiry") == "first_light"
+
+
+# ---------------------------------------------------------------------------
+# WP1b2: Founder veto exercise + First Light expiry (service integration)
+# ---------------------------------------------------------------------------
+
+def _make_veto_service(event_log=None):
+    """Create a GenesisService with a registered founder for veto tests."""
+    from genesis.policy.resolver import PolicyResolver
+    from genesis.service import GenesisService
+
+    config_dir = Path(__file__).resolve().parent.parent / "config"
+    resolver = PolicyResolver.from_config_dir(config_dir)
+    if event_log is None:
+        event_log = EventLog()
+    svc = GenesisService(resolver, event_log=event_log)
+    svc.open_epoch("epoch-1")
+    svc.register_actor(
+        "founder-001", ActorKind.HUMAN, "eu", "genesis-org", initial_trust=0.8,
+    )
+    # Manually set founder identity
+    svc._founder_id = "founder-001"
+    return svc
+
+
+class TestFounderVetoExercise:
+    """exercise_founder_veto() — rejection-only, transparent, auditable."""
+
+    def test_exercise_veto_succeeds(self) -> None:
+        log = EventLog()
+        svc = _make_veto_service(event_log=log)
+        result = svc.exercise_founder_veto(
+            "founder-001", "PROP-001", "Conflicts with trust-cannot-be-bought."
+        )
+        assert result.success is True
+        assert result.data["vetoed"] is True
+        assert result.data["proposal_id"] == "PROP-001"
+
+    def test_exercise_veto_logs_event(self) -> None:
+        log = EventLog()
+        svc = _make_veto_service(event_log=log)
+        svc.exercise_founder_veto(
+            "founder-001", "PROP-002", "Reason."
+        )
+        veto_events = [
+            e for e in log.events()
+            if e.event_kind == EventKind.FOUNDER_VETO_EXERCISED
+        ]
+        assert len(veto_events) == 1
+        assert veto_events[0].payload["proposal_id"] == "PROP-002"
+
+    def test_non_founder_cannot_veto(self) -> None:
+        svc = _make_veto_service()
+        svc.register_actor(
+            "imposter-001", ActorKind.HUMAN, "us", "evil-corp", initial_trust=0.9,
+        )
+        result = svc.exercise_founder_veto(
+            "imposter-001", "PROP-003", "Takeover attempt."
+        )
+        assert result.success is False
+        assert "not the registered founder" in result.errors[0]
+
+    def test_veto_without_founder_identity(self) -> None:
+        from genesis.policy.resolver import PolicyResolver
+        from genesis.service import GenesisService
+
+        config_dir = Path(__file__).resolve().parent.parent / "config"
+        resolver = PolicyResolver.from_config_dir(config_dir)
+        svc = GenesisService(resolver, event_log=EventLog())
+        # _founder_id is None (default)
+        result = svc.exercise_founder_veto(
+            "anyone", "PROP-004", "No founder set."
+        )
+        assert result.success is False
+        assert "No founder identity" in result.errors[0]
+
+    def test_veto_resets_dormancy_counter(self) -> None:
+        svc = _make_veto_service()
+        assert svc._founder_last_action_utc is None
+        svc.exercise_founder_veto(
+            "founder-001", "PROP-005", "Resets dormancy."
+        )
+        assert svc._founder_last_action_utc is not None
+
+
+class TestFounderVetoFirstLightExpiry:
+    """Founder veto expires irreversibly at First Light."""
+
+    def test_veto_expires_on_first_light(self) -> None:
+        log = EventLog()
+        svc = _make_veto_service(event_log=log)
+        # Veto is active before First Light
+        assert svc._resolver.founder_veto_active() is True
+
+        # Trigger First Light
+        result = svc.check_first_light(
+            monthly_revenue=Decimal("15000"),
+            monthly_costs=Decimal("5000"),
+            reserve_balance=Decimal("50000"),
+        )
+        assert result.success is True
+        assert result.data["first_light"] is True
+
+        # Veto is now expired
+        assert svc._resolver.founder_veto_active() is False
+
+    def test_veto_expired_event_logged(self) -> None:
+        log = EventLog()
+        svc = _make_veto_service(event_log=log)
+        svc.check_first_light(
+            monthly_revenue=Decimal("15000"),
+            monthly_costs=Decimal("5000"),
+            reserve_balance=Decimal("50000"),
+        )
+        expired_events = [
+            e for e in log.events()
+            if e.event_kind == EventKind.FOUNDER_VETO_EXPIRED
+        ]
+        assert len(expired_events) == 1
+        assert expired_events[0].payload["trigger"] == "first_light"
+
+    def test_veto_exercise_blocked_after_first_light(self) -> None:
+        svc = _make_veto_service()
+        # Achieve First Light
+        svc.check_first_light(
+            monthly_revenue=Decimal("15000"),
+            monthly_costs=Decimal("5000"),
+            reserve_balance=Decimal("50000"),
+        )
+        # Now try to exercise veto
+        result = svc.exercise_founder_veto(
+            "founder-001", "PROP-006", "Too late."
+        )
+        assert result.success is False
+        assert "expired" in result.errors[0].lower()
+
+    def test_first_light_return_data_includes_veto_expiry(self) -> None:
+        svc = _make_veto_service()
+        result = svc.check_first_light(
+            monthly_revenue=Decimal("15000"),
+            monthly_costs=Decimal("5000"),
+            reserve_balance=Decimal("50000"),
+        )
+        assert result.data["founder_veto_expired"] is True
 
 
 # ---------------------------------------------------------------------------

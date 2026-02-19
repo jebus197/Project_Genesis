@@ -264,11 +264,15 @@ class GenesisService:
             self._first_light_achieved = lifecycle["first_light_achieved"]
             self._founder_id = lifecycle["founder_id"]
             self._founder_last_action_utc = lifecycle["founder_last_action_utc"]
-            # Restore PoC mode override and GCF activation if First Light was previously achieved
+            # Restore PoC mode override, GCF activation, and veto expiry
+            # if First Light was previously achieved
             if self._first_light_achieved:
                 self._resolver._policy.setdefault("poc_mode", {})["active"] = False
                 if not self._gcf_tracker.is_active:
                     self._gcf_tracker.activate(now=datetime.now(timezone.utc))
+                # Founder veto expired at First Light — ensure it stays dead
+                genesis_cfg = self._resolver._params.get("genesis", {})
+                genesis_cfg["founder_veto_active"] = False
             # Restore escrow and workflow state
             escrow_records = state_store.load_escrows()
             if escrow_records:
@@ -4478,6 +4482,89 @@ class GenesisService:
             return ServiceResult(success=False, errors=[str(e)])
 
     # ------------------------------------------------------------------
+    # Founder's veto — pre-sustainability constitutional guardian
+    # ------------------------------------------------------------------
+
+    def exercise_founder_veto(
+        self,
+        founder_id: str,
+        proposal_id: str,
+        reason: str,
+    ) -> ServiceResult:
+        """Exercise the founder's veto to reject a constitutional proposal.
+
+        The founder's veto is a rejection-only power — it cannot be used
+        to propose or force changes, only to block them. It exists because
+        the system is too small to self-govern during the bootstrap phase.
+
+        The veto expires irreversibly at First Light (financial sustainability).
+        A self-sustaining system no longer needs emergency powers.
+
+        Args:
+            founder_id: Actor ID of the founder exercising the veto.
+            proposal_id: ID of the proposal being vetoed.
+            reason: Public justification (logged on-chain, transparent).
+
+        Returns:
+            ServiceResult with veto details.
+        """
+        # Gate 1: Is the veto still active?
+        if not self._resolver.founder_veto_active():
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Founder veto has expired. The system achieved "
+                    "First Light and no longer requires emergency powers."
+                ],
+            )
+
+        # Gate 2: Is this actually the founder?
+        if self._founder_id is None:
+            return ServiceResult(
+                success=False,
+                errors=["No founder identity registered."],
+            )
+        if founder_id != self._founder_id:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Actor '{founder_id}' is not the registered founder."
+                ],
+            )
+
+        # Log the veto exercise — transparent, on-chain, auditable
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.FOUNDER_VETO_EXERCISED,
+                    actor_id=founder_id,
+                    payload={
+                        "proposal_id": proposal_id,
+                        "reason": reason,
+                        "veto_type": "rejection",
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        # Update founder last action (resets dormancy counter)
+        self._founder_last_action_utc = datetime.now(timezone.utc)
+
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "vetoed": True,
+            "proposal_id": proposal_id,
+            "founder_id": founder_id,
+            "reason": reason,
+        }
+        if warning:
+            data["warning"] = warning
+        return ServiceResult(success=True, data=data)
+
+    # ------------------------------------------------------------------
     # First Light and platform lifecycle
     # ------------------------------------------------------------------
 
@@ -4595,12 +4682,39 @@ class GenesisService:
                 except (ValueError, OSError, RuntimeError):
                     pass  # Best-effort for lifecycle events
 
+        # 4. Expire founder's veto — irreversible
+        #    A self-sustaining system no longer needs a single person
+        #    holding emergency powers.
+        veto_was_active = self._resolver.founder_veto_active()
+        genesis_cfg = self._resolver._params.get("genesis", {})
+        genesis_cfg["founder_veto_active"] = False
+        if veto_was_active and self._event_log is not None:
+            try:
+                veto_event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.FOUNDER_VETO_EXPIRED,
+                    actor_id="system",
+                    payload={
+                        "expired_utc": now.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                        "trigger": "first_light",
+                        "reason": (
+                            "System achieved financial sustainability. "
+                            "Founder veto authority is no longer needed."
+                        ),
+                    },
+                )
+                self._epoch_service.record_mission_event(veto_event.event_hash)
+                self._event_log.append(veto_event)
+            except (ValueError, OSError, RuntimeError):
+                pass  # Best-effort for lifecycle events
+
         warning = self._safe_persist_post_audit()
         data: dict[str, Any] = {
             "first_light": True,
             "achieved_now": True,
             "poc_mode_disabled": True,
             "gcf_activated": True,
+            "founder_veto_expired": veto_was_active,
             "human_count": estimate.current_humans,
             "sustainability_ratio": estimate.current_sustainability_ratio,
         }

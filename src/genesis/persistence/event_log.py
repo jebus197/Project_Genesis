@@ -68,6 +68,7 @@ class EventKind(str, enum.Enum):
     CREATOR_ALLOCATION_DISBURSED = "creator_allocation_disbursed"
     # Governance lifecycle events
     FOUNDER_VETO_EXERCISED = "founder_veto_exercised"
+    FOUNDER_VETO_EXPIRED = "founder_veto_expired"
     # Platform lifecycle events
     FIRST_LIGHT = "first_light"
     MACHINE_REGISTERED = "machine_registered"

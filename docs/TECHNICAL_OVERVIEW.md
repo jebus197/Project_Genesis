@@ -447,7 +447,7 @@ The full constitutional governance model requires large participant pools (chamb
 | Phase | Participants | Chamber Sizes | Regions Required | Max Regional Share | Key Rules |
 |---|---|---|---|---|---|
 | **G0** | 0 – 50 | No chambers | N/A | N/A | Founder stewardship. All decisions provisional. Public audit trail. Hard time limit: 365 days (one extension of 180 days). |
-| **G1** | 50 – 500 | 11 / 17 / 25 | ≥ 3 | 0.40 | Provisional chambers activate. Founder loses veto. All G0 decisions must be retroactively ratified within 90 days. |
+| **G1** | 50 – 500 | 11 / 17 / 25 | ≥ 3 | 0.40 | Provisional chambers activate. All G0 decisions must be retroactively ratified within 90 days. |
 | **G2** | 500 – 2,000 | 21 / 31 / 51 | ≥ 5 | 0.25 | Intermediate chambers. Stricter geographic constraints. |
 | **G3** | 2,000+ | 41 / 61 / 101 | Full | Full | Full constitutional governance. All constraints active. |
 
@@ -455,7 +455,7 @@ Critical rules:
 
 - Phase transitions are **one-way**. The system cannot regress from G2 to G1, or from G1 to G0.
 - If G0 time limits expire without reaching 50 participants, **the project fails closed** — it does not limp along indefinitely under founder control.
-- The founder's authority is explicitly time-limited and structurally eliminated in G1.
+- The founder's veto is a rejection-only emergency brake that expires irreversibly at **First Light** (financial sustainability). Once the system proves it can sustain itself, the veto is no longer needed and cannot be reinstated.
 
 ---
 

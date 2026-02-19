@@ -361,7 +361,7 @@ At First Light:
 - The PoC banner is removed and the marketplace opens for real transactions.
 - The event is logged on-chain as a constitutional lifecycle event.
 
-Governance transitions (constitutional chambers, founder's veto expiry) are tied to the separate phase system (G0→G1→G2→G3), which is headcount-based.
+The founder's veto authority — a rejection-only emergency power — expires irreversibly at First Light. A self-sustaining system no longer needs a single person holding emergency powers. Constitutional governance transitions (chamber sizes, geographic requirements) are tied to the separate phase system (G0→G1→G2→G3), which is headcount-based.
 
 First Light is irreversible. Once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
 
