@@ -566,6 +566,32 @@ Each chamber panel is selected using greedy diversity-first selection with geogr
 59. Can a commission rate be changed by ballot? If yes, reject design.
 60. Can the cooling-off period be shortened without going through its own entrenched process? If yes, reject design.
 
+### G0 Retroactive Ratification
+
+During Phase G0 (the founder stewardship period), the founder makes governance decisions because there aren't yet enough people to form democratic panels. These decisions are tagged as "provisional" — temporary until the community has enough people to review them.
+
+When Genesis transitions from G0 to G1, a 90-day clock starts (`G0_RATIFICATION_WINDOW = 90` days). Every provisional decision the founder made during G0 is put before a panel of 11 randomly selected community members (the G1 proposal chamber). They vote on each decision:
+
+- **8 or more vote YES** → the decision becomes permanent ("ratified").
+- **Fewer than 8 vote YES, or nobody votes before the deadline** → the decision is reversed — undone as if it never happened.
+
+Panel selection uses the same greedy diversity-first algorithm as all other chambers: minimum 3 geographic regions, no single region exceeding 40% of the panel.
+
+The types of G0 decisions that must face ratification:
+- Founder veto exercises (blocking proposals)
+- Compliance rulings (harmful work decisions)
+- Adjudication outcomes (dispute resolutions)
+- Constitutional Court decisions
+
+Each ratifiable event kind has a registered reversal handler — a specific mechanism to undo the decision if the community rejects it. For example, reversing a compliance ruling would reinstate a previously suspended actor.
+
+This mechanism ensures the founder cannot cement permanent unilateral rules during the early period. The community gets democratic authority to accept or reject every governance action the founder took.
+
+**G0 retroactive ratification design tests:**
+61. Can a G0 provisional decision persist into G1 without ratification vote? If yes, reject design.
+62. Can a lapsed G0 decision remain in effect? If yes, reject design — it must be reversed.
+63. Can the 90-day ratification window be bypassed? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

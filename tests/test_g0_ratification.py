@@ -529,6 +529,95 @@ class TestG0RatificationService:
 
 
 # ===========================================================================
+# TestG0RatificationPersistence
+# ===========================================================================
+
+class TestG0RatificationPersistence:
+    """Test round-trip persistence of ratification items."""
+
+    def test_round_trip_save_load(self) -> None:
+        """Items survive save/load cycle through G0RatificationEngine.from_records()."""
+        engine = G0RatificationEngine(config={}, ratification_window_days=90)
+        item = engine.submit_for_ratification(
+            event_kind="founder_veto_exercised",
+            event_id="ev_persist_1",
+            description="Persistent veto",
+            payload={"reason": "test"},
+            now=_now(),
+        )
+        # Select panel and cast a vote
+        voters = _make_eligible_voters(15)
+        engine.select_panel(item.item_id, voters, 11, 3, 0.40, _now())
+        engine.cast_vote(
+            item.item_id, item.panel_ids[0], True,
+            "I attest", "eu", "acme", _now(),
+        )
+
+        # Serialize (mimicking StateStore)
+        serialized = []
+        for iid, it in engine.items.items():
+            votes_data = [
+                {
+                    "vote_id": v.vote_id,
+                    "voter_id": v.voter_id,
+                    "vote": v.vote,
+                    "attestation": v.attestation,
+                    "cast_utc": v.cast_utc.isoformat(),
+                    "region": v.region,
+                    "organization": v.organization,
+                }
+                for v in it.votes
+            ]
+            serialized.append({
+                "item_id": it.item_id,
+                "event_kind": it.event_kind,
+                "event_id": it.event_id,
+                "description": it.description,
+                "payload": it.payload,
+                "status": it.status.value,
+                "created_utc": it.created_utc.isoformat() if it.created_utc else None,
+                "decided_utc": it.decided_utc.isoformat() if it.decided_utc else None,
+                "panel_ids": it.panel_ids,
+                "votes": votes_data,
+                "genesis_provisional": it.genesis_provisional,
+            })
+
+        # Restore
+        restored = G0RatificationEngine.from_records(
+            config={}, ratification_window_days=90, items=serialized,
+        )
+        restored_item = restored.get_item(item.item_id)
+        assert restored_item is not None
+        assert restored_item.status == G0RatificationStatus.PANEL_VOTING
+        assert len(restored_item.votes) == 1
+        assert restored_item.votes[0].vote is True
+        assert restored_item.genesis_provisional is True
+
+
+# ===========================================================================
+# TestG0RatificationInvariants
+# ===========================================================================
+
+class TestG0RatificationInvariants:
+    """Test that invariant checks pass for G0 ratification configuration."""
+
+    def test_invariants_pass(self) -> None:
+        """check_invariants.py should pass with current config."""
+        import subprocess
+        result = subprocess.run(
+            ["python3", "tools/check_invariants.py"],
+            capture_output=True, text=True,
+            cwd="/Users/georgejackson/Developer_Projects/Project_Genesis",
+        )
+        assert result.returncode == 0, f"Invariants failed: {result.stdout}"
+
+    def test_ratification_window_is_90(self, resolver: PolicyResolver) -> None:
+        """G0_RATIFICATION_WINDOW_DAYS must be 90."""
+        time_limits = resolver.genesis_time_limits()
+        assert time_limits["G0_RATIFICATION_WINDOW_DAYS"] == 90
+
+
+# ===========================================================================
 # Helpers
 # ===========================================================================
 

@@ -797,6 +797,35 @@ def check() -> int:
                 if kind not in phase_chambers:
                     errors.append(f"{key} missing chamber: {kind}")
 
+    # ------------------------------------------------------------------
+    # G0 retroactive ratification invariants (Gap 3)
+    # ------------------------------------------------------------------
+
+    # G0_RATIFICATION_WINDOW_DAYS must exist and == 90
+    genesis_block = params.get("genesis", {})
+    rat_window = genesis_block.get("G0_RATIFICATION_WINDOW_DAYS")
+    if rat_window != 90:
+        errors.append(
+            f"G0_RATIFICATION_WINDOW_DAYS must be 90, got {rat_window}"
+        )
+
+    # G1 proposal chamber must be defined (used for ratification panels)
+    g1_chambers = genesis_block.get("G1_chambers", {})
+    if "proposal" not in g1_chambers:
+        errors.append("G1_chambers must define 'proposal' chamber for ratification panels")
+    else:
+        proposal_ch = g1_chambers["proposal"]
+        if proposal_ch.get("size", 0) < 1:
+            errors.append("G1 proposal chamber size must be >= 1")
+        if proposal_ch.get("pass_threshold", 0) < 1:
+            errors.append("G1 proposal chamber pass_threshold must be >= 1")
+
+    # All ratifiable event kinds must have reversal handlers
+    from genesis.governance.g0_ratification import RATIFIABLE_EVENT_KINDS, REVERSAL_HANDLERS
+    for kind in RATIFIABLE_EVENT_KINDS:
+        if kind not in REVERSAL_HANDLERS:
+            errors.append(f"Ratifiable event kind '{kind}' has no reversal handler")
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

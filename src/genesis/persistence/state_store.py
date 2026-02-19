@@ -1321,3 +1321,67 @@ class StateStore:
         for _pid, data in self._state.get("amendment_proposals", {}).items():
             proposals.append(data)
         return proposals
+
+    # ------------------------------------------------------------------
+    # G0 ratification items (Gap 3)
+    # ------------------------------------------------------------------
+
+    def save_ratification_items(
+        self,
+        items: dict[str, Any],
+    ) -> None:
+        """Serialize G0 ratification items to state.
+
+        Follows the same pattern as save_amendments: converts dataclass
+        fields to JSON-safe dicts keyed by item_id.
+        """
+        _TS_FMT = "%Y-%m-%dT%H:%M:%SZ"
+
+        def _fmt_ts(dt: Any) -> Any:
+            if dt is None:
+                return None
+            if hasattr(dt, "strftime"):
+                return dt.strftime(_TS_FMT)
+            return str(dt)
+
+        entries: dict[str, dict[str, Any]] = {}
+        for iid, item in items.items():
+            votes_data = [
+                {
+                    "vote_id": v.vote_id,
+                    "voter_id": v.voter_id,
+                    "vote": v.vote,
+                    "attestation": v.attestation,
+                    "cast_utc": _fmt_ts(v.cast_utc),
+                    "region": v.region,
+                    "organization": v.organization,
+                }
+                for v in item.votes
+            ]
+            entries[iid] = {
+                "item_id": item.item_id,
+                "event_kind": item.event_kind,
+                "event_id": item.event_id,
+                "description": item.description,
+                "payload": item.payload,
+                "status": item.status.value,
+                "created_utc": _fmt_ts(item.created_utc),
+                "decided_utc": _fmt_ts(item.decided_utc),
+                "panel_ids": item.panel_ids,
+                "votes": votes_data,
+                "genesis_provisional": item.genesis_provisional,
+            }
+
+        self._state["g0_ratification_items"] = entries
+        self._save()
+
+    def load_ratification_items(self) -> list[dict[str, Any]]:
+        """Deserialize G0 ratification items from state.
+
+        Returns list of item dicts in the format expected by
+        G0RatificationEngine.from_records().
+        """
+        items: list[dict[str, Any]] = []
+        for _iid, data in self._state.get("g0_ratification_items", {}).items():
+            items.append(data)
+        return items

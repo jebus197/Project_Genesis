@@ -332,6 +332,15 @@ class GenesisService:
                     resolver._params,
                     amend_proposals,
                 )
+            # Restore G0 ratification engine state
+            rat_items = state_store.load_ratification_items()
+            if rat_items:
+                window_days = resolver.genesis_time_limits()["G0_RATIFICATION_WINDOW_DAYS"]
+                self._g0_ratification_engine = G0RatificationEngine.from_records(
+                    config={},
+                    ratification_window_days=window_days,
+                    items=rat_items,
+                )
         else:
             self._roster = ActorRoster()
             self._trust_records: dict[str, TrustRecord] = {}
@@ -5497,6 +5506,10 @@ class GenesisService:
         self._state_store.save_amendments(
             self._amendment_engine._proposals,
         )
+        if self._g0_ratification_engine is not None:
+            self._state_store.save_ratification_items(
+                self._g0_ratification_engine.items,
+            )
 
     def _safe_persist(
         self,
