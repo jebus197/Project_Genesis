@@ -7843,7 +7843,7 @@ class GenesisService:
             return ServiceResult(success=False, errors=[str(e)])
 
         # Emit event
-        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event_id = self._next_event_id()
         event = EventRecord.create(
             event_id=event_id,
             event_kind=EventKind.AMENDMENT_COOLING_OFF_STARTED,
@@ -7862,9 +7862,9 @@ class GenesisService:
         )
         if self._event_log is not None:
             try:
-                self._epoch_service.record_mission_event(event)
+                self._epoch_service.record_mission_event(event.event_hash)
                 self._event_log.append(event)
-            except Exception:
+            except (ValueError, OSError, RuntimeError):
                 pass
 
         self._safe_persist_post_audit()
@@ -7897,7 +7897,7 @@ class GenesisService:
             now = datetime.now(timezone.utc)
 
         # Gather eligible voters (ACTIVE humans with trust >= tau_vote)
-        tau_vote = self._resolver.eligibility_thresholds()["tau_vote"]
+        tau_vote, _ = self._resolver.eligibility_thresholds()
         all_actors = self._roster.all_actors()
         eligible = []
         for entry in all_actors:
@@ -7952,7 +7952,7 @@ class GenesisService:
             now = datetime.now(timezone.utc)
 
         # Validate voter is human
-        entry = self._roster.get_actor(voter_id)
+        entry = self._roster.get(voter_id)
         if entry is None:
             return ServiceResult(success=False, errors=[f"Actor not found: {voter_id}"])
         if entry.actor_kind != ActorKind.HUMAN:
@@ -7975,7 +7975,7 @@ class GenesisService:
             return ServiceResult(success=False, errors=[str(e)])
 
         # Emit event
-        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event_id = self._next_event_id()
         event = EventRecord.create(
             event_id=event_id,
             event_kind=EventKind.AMENDMENT_CHAMBER_VOTE_CAST,
@@ -7990,9 +7990,9 @@ class GenesisService:
         )
         if self._event_log is not None:
             try:
-                self._epoch_service.record_mission_event(event)
+                self._epoch_service.record_mission_event(event.event_hash)
                 self._event_log.append(event)
-            except Exception:
+            except (ValueError, OSError, RuntimeError):
                 pass
 
         self._safe_persist_post_audit()
@@ -8032,7 +8032,7 @@ class GenesisService:
             EventKind.AMENDMENT_CONFIRMED if confirmed
             else EventKind.AMENDMENT_REJECTED
         )
-        event_id = f"ev_{uuid.uuid4().hex[:12]}"
+        event_id = self._next_event_id()
         event = EventRecord.create(
             event_id=event_id,
             event_kind=event_kind,
@@ -8047,9 +8047,9 @@ class GenesisService:
         )
         if self._event_log is not None:
             try:
-                self._epoch_service.record_mission_event(event)
+                self._epoch_service.record_mission_event(event.event_hash)
                 self._event_log.append(event)
-            except Exception:
+            except (ValueError, OSError, RuntimeError):
                 pass
 
         self._safe_persist_post_audit()
@@ -8058,6 +8058,70 @@ class GenesisService:
             data={
                 "proposal_id": proposal_id,
                 "confirmed": confirmed,
+                "status": proposal.status.value,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # E-6d: Amendment application (entrenched guard)
+    # ------------------------------------------------------------------
+
+    def apply_confirmed_amendment(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Apply a confirmed amendment to the live configuration.
+
+        Calls the entrenched provision guard before making any change.
+        The guard verifies the full constitutional pathway was followed:
+        - All chambers passed.
+        - For entrenched: cooling-off elapsed + confirmation vote passed.
+        - Status is CONFIRMED.
+
+        On success, the provision value is updated in constitutional_params.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal = self._amendment_engine.apply_amendment(
+                proposal_id=proposal_id,
+                config_target=self._resolver._params,
+                now=now,
+            )
+        except (ValueError, ConstitutionalViolation) as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        event_id = self._next_event_id()
+        event = EventRecord.create(
+            event_id=event_id,
+            event_kind=EventKind.AMENDMENT_CONFIRMED,
+            actor_id="system",
+            payload={
+                "proposal_id": proposal_id,
+                "provision_key": proposal.provision_key,
+                "proposed_value": str(proposal.proposed_value),
+                "applied": True,
+                "is_entrenched": proposal.is_entrenched,
+            },
+            timestamp_utc=now,
+        )
+        if self._event_log is not None:
+            try:
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "provision_key": proposal.provision_key,
+                "proposed_value": str(proposal.proposed_value),
                 "status": proposal.status.value,
             },
         )

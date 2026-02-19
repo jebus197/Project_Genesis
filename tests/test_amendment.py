@@ -979,3 +979,346 @@ class TestConfirmationVote:
         )
         assert confirmed is False
         assert result.status == AmendmentStatus.REJECTED
+
+
+# ======================================================================
+# E-6d: Entrenched provision guard + amendment application
+# ======================================================================
+
+class TestEntrenchedGuard:
+    """Tests for validate_amendment_application() — constitutional guardrails."""
+
+    @pytest.fixture
+    def engine(self, resolver: PolicyResolver) -> AmendmentEngine:
+        return AmendmentEngine(resolver.amendment_config(), resolver._params)
+
+    def _drive_to_confirmed_non_entrenched(
+        self,
+        engine: AmendmentEngine,
+        resolver: PolicyResolver,
+    ) -> AmendmentProposal:
+        """Drive a non-entrenched amendment through the full path to CONFIRMED."""
+        eligible = _make_eligible_voters(200)
+        proposal = engine.create_amendment(
+            "h1", "tau_vote", "0.60", "0.65",
+            "Raise voting threshold", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Proposal
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Ratification
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "I ratify", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+
+        # Advance past challenge
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        assert proposal.status == AmendmentStatus.CONFIRMED
+        return proposal
+
+    def _drive_to_confirmed_entrenched(
+        self,
+        engine: AmendmentEngine,
+        resolver: PolicyResolver,
+    ) -> AmendmentProposal:
+        """Drive an entrenched amendment through the full path to CONFIRMED."""
+        eligible = _make_eligible_voters(200)
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Proposal
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "I approve", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+
+        # Ratification
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "I ratify", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+
+        # Advance past challenge → COOLING_OFF
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+
+        # Start and wait out cooling-off
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+        day_91 = now + timedelta(days=91)
+
+        # Confirmation vote
+        conf_panel = engine.start_confirmation_vote(
+            proposal.proposal_id, eligible,
+            chambers[ChamberKind.RATIFICATION], r_min, c_max, day_91,
+        )
+        for vid in conf_panel:
+            engine.cast_confirmation_vote(
+                proposal.proposal_id, vid, True, "I confirm",
+                "eu", "org_0", day_91,
+            )
+        engine.close_confirmation_vote(proposal.proposal_id, day_91)
+        assert proposal.status == AmendmentStatus.CONFIRMED
+        return proposal
+
+    def test_entrenched_without_cooling_off_blocked(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Design test #58: entrenched amendment without cooling-off → ConstitutionalViolation."""
+        eligible = _make_eligible_voters(200)
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Pass proposal + ratification + advance past challenge
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "Yes", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "Yes", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        # Now in COOLING_OFF — force status to CONFIRMED to simulate bypass
+        proposal.status = AmendmentStatus.CONFIRMED
+
+        with pytest.raises(ConstitutionalViolation, match="no cooling-off record"):
+            engine.validate_amendment_application(proposal)
+
+    def test_entrenched_without_confirmation_blocked(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Entrenched amendment without confirmation vote → ConstitutionalViolation."""
+        eligible = _make_eligible_voters(200)
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.02",
+            "Double GCF rate", now=_now(),
+        )
+        chambers = resolver.chambers_for_phase(GenesisPhase.G1)
+        r_min, c_max = resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        # Pass all chambers + cooling-off but skip confirmation
+        panel = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            eligible, chambers[ChamberKind.PROPOSAL], r_min, c_max, _now(),
+        )
+        for vid in panel:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.PROPOSAL,
+                True, "Yes", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.PROPOSAL,
+            chambers[ChamberKind.PROPOSAL], _now(),
+        )
+        panel2 = engine.select_chamber_panel(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            eligible, chambers[ChamberKind.RATIFICATION], r_min, c_max, _now(),
+        )
+        for vid in panel2:
+            engine.cast_chamber_vote(
+                proposal.proposal_id, vid, ChamberKind.RATIFICATION,
+                True, "Yes", "eu", "org_0", _now(),
+            )
+        engine.close_chamber_voting(
+            proposal.proposal_id, ChamberKind.RATIFICATION,
+            chambers[ChamberKind.RATIFICATION], _now(),
+        )
+        engine.advance_past_challenge_window(proposal.proposal_id, _now())
+        now = _now()
+        engine.start_cooling_off(proposal.proposal_id, now)
+        # Force status to CONFIRMED without confirmation
+        proposal.status = AmendmentStatus.CONFIRMED
+
+        with pytest.raises(ConstitutionalViolation, match="no confirmation votes"):
+            engine.validate_amendment_application(proposal)
+
+    def test_non_entrenched_applied_correctly(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Non-entrenched amendment: standard pathway → APPLIED."""
+        proposal = self._drive_to_confirmed_non_entrenched(engine, resolver)
+        config = dict(resolver._params)
+
+        engine.apply_amendment(proposal.proposal_id, config, _now())
+        assert proposal.status == AmendmentStatus.APPLIED
+        assert config["tau_vote"] == "0.65"
+
+    def test_entrenched_applied_correctly(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Entrenched amendment: full pathway → APPLIED."""
+        proposal = self._drive_to_confirmed_entrenched(engine, resolver)
+        config = dict(resolver._params)
+
+        engine.apply_amendment(proposal.proposal_id, config, _now())
+        assert proposal.status == AmendmentStatus.APPLIED
+
+    def test_wrong_status_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Cannot apply an amendment that isn't CONFIRMED."""
+        proposal = engine.create_amendment(
+            "h1", "tau_vote", "0.60", "0.65",
+            "Test", now=_now(),
+        )
+        config = dict(resolver._params)
+
+        with pytest.raises(ConstitutionalViolation, match="not CONFIRMED"):
+            engine.apply_amendment(proposal.proposal_id, config, _now())
+
+    def test_commission_rate_proposal_rejected(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """Design test #59: commission rates cannot be changed by ballot."""
+        for key in FORMULA_ONLY_PARAMS:
+            with pytest.raises(ValueError, match="formula-determined"):
+                engine.create_amendment(
+                    "h1", key, "0.10", "0.15",
+                    "Try to change commission", now=_now(),
+                )
+
+    def test_gcf_rate_routed_as_entrenched(self, engine: AmendmentEngine, resolver: PolicyResolver) -> None:
+        """GCF_CONTRIBUTION_RATE is automatically treated as entrenched."""
+        proposal = engine.create_amendment(
+            "h1", "GCF_CONTRIBUTION_RATE", "0.01", "0.015",
+            "Increase GCF rate", now=_now(),
+        )
+        assert proposal.is_entrenched is True
+
+
+class TestAmendmentApplicationService:
+    """Service-layer tests for apply_confirmed_amendment()."""
+
+    @pytest.fixture
+    def service(self, resolver: PolicyResolver) -> GenesisService:
+        return GenesisService(resolver)
+
+    def test_apply_via_service(self, service: GenesisService) -> None:
+        """Service-level apply_confirmed_amendment happy path."""
+        # Register proposer
+        _register_human(service, "proposer_1", trust=0.80)
+
+        # Propose a non-entrenched amendment
+        result = service.propose_amendment(
+            proposer_id="proposer_1",
+            provision_key="tau_vote",
+            proposed_value="0.65",
+            justification="Raise voting threshold",
+        )
+        assert result.success
+        proposal_id = result.data["proposal_id"]
+
+        # Need eligible voters
+        regions = ["eu", "na", "as", "sa", "af", "me"]
+        for i in range(100):
+            _register_human(
+                service,
+                f"voter_{i}",
+                trust=0.70,
+                region=regions[i % len(regions)],
+                org=f"org_{i % 10}",
+            )
+
+        # Open and pass proposal chamber
+        result = service.open_amendment_chamber(proposal_id, ChamberKind.PROPOSAL, GenesisPhase.G1)
+        assert result.success
+        panel = result.data["panel_ids"]
+        for vid in panel:
+            result = service.vote_on_amendment(proposal_id, vid, ChamberKind.PROPOSAL, True, "I approve")
+            assert result.success
+        result = service.close_amendment_chamber(proposal_id, ChamberKind.PROPOSAL, GenesisPhase.G1)
+        assert result.success
+        assert result.data["passed"] is True
+
+        # Open and pass ratification chamber
+        result = service.open_amendment_chamber(proposal_id, ChamberKind.RATIFICATION, GenesisPhase.G1)
+        assert result.success
+        panel2 = result.data["panel_ids"]
+        for vid in panel2:
+            result = service.vote_on_amendment(proposal_id, vid, ChamberKind.RATIFICATION, True, "I ratify")
+            assert result.success
+        result = service.close_amendment_chamber(proposal_id, ChamberKind.RATIFICATION, GenesisPhase.G1)
+        assert result.success
+
+        # Advance past challenge
+        result = service.advance_amendment_past_challenge(proposal_id)
+        assert result.success
+        assert result.data["status"] == "confirmed"
+
+        # Apply
+        result = service.apply_confirmed_amendment(proposal_id)
+        assert result.success
+        assert result.data["status"] == "applied"
+
+    def test_apply_non_confirmed_fails(self, service: GenesisService) -> None:
+        """Cannot apply an amendment that hasn't been confirmed."""
+        _register_human(service, "proposer_1", trust=0.80)
+        result = service.propose_amendment(
+            proposer_id="proposer_1",
+            provision_key="tau_vote",
+            proposed_value="0.65",
+            justification="Test",
+        )
+        assert result.success
+        proposal_id = result.data["proposal_id"]
+
+        result = service.apply_confirmed_amendment(proposal_id)
+        assert result.success is False
+        assert "not CONFIRMED" in result.errors[0]
