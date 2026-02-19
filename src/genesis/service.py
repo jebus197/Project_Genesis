@@ -7133,6 +7133,99 @@ class GenesisService:
             },
         )
 
+    def execute_disbursement(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Execute an approved disbursement — transfer funds from GCF.
+
+        Validates:
+        1. Proposal exists and is APPROVED.
+        2. GCF balance still sufficient (may have changed since vote).
+        3. Records disbursement in GCFTracker (reduces balance).
+        4. Marks proposal DISBURSED in engine.
+        5. Emits GCF_DISBURSEMENT_EXECUTED event.
+
+        Returns ServiceResult with disbursement_id.
+        """
+        import uuid
+        from decimal import Decimal
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Get proposal
+        proposal = self._disbursement_engine.get_proposal(proposal_id)
+        if proposal is None:
+            return ServiceResult(success=False, errors=["Proposal not found"])
+        if proposal.status != DisbursementStatus.APPROVED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Proposal status is {proposal.status.value}, must be APPROVED"],
+            )
+
+        # Re-check balance (may have changed since vote)
+        gcf_state = self._gcf_tracker.get_state()
+        if proposal.requested_amount > gcf_state.balance:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"GCF balance {gcf_state.balance} now insufficient for "
+                    f"approved amount {proposal.requested_amount}"
+                ],
+            )
+
+        # Record disbursement in GCFTracker
+        disbursement_id = f"gcf_disb_{uuid.uuid4().hex[:12]}"
+        try:
+            self._gcf_tracker.record_disbursement(
+                disbursement_id=disbursement_id,
+                proposal_id=proposal_id,
+                amount=proposal.requested_amount,
+                category=proposal.category.value,
+                recipient_description=proposal.recipient_description,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Mark proposal as disbursed
+        self._disbursement_engine.mark_disbursed(
+            proposal_id, disbursement_id, now=now,
+        )
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.GCF_DISBURSEMENT_EXECUTED,
+                    actor_id="system",
+                    payload={
+                        "proposal_id": proposal_id,
+                        "disbursement_id": disbursement_id,
+                        "amount": str(proposal.requested_amount),
+                        "category": proposal.category.value,
+                        "gcf_balance_after": str(self._gcf_tracker.get_state().balance),
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "disbursement_id": disbursement_id,
+                "amount": str(proposal.requested_amount),
+                "gcf_balance_after": str(self._gcf_tracker.get_state().balance),
+                "status": proposal.status.value,
+            },
+        )
+
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}
         for m in self._missions.values():

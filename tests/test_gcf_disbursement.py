@@ -851,6 +851,164 @@ class TestDisbursementVotingService:
 
 
 # ======================================================================
+# Disbursement execution tests
+# ======================================================================
+
+
+class TestDisbursementExecution:
+    """Service-level tests for execute_disbursement()."""
+
+    def _approve_proposal(self, service: GenesisService) -> str:
+        """Helper: create, open, vote approve, close → APPROVED proposal."""
+        _register_human(service, "proposer1", 0.80)
+        _register_human(service, "voter1", 0.75)
+        _register_human(service, "voter2", 0.70)
+        _register_human(service, "voter3", 0.65)
+        _activate_gcf_and_fund(service, Decimal("1000"))
+
+        result = service.propose_gcf_disbursement(
+            proposer_id="proposer1",
+            title="Fund tools",
+            description="Build community tools",
+            requested_amount=Decimal("200"),
+            recipient_description="Tool co-op",
+            category="commons_investment",
+            measurable_deliverables=["Release tools"],
+            now=_now(),
+        )
+        proposal_id = result.data["proposal_id"]
+        service.open_disbursement_voting(proposal_id, now=_now())
+        service.vote_on_disbursement(
+            proposal_id, "voter1", "approve", "Yes", _now(),
+        )
+        service.vote_on_disbursement(
+            proposal_id, "voter2", "approve", "Yes", _now(),
+        )
+        service.vote_on_disbursement(
+            proposal_id, "voter3", "approve", "Yes", _now(),
+        )
+        close_result = service.close_disbursement_voting(proposal_id, _now())
+        assert close_result.data["approved"] is True
+        return proposal_id
+
+    def test_execution_reduces_balance(self, service: GenesisService) -> None:
+        proposal_id = self._approve_proposal(service)
+        result = service.execute_disbursement(proposal_id, _now())
+        assert result.success is True
+        assert result.data["amount"] == "200"
+        assert result.data["gcf_balance_after"] == "800"
+        assert result.data["status"] == "disbursed"
+
+    def test_balance_never_negative(self, service: GenesisService) -> None:
+        """After execution, GCF balance must remain >= 0."""
+        proposal_id = self._approve_proposal(service)
+        service.execute_disbursement(proposal_id, _now())
+        gcf_state = service._gcf_tracker.get_state()
+        assert gcf_state.balance >= Decimal("0")
+
+    def test_balance_changed_since_vote(self, service: GenesisService) -> None:
+        """If balance dropped since vote, execution fails gracefully."""
+        _register_human(service, "proposer1", 0.80)
+        _register_human(service, "voter1", 0.75)
+        _register_human(service, "voter2", 0.70)
+        _register_human(service, "voter3", 0.65)
+        _activate_gcf_and_fund(service, Decimal("500"))
+
+        result = service.propose_gcf_disbursement(
+            proposer_id="proposer1",
+            title="Fund research",
+            description="Science grant",
+            requested_amount=Decimal("400"),
+            recipient_description="Lab",
+            category="public_good_mission",
+            measurable_deliverables=["Report"],
+            now=_now(),
+        )
+        proposal_id = result.data["proposal_id"]
+        service.open_disbursement_voting(proposal_id, now=_now())
+        service.vote_on_disbursement(
+            proposal_id, "voter1", "approve", "Yes", _now(),
+        )
+        service.vote_on_disbursement(
+            proposal_id, "voter2", "approve", "Yes", _now(),
+        )
+        service.vote_on_disbursement(
+            proposal_id, "voter3", "approve", "Yes", _now(),
+        )
+        service.close_disbursement_voting(proposal_id, _now())
+
+        # Simulate balance reduction (another disbursement happened)
+        service._gcf_tracker.record_disbursement(
+            "other_d", "other_p", Decimal("200"), "cat", "desc", _now(),
+        )
+        # Now balance is 300, but proposal wants 400
+        exec_result = service.execute_disbursement(proposal_id, _now())
+        assert exec_result.success is False
+        assert any("insufficient" in e.lower() for e in exec_result.errors)
+
+    def test_total_disbursed_tracked(self, service: GenesisService) -> None:
+        proposal_id = self._approve_proposal(service)
+        service.execute_disbursement(proposal_id, _now())
+        state = service._gcf_tracker.get_state()
+        assert state.total_disbursed == Decimal("200")
+        assert state.disbursement_count == 1
+
+    def test_not_approved_rejected(self, service: GenesisService) -> None:
+        """Cannot execute a proposal that hasn't been approved."""
+        _register_human(service, "proposer1", 0.80)
+        _activate_gcf_and_fund(service, Decimal("1000"))
+
+        result = service.propose_gcf_disbursement(
+            proposer_id="proposer1",
+            title="Still proposed",
+            description="Not voted yet",
+            requested_amount=Decimal("100"),
+            recipient_description="Someone",
+            category="public_good_mission",
+            measurable_deliverables=["Deliver"],
+            now=_now(),
+        )
+        proposal_id = result.data["proposal_id"]
+        exec_result = service.execute_disbursement(proposal_id, _now())
+        assert exec_result.success is False
+        assert any("approved" in e.lower() for e in exec_result.errors)
+
+    def test_audit_trail_complete(self, resolver: PolicyResolver) -> None:
+        """Full lifecycle produces complete audit trail."""
+        event_log = EventLog()
+        svc = GenesisService(resolver, event_log=event_log)
+        _register_human(svc, "proposer1", 0.80)
+        _register_human(svc, "voter1", 0.75)
+        _register_human(svc, "voter2", 0.70)
+        _register_human(svc, "voter3", 0.65)
+        _activate_gcf_and_fund(svc, Decimal("1000"))
+        svc.open_epoch()
+
+        # Full lifecycle
+        result = svc.propose_gcf_disbursement(
+            "proposer1", "Grant", "Science", Decimal("100"), "Lab",
+            "public_good_mission", ["Report"], _now(),
+        )
+        pid = result.data["proposal_id"]
+        svc.open_disbursement_voting(pid, _now())
+        svc.vote_on_disbursement(pid, "voter1", "approve", "Yes", _now())
+        svc.vote_on_disbursement(pid, "voter2", "approve", "Yes", _now())
+        svc.vote_on_disbursement(pid, "voter3", "approve", "Yes", _now())
+        svc.close_disbursement_voting(pid, _now())
+        svc.execute_disbursement(pid, _now())
+
+        # Verify audit trail
+        proposed = event_log.events(EventKind.GCF_DISBURSEMENT_PROPOSED)
+        votes = event_log.events(EventKind.GCF_DISBURSEMENT_VOTE_CAST)
+        approved = event_log.events(EventKind.GCF_DISBURSEMENT_APPROVED)
+        executed = event_log.events(EventKind.GCF_DISBURSEMENT_EXECUTED)
+        assert len(proposed) == 1
+        assert len(votes) == 3
+        assert len(approved) == 1
+        assert len(executed) == 1
+
+
+# ======================================================================
 # EventKind completeness
 # ======================================================================
 
