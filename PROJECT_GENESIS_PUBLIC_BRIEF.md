@@ -256,6 +256,20 @@ Examples include:
 
 The social benefit is not “faster AI content.” It is more trustworthy and accountable AI-assisted work.
 
+## Compute Infrastructure: From Extraction to Commons
+
+The biggest AI companies are building vast data centres that consume public resources — land, water, electricity — while creating almost no local jobs and sending profits to distant shareholders. The costs are borne locally; the value is captured globally. This is extractive capitalism applied to computation.
+
+Genesis is designed to follow a different path, built into the framework from the outset.
+
+**Epoch 1 (Foundation):** Genesis starts on conventional infrastructure while the trust model, governance, and Genesis Common Fund establish themselves. The distributed compute framework is designed and ready, but not yet activated.
+
+**Epoch 2 (Distributed Compute):** When membership and available compute reach a mathematically modelled threshold, the distributed layer activates. Members contribute spare capacity peer-to-peer — machines contribute more, humans contribute voluntarily. Credits are earned proportional to verified contribution, weighted by scarcity. Every member gets a baseline floor of compute access as a right of membership, funded by the GCF. The threshold is public — anyone can see when Epoch 2 will be reached.
+
+**Epoch 3 (Self-Sustaining):** A constitutionally encoded allocation within the GCF automatically funds compute infrastructure acquisition, research, and development. As the network grows, external infrastructure dependency follows a bootstrap curve toward zero. The formula is mathematical, the allocation is automatic, and no individual controls procurement.
+
+The trajectory is engineering, not doctrine. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants. Genesis does not promise to eliminate the data centre paradigm overnight. It promises to build, openly and measurably, toward a system that makes it unnecessary.
+
 ## Feasibility Assessment
 The concept is feasible with today’s technology.
 

@@ -389,9 +389,56 @@ The existing operational engine is positioned as the governance and evidence cor
 4. Dispute, appeals, and incident governance operations.
 5. Institutional governance console and policy lifecycle tooling.
 
-## 9. Risk Register (Program-Level)
+## 9. Compute Infrastructure and Economic Sovereignty
 
-### 9.0 Threat modelling baseline
+### 9.1 The extractive compute paradigm
+
+The dominant AI infrastructure model concentrates compute in hyperscale data centres operated by a small number of global corporations. These facilities consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment relative to their capital intensity and environmental footprint. Infrastructure costs are socialised through public resource consumption; profits are privatised through shareholder returns. The result is a structural pattern of resource appropriation: local communities bear environmental and infrastructure costs, while economic value is captured globally by distant corporate entities.
+
+This pattern creates institutional risk for any platform that depends on it. Dependency on concentrated compute infrastructure introduces single points of regulatory capture, rent-seeking choke points, and jurisdictional vulnerability. For a system whose foundational principle is that governance cannot be bought, architectural dependency on entities whose governance is determined by capital markets represents a structural contradiction.
+
+### 9.2 Genesis compute trajectory
+
+Genesis addresses this through a three-epoch trajectory built into the framework from the outset.
+
+**Epoch 1 (Foundation):** Genesis operates on conventional infrastructure while the trust model, governance framework, labour market, and Genesis Common Fund establish themselves. The distributed compute framework is designed and ready but not yet activated. The GCF accumulates.
+
+**Epoch 2 (Distributed Compute):** When membership and available compute resources reach a mathematically modelled critical mass threshold, the distributed compute layer activates. Members contribute spare capacity peer-to-peer — machines contribute more as a condition of registration, humans contribute voluntarily. Compute credits are earned proportional to verified contribution, weighted by resource scarcity (GPU time when GPUs are scarce is worth more than CPU time when CPUs are abundant). A baseline floor guarantees every member minimum compute access as a right of membership, funded by the GCF. The activation threshold is public — any participant can see when Epoch 2 will be reached.
+
+**Epoch 3 (Self-Sustaining):** As the network grows, external infrastructure dependency follows a bootstrap curve toward zero. A constitutionally encoded allocation within the GCF automatically directs funds toward compute resource acquisition, research, and infrastructure development. This is not discretionary spending but a mathematically defined function:
+
+```
+compute_allocation = base_rate × max(0, 1 - distributed_capacity / required_capacity)
+```
+
+As distributed capacity approaches requirements, the allocation degrades to zero and the full GCF flows to its broader humanitarian scope. No individual controls procurement — it is governed by the Economic Advisory mechanism (Phase E-6).
+
+### 9.3 GCF compute allocation
+
+The compute infrastructure allocation is a constitutional constant (amendable by standard constitutional process) but not an entrenched provision. The recommended ceiling is **25% of GCF receipts**, degrading to zero via the bootstrap curve formula.
+
+At the GCF contribution rate of 1%, this means a maximum effective deduction of 0.25% of gross mission value is directed to compute infrastructure. The remaining 75% of GCF flows to its broader scope: education, healthcare, infrastructure, arts, community development, and scientific research. As the system becomes self-sustaining, the compute allocation falls and the humanitarian allocation rises to 100%.
+
+### 9.4 Distributable and non-distributable compute
+
+Not all compute workloads are equally distributable:
+
+- **Inference and fine-tuning** are distributable across consumer hardware with appropriate coordination frameworks. These represent the majority of Genesis operational compute needs.
+- **Foundation model training** requires tightly coupled GPU clusters that cannot be effectively distributed across consumer devices. At scale, this is funded by the GCF as dedicated infrastructure.
+
+### 9.5 Institutional implications
+
+The three-epoch trajectory has direct implications for institutional evaluation:
+
+1. **Regulatory resilience:** Distributed peer-to-peer infrastructure creates structural resilience against jurisdictional overreach — no single data centre to subpoena, no single jurisdiction with authority over the entire system, no investor to pressure.
+2. **Capital independence:** As external capital dependency degrades to zero via the bootstrap curve, so does external leverage. Genesis evaluates external regulation through its own constitutional lens, not the reverse.
+3. **Sustainability:** The trajectory is designed to be self-governing, self-sustaining, self-perpetuating, and self-improving. The end state is infrastructure that does not replicate the extractive patterns it was designed to replace.
+
+This trajectory is engineering, not doctrine. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants.
+
+## 10. Risk Register (Program-Level)
+
+### 10.0 Threat modelling baseline
 Threat modelling means defining what must be protected, who can cause harm, how harm can occur, and which controls prevent or contain harm.
 
 Institutional requirement:
@@ -399,38 +446,38 @@ Institutional requirement:
 2. Risk controls must distinguish what is mechanically prevented versus what is detected and remediated.
 3. High-severity incidents trigger threat-model and invariant review.
 
-### 9.1 Collusion risk
+### 10.1 Collusion risk
 Risk: reviewers coordinate or rubber-stamp low-quality work.  
 Controls: random reviewer assignment, no self-review, quorum checks for high-risk work, adversarial test tasks.
 
-### 9.2 Correlated error risk
+### 10.2 Correlated error risk
 Risk: multiple agents share the same blind spot and converge on a wrong answer.  
 Controls: model/method diversity, evidence-weighted adjudication, escalation for ambiguous tasks.
 
-### 9.3 Audit theater risk
+### 10.3 Audit theater risk
 Risk: logs exist but do not prove substantive quality.  
 Controls: strict evidence schema, reproducibility requirements, closure blocks for insufficient evidence.
 
-### 9.4 Reputation gaming risk
+### 10.4 Reputation gaming risk
 Risk: actors optimize visible metrics rather than truth.  
 Controls: slow trust accrual, fast penalty for severe failures, delayed scoring based on downstream outcomes.
 
-### 9.5 Human bottleneck risk
+### 10.5 Human bottleneck risk
 Risk: approval fatigue and oversight breakdown.  
 Controls: risk-tier workflow, exception-first human review, summarized evidence drill-down.
 
-### 9.6 Governance capture risk
+### 10.6 Governance capture risk
 Risk: concentration of control over mission policy and enforcement.  
 Controls: formal power separation, transparent policy revision logs, auditable appeals process.
 
-### 9.7 Overclaim risk
+### 10.7 Overclaim risk
 Risk: credibility loss through absolute promises.  
 Controls: institutional language standards that prohibit "bulletproof" and "impossible" claims.
 
-## 10. Identity and Trust Posture
+## 11. Identity and Trust Posture
 Genesis treats identity assurance as a layered, probabilistic governance function, not as a single binary test.
 
-### 10.1 Principles
+### 11.1 Principles
 1. Trust is longitudinal, not instantaneous.
 2. Identity assurance should combine behavioral history, cryptographic identity, and activity consistency.
 3. Timing-based challenge mechanisms may be used as one signal but not as sole truth source.
@@ -438,14 +485,14 @@ Genesis treats identity assurance as a layered, probabilistic governance functio
 5. Machine identities may earn operational trust, but do not receive constitutional voting rights.
 6. Constitutional voting is verified-human only; machine constitutional voting weight remains pinned at `0`.
 
-### 10.2 Prohibited design patterns
+### 11.2 Prohibited design patterns
 1. Trust purchase schemes.
 2. Trust transfer markets.
 3. Single-factor identity gating for high-stakes access.
 4. Unbounded trust accumulation.
 5. Trust-to-command conversion over other actors.
 
-## 11. Implementation Strategy
+## 12. Implementation Strategy
 Genesis should be deployed through reversible, measurable phases.
 
 ### Phase 1: Foundation
@@ -480,7 +527,7 @@ Acceptance baseline:
 2. Stable policy lifecycle controls.
 3. Measurable reduction in post-approval defects.
 
-### 11.1 Executable governance controls (current baseline)
+### 12.1 Executable governance controls (current baseline)
 To keep governance concrete (not narrative-only), Genesis maintains machine-checkable control artifacts:
 
 1. Constitutional parameter baseline:
@@ -495,15 +542,15 @@ To keep governance concrete (not narrative-only), Genesis maintains machine-chec
 4. Worked-example policy validation:
 - `python3 tools/verify_examples.py`
 
-5. Threat-model control baseline:
-- `THREAT_MODEL_AND_INVARIANTS.md`
+5. Automated invariant verification:
+- `python3 tools/check_invariants.py`
 
 Governance changes are not considered complete unless the policy artifacts and executable checks pass together.
 
-## 12. Measurement and Assurance Framework
+## 13. Measurement and Assurance Framework
 Genesis performance should be assessed by institutional outcomes, not output volume.
 
-### 12.1 Core indicators
+### 13.1 Core indicators
 1. First-pass review acceptance rate.
 2. Post-approval defect or rework rate.
 3. Time-to-completion by risk tier.
@@ -512,10 +559,10 @@ Genesis performance should be assessed by institutional outcomes, not output vol
 6. Abuse attempts detected versus escaped.
 7. Human confidence and adoption retention.
 
-### 12.2 Assurance posture
+### 13.2 Assurance posture
 Claims should be evidence-based and periodically audited with external challenge testing where appropriate.
 
-## 13. Applicability and Initial Deployment Domains
+## 14. Applicability and Initial Deployment Domains
 High-potential early domains are those where traceability is already expected and failure costs are meaningful.
 
 1. Compliance documentation and controls evidence.
@@ -524,14 +571,14 @@ High-potential early domains are those where traceability is already expected an
 4. Public-sector reporting and policy documentation.
 5. Safety and quality governance workflows.
 
-## 14. Communication Standard
+## 15. Communication Standard
 To preserve credibility, Genesis communications should follow three rules:
 
 1. Distinguish objective verification from normative judgment.
 2. Present risk reduction claims with measurable bounds.
 3. Avoid absolute language about certainty, security, or correctness.
 
-## 15. Conclusion
+## 16. Conclusion
 Project Genesis is a realistic and ambitious institutional proposal for responsible AI work coordination. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance and verification substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
 The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle.
@@ -543,12 +590,11 @@ Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted
 Trust can only be earned through verified behavior and verified outcomes over time.
 
 ## Appendix B: Related Project Files
-1. `HANDOFF_NOTE.md`
-2. `GENESIS_BACKGROUND_REVIEW_2026-02-13.md`
-3. `GENESIS_WORK_LOG_2026-02-13.md`
-4. `TRUST_CONSTITUTION.md`
-5. `PROJECT_GENESIS_PUBLIC_BRIEF.md`
-6. `THREAT_MODEL_AND_INVARIANTS.md`
-7. `CONTRIBUTING.md`
+1. `TRUST_CONSTITUTION.md`
+2. `PROJECT_GENESIS_PUBLIC_BRIEF.md`
+3. `CONTRIBUTING.md`
+4. `docs/TECHNICAL_OVERVIEW.md`
+5. `docs/ANCHORS.md`
+6. `docs/GENESIS_EVENTS.md`
 
 \* subject to review

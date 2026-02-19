@@ -22,12 +22,13 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 12. [Skill Lifecycle](#skill-lifecycle)
 13. [Compensation Model](#compensation-model)
 14. [Genesis Common Fund](#genesis-common-fund)
-15. [Workflow Orchestration](#workflow-orchestration)
-16. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
-17. [Blockchain Anchoring](#blockchain-anchoring)
-18. [Identity Verification](#identity-verification)
-19. [Success Metrics](#success-metrics)
-20. [Governance Engine Architecture](#governance-engine-architecture)
+15. [Compute Infrastructure and Bootstrap Curve](#compute-infrastructure-and-bootstrap-curve)
+16. [Workflow Orchestration](#workflow-orchestration)
+17. [Cryptographic Implementation Profile](#cryptographic-implementation-profile)
+18. [Blockchain Anchoring](#blockchain-anchoring)
+19. [Identity Verification](#identity-verification)
+20. [Success Metrics](#success-metrics)
+21. [Governance Engine Architecture](#governance-engine-architecture)
 
 ---
 
@@ -740,6 +741,78 @@ After the 50-year dormancy clause, the founder's creator allocation (the 5% both
 
 ---
 
+## Compute Infrastructure and Bootstrap Curve
+
+The dominant AI infrastructure model concentrates compute in hyperscale data centres operated by a small number of global corporations. These facilities consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment relative to their capital intensity (a billion-pound facility may employ 30-50 permanent staff). Environmental and infrastructure costs are socialised; profits are privatised through shareholder returns. This is extractive capitalism applied to computation, and it creates institutional dependency risk for any platform built on top of it.
+
+Genesis addresses this through a three-epoch trajectory designed into the framework from the outset. The distributed compute layer is not an afterthought — it is a constitutional design commitment.
+
+### Three-epoch trajectory
+
+**Epoch 1 (Foundation):** Genesis operates on conventional infrastructure while the trust model, governance framework, labour market, and GCF establish themselves. The distributed compute framework is designed and ready but not yet activated. The GCF accumulates.
+
+**Epoch 2 (Distributed Compute):** When membership and available compute resources reach a mathematically modelled critical mass threshold, the distributed compute layer activates.
+
+Key properties:
+- Members contribute spare capacity peer-to-peer — machines contribute more as a condition of registration, humans contribute voluntarily (configurable: spare only, fixed percentage, or full dedication).
+- Compute credits are earned proportional to verified contribution, weighted by resource scarcity (GPU time when GPUs are scarce > CPU time when CPUs are abundant).
+- A baseline floor guarantees every member minimum compute access as a right of membership, funded by the GCF.
+- The activation threshold is public and mathematically modelled — any participant can see when Epoch 2 will be reached.
+
+**Epoch 3 (Self-Sustaining):** As the network grows, external infrastructure dependency follows a bootstrap curve toward zero.
+
+### GCF compute allocation
+
+A constitutionally encoded allocation within the GCF automatically directs funds toward compute resource acquisition, research, and infrastructure development. This is not discretionary spending but a mathematically defined function:
+
+```
+compute_allocation = GCF_COMPUTE_CEILING × max(0, 1 - distributed_capacity / required_capacity)
+```
+
+Where:
+- `GCF_COMPUTE_CEILING = 0.25` — maximum 25% of GCF receipts directed to compute infrastructure.
+- `distributed_capacity` — the aggregate compute capacity contributed by the distributed network.
+- `required_capacity` — the system's operational compute requirements.
+
+At the GCF contribution rate of 1%, the maximum effective deduction is 0.25% of gross mission value. As distributed capacity approaches requirements, the allocation degrades to zero and the full GCF flows to its broader humanitarian scope (education, healthcare, arts, research, etc.).
+
+The compute ceiling is a constitutional constant amendable by standard constitutional process, but is NOT an entrenched provision. The entrenched provision is the GCF rate itself (1%). How the GCF is spent is a governance question, not an existential one.
+
+### Distributable vs non-distributable compute
+
+Not all compute workloads are equally distributable:
+
+| Workload | Distributable? | Notes |
+|---|---|---|
+| Inference | Yes | Embarrassingly parallel; consumer hardware sufficient |
+| Fine-tuning | Yes | Data-parallel with gradient aggregation; coordinated but distributable |
+| Foundation model training | No | Requires tightly coupled GPU clusters with high-bandwidth interconnects |
+
+Inference and fine-tuning represent the majority of Genesis's operational compute needs and are distributable across consumer hardware with appropriate coordination frameworks. Foundation model training requires dedicated infrastructure — at scale, funded by the GCF.
+
+### Mathematical model
+
+The distributed compute layer operates under a dual-entropy regime:
+
+- **High entropy in space (workload distribution):** Tasks are spread uniformly across available nodes using maximum-entropy resource allocation. No single node or cluster should bear disproportionate load.
+- **Low entropy in information (data consistency):** The system maintains strict data consistency with eventual consistency and causal ordering. One truth, no divergence.
+
+Verifiable computation uses redundant execution combined with trust-based validation: the same task is executed on multiple nodes, and results are compared. Nodes with higher trust scores carry more weight in consensus, integrating naturally with the existing trust decay mechanism.
+
+### Economic sovereignty
+
+The three-epoch trajectory has direct implications for institutional independence:
+
+1. **Regulatory resilience:** No single data centre to subpoena, no single jurisdiction with authority over the entire system, no investor to pressure.
+2. **Capital independence:** As external capital dependency degrades to zero via the bootstrap curve, so does external leverage.
+3. **Self-sustaining trajectory:** Self-governing, self-sustaining, self-perpetuating, and self-improving. No individual controls procurement — it is governed by the Economic Advisory mechanism (Phase E-6).
+
+### Configuration
+
+The compute infrastructure parameters are not yet in `config/` — they will be added as part of the Phase E-5 implementation. The constitutional constant (`GCF_COMPUTE_CEILING`) will be added to `config/constitutional_params.json`.
+
+---
+
 ## Workflow Orchestration
 
 The systems described above — trust, skills, labour market, escrow, compliance, justice — are powerful individually but must be coordinated to produce a coherent workflow. The `WorkflowOrchestrator` (`src/genesis/workflow/orchestrator.py`) is the thin stateful coordinator that bridges these subsystems into a single, auditable lifecycle for every piece of work on the platform.
@@ -1194,6 +1267,6 @@ The project includes containerised deployment and continuous integration:
 
 ---
 
-*This document describes the technical architecture as of Genesis Block 7 (2026-02-18). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, identity verification (BIP39 liveness and quorum verification with disability accommodation), compliance screening (17 prohibited categories and penalty escalation), three-tier justice (adjudication panels, Constitutional Court, and rehabilitation), the Genesis Common Fund, workflow orchestration (escrow-first coordination), cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
+*This document describes the technical architecture as of Genesis Block 7+ (2026-02-19). It covers the full trust model, skill taxonomy, domain-specific trust, labour market mediation, skill lifecycle, identity verification (BIP39 liveness and quorum verification with disability accommodation), compliance screening (17 prohibited categories and penalty escalation), three-tier justice (adjudication panels, Constitutional Court, and rehabilitation), the Genesis Common Fund, compute infrastructure and the bootstrap curve (three-epoch trajectory from conventional to distributed to self-sustaining), workflow orchestration (escrow-first coordination), cryptographic profile, and governance engine. Changes to constitutional parameters require governance approval as described above.*
 
 \* subject to review
