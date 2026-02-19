@@ -317,6 +317,20 @@ Changing the 1% rate requires the highest amendment threshold in the constitutio
 
 After the 50-year dormancy clause, the founder's creator allocation redirects to STEM and medical charitable recipients selected by supermajority.
 
+## Compute Infrastructure and the Bootstrap Curve
+
+The dominant AI infrastructure model concentrates compute in hyperscale data centres that consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment and capturing resulting value globally through shareholder returns. Environmental and infrastructure costs are socialised; profits are privatised. This is extractive capitalism applied to computation.
+
+Genesis is designed to follow a fundamentally different trajectory, built into the framework from the outset and structured as three epochs.
+
+**Epoch 1 (Foundation):** Genesis operates on conventional infrastructure while the trust model, governance framework, labour market, and Genesis Common Fund establish themselves. The GCF accumulates. The distributed compute framework is built and ready, but not yet activated.
+
+**Epoch 2 (Distributed Compute):** When membership and available compute resources reach a mathematically modelled critical mass threshold, the distributed compute layer activates. Members contribute spare capacity peer-to-peer — machines contribute more as a condition of registration, humans contribute voluntarily. Compute credits are earned proportional to verified contribution, weighted by resource scarcity. A baseline floor guarantees every member minimum compute access as a right of membership, funded by the GCF. The transition point is not hidden: the mathematical model is public, the metrics are visible, and anyone can see when Epoch 2 will be reached.
+
+**Epoch 3 (Self-Sustaining):** As the network grows, external infrastructure dependency follows a bootstrap curve toward zero. A constitutionally encoded allocation within the GCF automatically directs funds toward compute resource acquisition, research, and infrastructure development — this is not discretionary spending but a mathematically defined function of the system's current capacity relative to its requirements. No individual controls procurement — it is governed by the Economic Advisory mechanism. The entire trajectory is designed to be self-governing, self-sustaining, self-perpetuating, and self-improving. The end state is fully distributed compute that does not replicate the extractive patterns it was designed to replace.
+
+This trajectory is not doctrine — it is engineering. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants. Genesis does not promise to eliminate the data centre paradigm overnight. It promises to build, openly and measurably, toward a system that makes it unnecessary.
+
 ## What the Architecture Eliminates
 
 The mechanisms described above — escrow-first coordination, deterministic commission, earned trust, constitutional governance, and blockchain anchoring — combine to structurally eliminate entire categories of failure that plague existing platforms and financial systems.
@@ -381,23 +395,13 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | [Public Brief](PROJECT_GENESIS_PUBLIC_BRIEF.md) | A shorter summary of what Genesis is and why it matters. |
 | [Institutional White Paper (Draft)](PROJECT_GENESIS_INSTITUTIONAL_WHITE_PAPER.md) | The detailed case for institutional adoption. |
 
-**For technical readers:**
+**Technical and governance:**
 
 | Document | Description |
 |---|---|
 | [Technical Overview](docs/TECHNICAL_OVERVIEW.md) | Full technical architecture: trust equations, cryptographic profile, parameter matrices, protocol details. |
-| [Threat Model and Invariants](THREAT_MODEL_AND_INVARIANTS.md) | Adversary model, trust boundaries, and non-negotiable system rules. |
-| [System Blueprint](GENESIS_SYSTEM_BLUEPRINT.md) | Software architecture and component design. |
-
-**Project history and governance:**
-
-| Document | Description |
-|---|---|
-| [Work Log](GENESIS_WORK_LOG_2026-02-13.md) | Chronological record of all founding session work. |
-| [Background Review](GENESIS_BACKGROUND_REVIEW_2026-02-13.md) | Independent assessment of the original project materials. |
-| [Foundational Note](HANDOFF_NOTE.md) | Original project brief and context. |
 | [Contribution Governance](CONTRIBUTING.md) | Rules for contributing to the project. |
-| [Blockchain Anchor Log](docs/ANCHORS.md) | Record of all blockchain anchoring events. |
+| [Blockchain Anchor Log](docs/ANCHORS.md) | Record of all blockchain anchoring events (Trust Mint Log). |
 | [Trust Event Ledger](docs/GENESIS_EVENTS.md) | Formally recognised trust events. |
 
 **Machine-readable governance artifacts:**
