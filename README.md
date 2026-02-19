@@ -363,6 +363,8 @@ At First Light:
 
 The founder's veto authority — a rejection-only emergency power — expires irreversibly at First Light. A self-sustaining system no longer needs a single person holding emergency powers. Constitutional governance transitions (chamber sizes, geographic requirements) are tied to the separate phase system (G0→G1→G2→G3), which is headcount-based.
 
+Every governance decision the founder makes during the founding period (G0) is tagged as provisional. When the system transitions to G1, every one of these decisions faces retroactive ratification — a panel of 11 randomly selected community members reviews each decision, and 8 out of 11 must approve for it to stand. Decisions that fail ratification or exceed the 90-day review window are reversed. The founder's temporary authority is legitimate precisely because it is temporary and accountable. See [FOUNDERS_ROLE.md](FOUNDERS_ROLE.md) for the full description of the founder's responsibilities across all phases.
+
 First Light is irreversible. Once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
 
 ## Why This Is Feasible Now
