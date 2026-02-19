@@ -97,6 +97,13 @@ from genesis.identity.session import SessionManager, SessionState
 from genesis.identity.quorum_verifier import QuorumVerifier
 from genesis.trust.engine import TrustEngine
 from genesis.compensation.gcf import GCFTracker
+from genesis.compensation.gcf_disbursement import (
+    DisbursementCategory,
+    DisbursementEngine,
+    DisbursementProposal,
+    DisbursementStatus,
+    DisbursementVoteChoice,
+)
 from genesis.compensation.escrow import EscrowManager
 from genesis.compliance.screener import ComplianceScreener, ComplianceVerdict
 from genesis.compliance.penalties import (
@@ -213,6 +220,11 @@ class GenesisService:
 
         # Genesis Common Fund tracker — activates at First Light
         self._gcf_tracker = GCFTracker()
+
+        # GCF Disbursement governance — proposals, voting, execution (Phase E-5)
+        self._disbursement_engine = DisbursementEngine(
+            resolver.gcf_disbursement_config()
+        )
 
         # Escrow manager — manages escrow lifecycle for mission payments
         self._escrow_manager = EscrowManager()
@@ -6752,6 +6764,173 @@ class GenesisService:
     def get_workflow(self, workflow_id: str) -> Optional[Any]:
         """Retrieve a workflow state by ID."""
         return self._workflow_orchestrator.get_workflow(workflow_id)
+
+    # ------------------------------------------------------------------
+    # GCF Disbursement Governance (Phase E-5)
+    # ------------------------------------------------------------------
+
+    def propose_gcf_disbursement(
+        self,
+        proposer_id: str,
+        title: str,
+        description: str,
+        requested_amount: "Decimal",
+        recipient_description: str,
+        category: str,
+        measurable_deliverables: list[str],
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Propose a GCF disbursement.
+
+        Validates:
+        1. Proposer is an ACTIVE human with trust >= min_proposer_trust.
+        2. Compliance screening passes (same 17 categories as missions).
+        3. Requested amount does not exceed GCF balance.
+        4. Compute infrastructure proposals respect GCF_COMPUTE_CEILING.
+        5. At least one measurable deliverable.
+
+        Design test #54: Machine actors cannot propose disbursements.
+        Design test #55: Compute ceiling is enforced.
+        Design test #56: Compliance screening cannot be bypassed.
+        """
+        from decimal import Decimal
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # --- Actor validation ---
+        entry = self._roster.get(proposer_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=["Proposer not found"])
+        if entry.status != ActorStatus.ACTIVE:
+            return ServiceResult(
+                success=False,
+                errors=[f"Proposer status is {entry.status.value}, must be ACTIVE"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can propose GCF disbursements"],
+            )
+
+        # Trust gate — proposers need tau_prop level trust
+        trust_rec = self._trust_records.get(proposer_id)
+        min_trust = self._resolver.gcf_disbursement_config().get(
+            "min_proposer_trust", 0.75
+        )
+        if trust_rec is None or trust_rec.score < min_trust:
+            actual = trust_rec.score if trust_rec else 0.0
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Proposer trust {actual:.3f} below minimum {min_trust:.3f}"
+                ],
+            )
+
+        # --- Category validation ---
+        try:
+            cat_enum = DisbursementCategory(category)
+        except ValueError:
+            valid = [c.value for c in DisbursementCategory]
+            return ServiceResult(
+                success=False,
+                errors=[f"Invalid category '{category}'. Valid: {valid}"],
+            )
+
+        # --- Compliance screening ---
+        compliance = self._compliance_screener.screen_gcf_proposal(
+            title=title,
+            description=description,
+            recipient_description=recipient_description,
+            deliverables=measurable_deliverables,
+            now=now,
+        )
+        if compliance.verdict == ComplianceVerdict.REJECTED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Proposal rejected by compliance: {compliance.reason}"],
+            )
+
+        # --- Balance check ---
+        gcf_state = self._gcf_tracker.get_state()
+        if not gcf_state.activated:
+            return ServiceResult(
+                success=False,
+                errors=["GCF not yet activated — requires First Light"],
+            )
+        if requested_amount > gcf_state.balance:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Requested amount {requested_amount} exceeds GCF balance "
+                    f"{gcf_state.balance}"
+                ],
+            )
+
+        # --- Compute ceiling check ---
+        if cat_enum == DisbursementCategory.COMPUTE_INFRASTRUCTURE:
+            ceiling_str = self._resolver._params.get("gcf_compute", {}).get(
+                "GCF_COMPUTE_CEILING", "0.25"
+            )
+            ceiling = Decimal(ceiling_str)
+            max_compute = gcf_state.balance * ceiling
+            if requested_amount > max_compute:
+                return ServiceResult(
+                    success=False,
+                    errors=[
+                        f"Compute request {requested_amount} exceeds ceiling "
+                        f"{ceiling} × balance {gcf_state.balance} = {max_compute}"
+                    ],
+                )
+
+        # --- Create proposal ---
+        try:
+            proposal = self._disbursement_engine.create_proposal(
+                proposer_id=proposer_id,
+                title=title,
+                description=description,
+                requested_amount=requested_amount,
+                recipient_description=recipient_description,
+                category=cat_enum,
+                measurable_deliverables=measurable_deliverables,
+                compliance_verdict=compliance.verdict.value,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # --- Emit event ---
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.GCF_DISBURSEMENT_PROPOSED,
+                    actor_id=proposer_id,
+                    payload={
+                        "proposal_id": proposal.proposal_id,
+                        "title": proposal.title,
+                        "requested_amount": str(proposal.requested_amount),
+                        "category": proposal.category.value,
+                        "recipient_description": proposal.recipient_description,
+                        "deliverables_count": len(proposal.measurable_deliverables),
+                        "compliance_verdict": compliance.verdict.value,
+                        "gcf_balance_at_proposal": str(gcf_state.balance),
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass  # Best-effort for audit trail
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal.proposal_id,
+                "status": proposal.status.value,
+                "category": proposal.category.value,
+                "requested_amount": str(proposal.requested_amount),
+            },
+        )
 
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}

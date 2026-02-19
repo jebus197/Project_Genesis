@@ -775,6 +775,26 @@ class PolicyResolver:
         config = self._policy.get("workflow", {})
         return {**defaults, **config}
 
+    def gcf_disbursement_config(self) -> dict[str, Any]:
+        """Return GCF disbursement governance configuration.
+
+        Keys: voting_window_days, quorum_fraction, min_proposer_trust,
+              min_voter_trust, compute_ceiling, human_only_voting,
+              min_deliverables, max_proposals_per_proposer_active.
+        """
+        defaults: dict[str, Any] = {
+            "voting_window_days": 14,
+            "quorum_fraction": 0.30,
+            "min_proposer_trust": 0.75,
+            "min_voter_trust": 0.60,
+            "compute_ceiling": 0.25,
+            "human_only_voting": True,
+            "min_deliverables": 1,
+            "max_proposals_per_proposer_active": 3,
+        }
+        config = self._policy.get("gcf_disbursement", {})
+        return {**defaults, **config}
+
     def poc_mode(self) -> dict[str, Any]:
         """Return PoC mode configuration.
 

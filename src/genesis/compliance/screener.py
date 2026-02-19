@@ -213,6 +213,35 @@ class ComplianceScreener:
             screened_utc=now,
         )
 
+    def screen_gcf_proposal(
+        self,
+        title: str,
+        description: str,
+        recipient_description: str,
+        deliverables: list[str],
+        now: Optional[datetime] = None,
+    ) -> ComplianceResult:
+        """Screen a GCF disbursement proposal against prohibited categories.
+
+        Same logic as screen_mission but combines all proposal text fields:
+        title + description + recipient_description + deliverables.
+
+        Design test #56: Can a disbursement proposal bypass compliance screening?
+        If yes, reject design.
+        """
+        combined_text = " ".join([
+            title,
+            description,
+            recipient_description,
+            " ".join(deliverables),
+        ])
+        return self.screen_mission(
+            title=combined_text,
+            description="",
+            tags=None,
+            now=now,
+        )
+
     def file_compliance_complaint(
         self,
         mission_id: str,

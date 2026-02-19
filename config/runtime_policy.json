@@ -200,6 +200,16 @@
     "require_escrow_before_publish": true,
     "auto_start_bids_on_publish": true
   },
+  "gcf_disbursement": {
+    "voting_window_days": 14,
+    "quorum_fraction": 0.30,
+    "min_proposer_trust": 0.75,
+    "min_voter_trust": 0.60,
+    "compute_ceiling": 0.25,
+    "human_only_voting": true,
+    "min_deliverables": 1,
+    "max_proposals_per_proposer_active": 3
+  },
   "poc_mode": {
     "active": true,
     "label": "Proof of Concept",

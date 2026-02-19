@@ -37,6 +37,21 @@ class GCFContribution:
     contributed_utc: datetime
 
 
+@dataclass(frozen=True)
+class GCFDisbursement:
+    """A single disbursement from the Genesis Common Fund.
+
+    Records when the commons spends money — proposal-linked, timestamped,
+    categorised. Disbursements are immutable once recorded.
+    """
+    disbursement_id: str
+    proposal_id: str
+    amount: Decimal
+    category: str
+    recipient_description: str
+    disbursed_utc: datetime
+
+
 @dataclass
 class GCFState:
     """Observable state of the Genesis Common Fund.
@@ -46,7 +61,9 @@ class GCFState:
     """
     balance: Decimal = Decimal("0")
     total_contributed: Decimal = Decimal("0")
+    total_disbursed: Decimal = Decimal("0")
     contribution_count: int = 0
+    disbursement_count: int = 0
     activated: bool = False
     activated_utc: Optional[datetime] = None
 
@@ -78,6 +95,7 @@ class GCFTracker:
     def __init__(self) -> None:
         self._state = GCFState()
         self._contributions: list[GCFContribution] = []
+        self._disbursements: list[GCFDisbursement] = []
 
     @property
     def is_active(self) -> bool:
@@ -142,6 +160,91 @@ class GCFTracker:
         """
         return self._state
 
+    def record_disbursement(
+        self,
+        disbursement_id: str,
+        proposal_id: str,
+        amount: Decimal,
+        category: str,
+        recipient_description: str,
+        now: Optional[datetime] = None,
+    ) -> GCFDisbursement:
+        """Record a disbursement from the GCF.
+
+        Reduces the fund balance. The GCF must be activated and the
+        amount must be positive and not exceed the current balance.
+
+        Args:
+            disbursement_id: Unique identifier for this disbursement.
+            proposal_id: The approved proposal authorising this spend.
+            amount: The disbursement amount.
+            category: Disbursement category (e.g. COMPUTE_INFRASTRUCTURE).
+            recipient_description: Human-readable description of recipient.
+            now: Timestamp (defaults to UTC now).
+
+        Returns:
+            The recorded GCFDisbursement.
+
+        Raises:
+            ValueError: If GCF is not activated, amount invalid, or
+                       amount exceeds balance.
+        """
+        if not self._state.activated:
+            raise ValueError("GCF not yet activated — disbursements require First Light")
+        if amount <= Decimal("0"):
+            raise ValueError(f"Disbursement amount must be positive, got {amount}")
+        if amount > self._state.balance:
+            raise ValueError(
+                f"Disbursement amount {amount} exceeds GCF balance {self._state.balance}"
+            )
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        disbursement = GCFDisbursement(
+            disbursement_id=disbursement_id,
+            proposal_id=proposal_id,
+            amount=amount,
+            category=category,
+            recipient_description=recipient_description,
+            disbursed_utc=now,
+        )
+        self._disbursements.append(disbursement)
+        self._state.balance -= amount
+        self._state.total_disbursed += amount
+        self._state.disbursement_count += 1
+        return disbursement
+
+    def credit_refund(
+        self,
+        amount: Decimal,
+        reason: str,
+    ) -> None:
+        """Credit a refund back to the GCF balance.
+
+        Used when a GCF-funded listing is cancelled — the escrowed funds
+        return to the commons. This is NOT a contribution (does not
+        increment total_contributed or contribution_count). It is a
+        reversal of a prior disbursement.
+
+        Args:
+            amount: The refund amount.
+            reason: Human-readable reason for the refund.
+
+        Raises:
+            ValueError: If GCF is not activated or amount is not positive.
+        """
+        if not self._state.activated:
+            raise ValueError("GCF not yet activated — refunds require First Light")
+        if amount <= Decimal("0"):
+            raise ValueError(f"Refund amount must be positive, got {amount}")
+        self._state.balance += amount
+        # Note: total_disbursed is NOT decremented — the disbursement happened,
+        # the refund is a separate event. Net spend = total_disbursed - refunds.
+
     def get_contributions(self) -> list[GCFContribution]:
         """Return all recorded contributions (for audit)."""
         return list(self._contributions)
+
+    def get_disbursements(self) -> list[GCFDisbursement]:
+        """Return all recorded disbursements (for audit)."""
+        return list(self._disbursements)

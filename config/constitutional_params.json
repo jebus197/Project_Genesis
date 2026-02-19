@@ -173,6 +173,9 @@
     "calibration_min_history": 5,
     "calibration_window_size": 20
   },
+  "gcf_compute": {
+    "GCF_COMPUTE_CEILING": "0.25"
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,

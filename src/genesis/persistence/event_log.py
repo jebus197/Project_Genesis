@@ -124,6 +124,13 @@ class EventKind(str, enum.Enum):
     WORKFLOW_CANCELLED = "workflow_cancelled"
     PAYMENT_DISPUTE_FILED = "payment_dispute_filed"
     DISPUTE_RESOLVED = "dispute_resolved"
+    # GCF Disbursement events (Phase E-5)
+    GCF_DISBURSEMENT_PROPOSED = "gcf_disbursement_proposed"
+    GCF_DISBURSEMENT_VOTE_CAST = "gcf_disbursement_vote_cast"
+    GCF_DISBURSEMENT_APPROVED = "gcf_disbursement_approved"
+    GCF_DISBURSEMENT_REJECTED = "gcf_disbursement_rejected"
+    GCF_DISBURSEMENT_EXECUTED = "gcf_disbursement_executed"
+    GCF_FUNDED_LISTING_CREATED = "gcf_funded_listing_created"
 
 
 @dataclass(frozen=True)
