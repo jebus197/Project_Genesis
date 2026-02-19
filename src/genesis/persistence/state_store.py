@@ -41,6 +41,7 @@ from genesis.models.market import (
     BidState,
     ListingState,
     MarketListing,
+    WorkVisibility,
 )
 from genesis.models.skill import (
     ActorSkillProfile,
@@ -599,6 +600,12 @@ class StateStore:
                 "mission_reward": str(listing.mission_reward) if listing.mission_reward is not None else None,
                 "escrow_id": listing.escrow_id,
                 "deadline_days": listing.deadline_days,
+                "visibility": listing.visibility.value,
+                "visibility_justification": listing.visibility_justification,
+                "visibility_expiry_utc": (
+                    listing.visibility_expiry_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if listing.visibility_expiry_utc else None
+                ),
             }
 
         bid_entries: dict[str, list[dict[str, Any]]] = {}
@@ -675,6 +682,12 @@ class StateStore:
                 mission_reward=Decimal(data["mission_reward"]) if data.get("mission_reward") else None,
                 escrow_id=data.get("escrow_id"),
                 deadline_days=data.get("deadline_days"),
+                visibility=WorkVisibility(data.get("visibility", "public")),
+                visibility_justification=data.get("visibility_justification"),
+                visibility_expiry_utc=(
+                    datetime.strptime(data["visibility_expiry_utc"], "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+                    if data.get("visibility_expiry_utc") else None
+                ),
             )
 
         bids: dict[str, list[Bid]] = {}
@@ -1115,6 +1128,12 @@ class StateStore:
                     wf.completed_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
                     if wf.completed_utc else None
                 ),
+                "visibility": wf.visibility,
+                "visibility_justification": wf.visibility_justification,
+                "visibility_expiry_utc": (
+                    wf.visibility_expiry_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if wf.visibility_expiry_utc else None
+                ),
             }
         self._state["workflows"] = entries
         self._save()
@@ -1149,6 +1168,9 @@ class StateStore:
                 created_utc=_parse_ts("created_utc"),
                 cancelled_utc=_parse_ts("cancelled_utc"),
                 completed_utc=_parse_ts("completed_utc"),
+                visibility=data.get("visibility", "public"),
+                visibility_justification=data.get("visibility_justification"),
+                visibility_expiry_utc=_parse_ts("visibility_expiry_utc"),
             )
         return workflows
 

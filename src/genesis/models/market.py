@@ -38,6 +38,20 @@ class BidState(str, enum.Enum):
     WITHDRAWN = "withdrawn"
 
 
+class WorkVisibility(str, enum.Enum):
+    """Visibility of work products — Open Work Principle.
+
+    Constitutional default is PUBLIC.  METADATA_ONLY restricts
+    deliverable substance only — structural metadata (creator,
+    worker, status, trust consequences, compliance verdict) is
+    ALWAYS visible regardless of this setting.
+
+    There is no PRIVATE value.  Genesis has no concept of hidden work.
+    """
+    PUBLIC = "public"
+    METADATA_ONLY = "metadata_only"
+
+
 @dataclass
 class MarketListing:
     """A work listing posted by a mission creator.
@@ -60,6 +74,10 @@ class MarketListing:
     mission_reward: Optional[Decimal] = None
     escrow_id: Optional[str] = None
     deadline_days: Optional[int] = None
+    # Open Work Principle — constitutional default is PUBLIC
+    visibility: WorkVisibility = WorkVisibility.PUBLIC
+    visibility_justification: Optional[str] = None
+    visibility_expiry_utc: Optional[datetime] = None
     # Optional metadata for search and filtering
     domain_tags: list[str] = field(default_factory=list)
     preferences: dict[str, Any] = field(default_factory=dict)

@@ -744,6 +744,27 @@ def check() -> int:
             )
 
     # ------------------------------------------------------------------
+    # Open Work Principle visibility invariants
+    # ------------------------------------------------------------------
+    default_vis = wf.get("default_visibility", "")
+    if default_vis != "public":
+        errors.append(
+            f"workflow.default_visibility must be 'public' (constitutional default), "
+            f"got '{default_vis}'"
+        )
+    vis_expiry = wf.get("default_visibility_expiry_days", 0)
+    if vis_expiry < 1:
+        errors.append(
+            f"workflow.default_visibility_expiry_days must be >= 1, got {vis_expiry}"
+        )
+    max_vis_expiry = wf.get("max_visibility_expiry_days", 0)
+    if max_vis_expiry < vis_expiry:
+        errors.append(
+            f"workflow.max_visibility_expiry_days ({max_vis_expiry}) must be >= "
+            f"default_visibility_expiry_days ({vis_expiry})"
+        )
+
+    # ------------------------------------------------------------------
     # Constitutional Amendment invariants (Phase E-6)
     # ------------------------------------------------------------------
     entrenched = params.get("entrenched_provisions", {})

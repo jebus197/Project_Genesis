@@ -198,7 +198,10 @@
     "default_deadline_days": 30,
     "require_compliance_screening": true,
     "require_escrow_before_publish": true,
-    "auto_start_bids_on_publish": true
+    "auto_start_bids_on_publish": true,
+    "default_visibility": "public",
+    "default_visibility_expiry_days": 365,
+    "max_visibility_expiry_days": 1825
   },
   "gcf_disbursement": {
     "voting_window_days": 14,

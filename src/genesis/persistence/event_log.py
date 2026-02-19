@@ -145,6 +145,9 @@ class EventKind(str, enum.Enum):
     G0_DECISION_RATIFIED = "g0_decision_ratified"
     G0_DECISION_LAPSED = "g0_decision_lapsed"
     G0_DECISION_REVERSED = "g0_decision_reversed"
+    # Open Work Principle events
+    VISIBILITY_RESTRICTED = "visibility_restricted"
+    VISIBILITY_RESTRICTION_LAPSED = "visibility_restriction_lapsed"
 
 
 @dataclass(frozen=True)

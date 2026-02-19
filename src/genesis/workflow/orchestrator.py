@@ -62,6 +62,10 @@ class WorkflowState:
     created_utc: Optional[datetime] = None
     cancelled_utc: Optional[datetime] = None
     completed_utc: Optional[datetime] = None
+    # Open Work Principle — constitutional default is "public"
+    visibility: str = "public"
+    visibility_justification: Optional[str] = None
+    visibility_expiry_utc: Optional[datetime] = None
 
 
 class WorkflowOrchestrator:

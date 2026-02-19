@@ -68,6 +68,7 @@ from genesis.models.market import (
     BidState,
     ListingState,
     MarketListing,
+    WorkVisibility,
 )
 from genesis.models.trust import ActorKind, TrustDelta, TrustRecord
 from genesis.leave.engine import LeaveAdjudicationEngine
@@ -6252,6 +6253,9 @@ class GenesisService:
         skill_requirements: list[Any] | None = None,
         domain_tags: list[str] | None = None,
         deadline_days: int | None = None,
+        visibility: WorkVisibility = WorkVisibility.PUBLIC,
+        visibility_justification: str | None = None,
+        visibility_expiry_days: int | None = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
         """Create a funded listing: compliance screen → escrow → listing.
@@ -6297,6 +6301,14 @@ class GenesisService:
         else:
             compliance_verdict = "skipped"
 
+        # Open Work Principle: validate visibility
+        if visibility == WorkVisibility.METADATA_ONLY:
+            if not visibility_justification or not visibility_justification.strip():
+                return ServiceResult(
+                    success=False,
+                    errors=["Deliverable restriction requires justification (Open Work Principle)"],
+                )
+
         # Step 2: Preflight — check listing doesn't already exist (before creating escrow)
         if listing_id in self._listings:
             return ServiceResult(
@@ -6335,6 +6347,12 @@ class GenesisService:
         listing.mission_reward = reward
         listing.escrow_id = escrow_record.escrow_id
         listing.deadline_days = deadline_days or wf_cfg.get("default_deadline_days", 30)
+        # Open Work Principle — set visibility on listing
+        listing.visibility = visibility
+        listing.visibility_justification = visibility_justification
+        if visibility == WorkVisibility.METADATA_ONLY:
+            expiry = visibility_expiry_days or wf_cfg.get("default_visibility_expiry_days", 365)
+            listing.visibility_expiry_utc = now + timedelta(days=expiry)
 
         # Step 5: Create workflow state
         wf = self._workflow_orchestrator.create_workflow(
@@ -6346,10 +6364,27 @@ class GenesisService:
         wf.mission_class = mission_class.value
         wf.domain_type = domain_type.value
         wf.escrow_id = escrow_record.escrow_id
+        # Open Work Principle — mirror visibility on workflow
+        wf.visibility = visibility.value
+        wf.visibility_justification = visibility_justification
+        wf.visibility_expiry_utc = listing.visibility_expiry_utc
         self._workflow_orchestrator.record_compliance_screening(
             wf.workflow_id, compliance_verdict, now,
         )
         self._workflows[wf.workflow_id] = wf
+
+        # Emit visibility restriction event if applicable
+        if visibility == WorkVisibility.METADATA_ONLY:
+            self._record_actor_lifecycle_event(
+                creator_id,
+                EventKind.VISIBILITY_RESTRICTED,
+                {
+                    "listing_id": listing_id,
+                    "workflow_id": wf.workflow_id,
+                    "justification": visibility_justification,
+                    "expiry_utc": listing.visibility_expiry_utc.strftime("%Y-%m-%dT%H:%M:%SZ"),
+                },
+            )
 
         # Emit event
         self._record_actor_lifecycle_event(
@@ -6827,6 +6862,60 @@ class GenesisService:
     def get_workflow(self, workflow_id: str) -> Optional[Any]:
         """Retrieve a workflow state by ID."""
         return self._workflow_orchestrator.get_workflow(workflow_id)
+
+    def lapse_expired_visibility_restrictions(
+        self,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Sweep workflows and lapse expired METADATA_ONLY restrictions.
+
+        Constitutional requirement: deliverable restrictions are time-limited
+        and automatically lapse when their expiry passes. This method should
+        be called periodically (e.g. on a timer or at service startup).
+
+        Returns the list of workflow IDs whose restrictions were lapsed.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        lapsed_ids: list[str] = []
+
+        for wf_id, wf in self._workflow_orchestrator._workflows.items():
+            if (
+                wf.visibility == "metadata_only"
+                and wf.visibility_expiry_utc is not None
+                and wf.visibility_expiry_utc <= now
+            ):
+                # Lapse the restriction — restore to public
+                wf.visibility = "public"
+                wf.visibility_justification = None
+                wf.visibility_expiry_utc = None
+
+                # Also lapse the listing if it exists
+                listing = self._listings.get(wf.listing_id)
+                if listing is not None:
+                    listing.visibility = WorkVisibility.PUBLIC
+                    listing.visibility_justification = None
+                    listing.visibility_expiry_utc = None
+
+                # Emit lapse event
+                self._record_actor_lifecycle_event(
+                    wf.creator_id,
+                    EventKind.VISIBILITY_RESTRICTION_LAPSED,
+                    {
+                        "workflow_id": wf_id,
+                        "listing_id": wf.listing_id,
+                    },
+                )
+                lapsed_ids.append(wf_id)
+
+        if lapsed_ids:
+            self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={"lapsed_workflow_ids": lapsed_ids, "count": len(lapsed_ids)},
+        )
 
     # ------------------------------------------------------------------
     # GCF Disbursement Governance (Phase E-5)
