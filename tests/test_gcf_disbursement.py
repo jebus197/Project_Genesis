@@ -1009,6 +1009,136 @@ class TestDisbursementExecution:
 
 
 # ======================================================================
+# GCF-funded listings (public good compute routing)
+# ======================================================================
+
+
+class TestGCFFundedListing:
+    """Tests for GCF as virtual actor funding listings."""
+
+    def _approve_proposal(self, service: GenesisService) -> str:
+        """Helper: full proposal lifecycle → APPROVED."""
+        _register_human(service, "proposer1", 0.80)
+        _register_human(service, "voter1", 0.75)
+        _register_human(service, "voter2", 0.70)
+        _register_human(service, "voter3", 0.65)
+        _activate_gcf_and_fund(service, Decimal("1000"))
+        service.open_epoch()
+
+        result = service.propose_gcf_disbursement(
+            proposer_id="proposer1",
+            title="Fund compute node",
+            description="Deploy shared GPU",
+            requested_amount=Decimal("200"),
+            recipient_description="Compute co-op",
+            category="compute_infrastructure",
+            measurable_deliverables=["Deploy node"],
+            now=_now(),
+        )
+        pid = result.data["proposal_id"]
+        service.open_disbursement_voting(pid, now=_now())
+        for vid in ["voter1", "voter2", "voter3"]:
+            service.vote_on_disbursement(pid, vid, "approve", "Yes", _now())
+        service.close_disbursement_voting(pid, _now())
+        return pid
+
+    def test_gcf_funded_listing_happy_path(self, service: GenesisService) -> None:
+        pid = self._approve_proposal(service)
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L001",
+            title="Deploy community GPU node",
+            description="Shared compute for commons",
+            now=_now(),
+        )
+        assert result.success is True
+        assert result.data["listing_id"] == "GCF-L001"
+        assert result.data["amount"] == "200"
+        assert "workflow_id" in result.data
+        assert "escrow_id" in result.data
+
+    def test_gcf_as_staker(self, service: GenesisService) -> None:
+        """GCF-funded escrow has staker_id='gcf'."""
+        pid = self._approve_proposal(service)
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L002",
+            title="Compute deployment",
+            description="Shared resources",
+            now=_now(),
+        )
+        assert result.success
+        escrow_id = result.data["escrow_id"]
+        escrow = service._escrow_manager.get_escrow(escrow_id)
+        assert escrow.staker_id == "gcf"
+
+    def test_uses_existing_workflow(self, service: GenesisService) -> None:
+        """GCF-funded listing creates a real workflow."""
+        pid = self._approve_proposal(service)
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L003",
+            title="Compute job",
+            description="Process data",
+            now=_now(),
+        )
+        wf_id = result.data["workflow_id"]
+        wf = service.get_workflow(wf_id)
+        assert wf is not None
+        assert wf.creator_id == "gcf"
+
+    def test_escrow_created(self, service: GenesisService) -> None:
+        """Escrow is created with the proposal's requested_amount."""
+        pid = self._approve_proposal(service)
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L004",
+            title="GPU cluster",
+            description="Deploy GPUs",
+            now=_now(),
+        )
+        escrow_id = result.data["escrow_id"]
+        escrow = service._escrow_manager.get_escrow(escrow_id)
+        assert escrow.amount == Decimal("200")
+
+    def test_cancel_returns_funds_to_gcf(self, service: GenesisService) -> None:
+        """Cancelling a GCF-funded listing returns funds to the commons."""
+        pid = self._approve_proposal(service)
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L005",
+            title="Cancellable task",
+            description="Will be cancelled",
+            now=_now(),
+        )
+        wf_id = result.data["workflow_id"]
+        gcf_balance_before = service._gcf_tracker.get_state().balance
+
+        cancel_result = service.cancel_gcf_funded_listing(
+            proposal_id=pid, workflow_id=wf_id,
+            reason="No longer needed", now=_now(),
+        )
+        assert cancel_result.success is True
+        gcf_balance_after = service._gcf_tracker.get_state().balance
+        assert gcf_balance_after == gcf_balance_before + Decimal("200")
+
+    def test_disbursement_reduces_gcf_balance(self, service: GenesisService) -> None:
+        """Creating a GCF-funded listing reduces GCF balance."""
+        pid = self._approve_proposal(service)
+        balance_before = service._gcf_tracker.get_state().balance
+        result = service.create_gcf_funded_listing(
+            proposal_id=pid,
+            listing_id="GCF-L006",
+            title="Compute task",
+            description="Process",
+            now=_now(),
+        )
+        assert result.success
+        balance_after = service._gcf_tracker.get_state().balance
+        assert balance_after == balance_before - Decimal("200")
+
+
+# ======================================================================
 # EventKind completeness
 # ======================================================================
 

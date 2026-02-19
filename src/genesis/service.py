@@ -2271,16 +2271,16 @@ class GenesisService:
                 errors=[f"Listing already exists: {listing_id}"],
             )
 
-        # Verify creator is registered
+        # Verify creator is registered ("gcf" is a virtual commons actor)
         creator = self._roster.get(creator_id)
-        if creator is None:
+        if creator is None and creator_id != "gcf":
             return ServiceResult(
                 success=False,
                 errors=[f"Creator not found: {creator_id}"],
             )
 
         # Compliance: suspended/decommissioned actors cannot post listings
-        if creator.status in (
+        if creator is not None and creator.status in (
             ActorStatus.SUSPENDED,
             ActorStatus.PERMANENTLY_DECOMMISSIONED,
         ):
@@ -7223,6 +7223,193 @@ class GenesisService:
                 "amount": str(proposal.requested_amount),
                 "gcf_balance_after": str(self._gcf_tracker.get_state().balance),
                 "status": proposal.status.value,
+            },
+        )
+
+    def create_gcf_funded_listing(
+        self,
+        proposal_id: str,
+        listing_id: str,
+        title: str,
+        description: str,
+        mission_class: MissionClass = MissionClass.DOCUMENTATION_UPDATE,
+        domain_type: DomainType = DomainType.OBJECTIVE,
+        skill_requirements: list[Any] | None = None,
+        domain_tags: list[str] | None = None,
+        deadline_days: int | None = None,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Create a GCF-funded listing from an approved disbursement proposal.
+
+        Executes the disbursement (reduces GCF balance), creates escrow
+        with staker_id="gcf", then delegates to create_funded_listing()
+        workflow. GCF is a virtual actor — not in the roster.
+
+        Flow:
+        1. Execute disbursement (APPROVED → DISBURSED, GCF balance reduced).
+        2. Create escrow with staker_id="gcf".
+        3. Create listing + workflow via existing infrastructure.
+        4. Link proposal to workflow for audit trail.
+        5. Emit GCF_FUNDED_LISTING_CREATED event.
+        """
+        from decimal import Decimal as D
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Get proposal
+        proposal = self._disbursement_engine.get_proposal(proposal_id)
+        if proposal is None:
+            return ServiceResult(success=False, errors=["Proposal not found"])
+        if proposal.status != DisbursementStatus.APPROVED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Proposal status is {proposal.status.value}, must be APPROVED"],
+            )
+
+        # Execute disbursement (validates balance + records outflow)
+        exec_result = self.execute_disbursement(proposal_id, now=now)
+        if not exec_result.success:
+            return exec_result
+
+        disbursement_id = exec_result.data["disbursement_id"]
+        reward = proposal.requested_amount
+
+        # Preflight — check listing doesn't already exist
+        if listing_id in self._listings:
+            return ServiceResult(
+                success=False,
+                errors=[f"Listing already exists: {listing_id}"],
+            )
+
+        wf_cfg = self._resolver.workflow_config()
+
+        # Create escrow with GCF as virtual staker (no employer creator fee)
+        escrow_record = self._escrow_manager.create_escrow(
+            mission_id=listing_id,
+            staker_id="gcf",
+            amount=reward,
+            now=now,
+        )
+
+        # Create listing — GCF as creator (bypass roster validation)
+        listing_result = self.create_listing(
+            listing_id=listing_id,
+            title=title,
+            description=description,
+            creator_id="gcf",
+            skill_requirements=skill_requirements,
+            domain_tags=domain_tags,
+        )
+        if not listing_result.success:
+            return listing_result
+
+        # Link escrow and reward to listing
+        listing = self._listings[listing_id]
+        listing.mission_reward = reward
+        listing.escrow_id = escrow_record.escrow_id
+        listing.deadline_days = deadline_days or wf_cfg.get("default_deadline_days", 30)
+
+        # Create workflow state
+        wf = self._workflow_orchestrator.create_workflow(
+            listing_id=listing_id,
+            creator_id="gcf",
+            mission_reward=reward,
+            now=now,
+        )
+        wf.mission_class = mission_class.value
+        wf.domain_type = domain_type.value
+        wf.escrow_id = escrow_record.escrow_id
+        self._workflow_orchestrator.record_compliance_screening(
+            wf.workflow_id, "clear", now,  # Already compliance-screened at proposal
+        )
+        self._workflows[wf.workflow_id] = wf
+
+        # Link proposal to workflow
+        proposal.listing_id = listing_id
+        proposal.workflow_id = wf.workflow_id
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.GCF_FUNDED_LISTING_CREATED,
+                    actor_id="gcf",
+                    payload={
+                        "proposal_id": proposal_id,
+                        "listing_id": listing_id,
+                        "workflow_id": wf.workflow_id,
+                        "disbursement_id": disbursement_id,
+                        "amount": str(reward),
+                        "category": proposal.category.value,
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "listing_id": listing_id,
+                "workflow_id": wf.workflow_id,
+                "disbursement_id": disbursement_id,
+                "escrow_id": escrow_record.escrow_id,
+                "amount": str(reward),
+            },
+        )
+
+    def cancel_gcf_funded_listing(
+        self,
+        proposal_id: str,
+        workflow_id: str,
+        reason: str = "",
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cancel a GCF-funded listing and return funds to the commons.
+
+        Cancels the workflow (refunds escrow) and credits the refund
+        back to the GCF via credit_refund().
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        proposal = self._disbursement_engine.get_proposal(proposal_id)
+        if proposal is None:
+            return ServiceResult(success=False, errors=["Proposal not found"])
+
+        wf = self._workflow_orchestrator.get_workflow(workflow_id)
+        if wf is None:
+            return ServiceResult(
+                success=False, errors=[f"Workflow not found: {workflow_id}"]
+            )
+
+        # Cancel the workflow (this handles listing cancellation + escrow refund)
+        cancel_result = self.cancel_workflow(workflow_id, reason=reason, now=now)
+        if not cancel_result.success:
+            return cancel_result
+
+        # Credit refund back to GCF
+        try:
+            self._gcf_tracker.credit_refund(
+                proposal.requested_amount,
+                f"GCF-funded listing cancelled: {reason}",
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "workflow_id": workflow_id,
+                "refunded_amount": str(proposal.requested_amount),
+                "gcf_balance_after": str(self._gcf_tracker.get_state().balance),
             },
         )
 
