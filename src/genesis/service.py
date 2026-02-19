@@ -6932,6 +6932,207 @@ class GenesisService:
             },
         )
 
+    def open_disbursement_voting(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Open voting on a disbursement proposal.
+
+        Counts eligible human voters (ACTIVE, trust >= tau_vote)
+        and transitions proposal from PROPOSED to VOTING.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Count eligible voters: ACTIVE humans with trust >= min_voter_trust
+        min_voter_trust = self._resolver.gcf_disbursement_config().get(
+            "min_voter_trust", 0.60
+        )
+        eligible_count = 0
+        for entry in self._roster.all_actors():
+            if (
+                entry.actor_kind == ActorKind.HUMAN
+                and entry.status == ActorStatus.ACTIVE
+                and entry.actor_id in self._trust_records
+                and self._trust_records[entry.actor_id].score >= min_voter_trust
+            ):
+                eligible_count += 1
+
+        try:
+            proposal = self._disbursement_engine.open_voting(
+                proposal_id, eligible_count, now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal.proposal_id,
+                "status": proposal.status.value,
+                "eligible_voter_count": eligible_count,
+                "voting_closes_utc": (
+                    proposal.voting_closes_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+                    if proposal.voting_closes_utc else None
+                ),
+            },
+        )
+
+    def vote_on_disbursement(
+        self,
+        proposal_id: str,
+        voter_id: str,
+        choice: str,
+        attestation: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cast a trust-weighted vote on a disbursement proposal.
+
+        Validates voter is ACTIVE human with trust >= tau_vote.
+        Design test #54: machines cannot vote (MACHINE_VOTING_EXCLUSION).
+        """
+        from decimal import Decimal as D
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate voter exists and is active
+        entry = self._roster.get(voter_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=["Voter not found"])
+        if entry.status != ActorStatus.ACTIVE:
+            return ServiceResult(
+                success=False,
+                errors=[f"Voter status is {entry.status.value}, must be ACTIVE"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can vote on GCF disbursements"],
+            )
+
+        # Trust gate
+        trust_rec = self._trust_records.get(voter_id)
+        min_trust = self._resolver.gcf_disbursement_config().get(
+            "min_voter_trust", 0.60
+        )
+        if trust_rec is None or trust_rec.score < min_trust:
+            actual = trust_rec.score if trust_rec else 0.0
+            return ServiceResult(
+                success=False,
+                errors=[f"Voter trust {actual:.3f} below minimum {min_trust:.3f}"],
+            )
+
+        # Parse choice
+        try:
+            vote_choice = DisbursementVoteChoice(choice)
+        except ValueError:
+            return ServiceResult(
+                success=False,
+                errors=[f"Invalid vote choice '{choice}'. Use 'approve' or 'reject'"],
+            )
+
+        # Cast vote
+        try:
+            vote = self._disbursement_engine.cast_vote(
+                proposal_id=proposal_id,
+                voter_id=voter_id,
+                voter_trust=D(str(trust_rec.score)),
+                voter_kind=entry.actor_kind.value,
+                choice=vote_choice,
+                attestation=attestation,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.GCF_DISBURSEMENT_VOTE_CAST,
+                    actor_id=voter_id,
+                    payload={
+                        "proposal_id": proposal_id,
+                        "vote_id": vote.vote_id,
+                        "choice": vote.choice.value,
+                        "trust_weight": str(vote.trust_weight),
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        return ServiceResult(
+            success=True,
+            data={
+                "vote_id": vote.vote_id,
+                "proposal_id": proposal_id,
+                "choice": vote.choice.value,
+                "trust_weight": str(vote.trust_weight),
+            },
+        )
+
+    def close_disbursement_voting(
+        self,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Close voting on a disbursement proposal and determine outcome.
+
+        Checks quorum (30% of eligible voters) and trust-weighted
+        simple majority. Emits APPROVED or REJECTED event.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal, approved = self._disbursement_engine.close_voting(
+                proposal_id, now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit appropriate event
+        event_kind = (
+            EventKind.GCF_DISBURSEMENT_APPROVED if approved
+            else EventKind.GCF_DISBURSEMENT_REJECTED
+        )
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=event_kind,
+                    actor_id="system",
+                    payload={
+                        "proposal_id": proposal.proposal_id,
+                        "approved": approved,
+                        "votes_cast": proposal.votes_cast,
+                        "eligible_voter_count": proposal.eligible_voter_count,
+                        "total_trust_for": str(proposal.total_trust_for),
+                        "total_trust_against": str(proposal.total_trust_against),
+                    },
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal.proposal_id,
+                "status": proposal.status.value,
+                "approved": approved,
+                "votes_cast": proposal.votes_cast,
+                "total_trust_for": str(proposal.total_trust_for),
+                "total_trust_against": str(proposal.total_trust_against),
+            },
+        )
+
     def _count_missions_by_state(self) -> dict[str, int]:
         counts: dict[str, int] = {}
         for m in self._missions.values():
