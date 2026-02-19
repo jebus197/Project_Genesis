@@ -347,6 +347,20 @@ The mechanisms described above — escrow-first coordination, deterministic comm
 
 **Crime has no value.** Harmful work is screened out by 17 prohibited categories with three layers of enforcement. Trust decay removes access to the platform progressively and automatically. There is no secondary market for influence, no dark pool for trust, and no mechanism to monetise criminal behaviour within the system. Bad behaviour is its own punishment: trust decays, access shrinks, earning potential falls, and the system self-corrects without requiring external intervention. The penalties are not bolted on after the fact — they are consequences of the architecture itself.
 
+## Open Work — The Structural Defence
+
+All work conducted through Genesis is visible to all verified participants by default. Mission listings, deliverables, reviews, disputes, trust consequences — everything. This is not optional and not a feature that can be toggled. It is a structural property of the system.
+
+The trust engine, compliance screening, and three-tier justice system all catch bad actors after the fact. Openness prevents them from operating in the first place. If every participant can see every mission and every deliverable, organised misconduct cannot hide behind opacity. This is the open-source software and scientific peer review model extended to economic activity at a societal level.
+
+Consider an organisation composed entirely of bad actors — the historical equivalent of organised crime. On Genesis, every mission they post is visible to everyone. Every worker allocation is visible. Every deliverable is visible — or its withholding is visible and flagged. Every trust score change is auditable. Domain experts can challenge suspicious work in their field. The Assembly can discuss suspicious patterns without fear of identification. The bad actors' only option is to operate honestly — in which case Genesis has reformed them by structural incentive — or to leave, in which case Genesis has excluded them by structural transparency.
+
+Information exists at three tiers of visibility. First, the fact that work exists — always visible, no exceptions. Second, the structural metadata: who created it, who performed it, how it was reviewed, what trust consequences resulted, what the compliance screening found, how disputes were resolved — always visible, no exceptions. Third, the deliverable substance — the actual work product — open by default, with a narrow exception for genuinely sensitive content (medical data, security-critical infrastructure details). Even under exception, the first two tiers remain fully visible. Restrictions require justification at listing creation, carry time limits, and can be challenged through the existing adjudication mechanism. There are no secret missions.
+
+Once work is completed and public, it stays public. Openness cannot be revoked. There is no retroactive concealment mechanism.
+
+Genesis is structurally incompatible with concealment. If you have secrets to hide, Genesis is not for you. This is not a warning. It is a description of what Genesis is. Genesis is not attempting to recreate the organisational models of the past. It is designed to facilitate entirely new ones — and to allow other entirely novel structures to emerge.
+
 ## The Assembly and the Anti-Social Network
 
 Genesis includes a deliberative space called the Assembly — a town square where participants debate ideas, surface priorities, and develop proposals. It is not social media. There are no identities, no followers, no likes, no friendships. Content stands on its own merits. You cannot build influence because no one knows who you are.

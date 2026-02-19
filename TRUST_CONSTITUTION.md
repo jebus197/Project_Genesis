@@ -719,6 +719,37 @@ Genesis does not assume the permanent superiority of any class of intelligence o
 75. Can a machine petition for its own Tier 3 status without a human operator initiating the process? If yes, reject design.
 76. Does the constitution permanently foreclose the evolution of machine capabilities, or does it provide a structured pathway for community-consented expansion? If it forecloses, reject design.
 
+### The Open Work Principle
+
+**Why this principle exists.**
+
+Openness is Genesis's primary anti-corruption mechanism. The trust engine, compliance screening, three-tier justice system, and penalty escalation all catch bad actors after the fact. Transparency prevents them from operating in the first place. If every verified participant can see every mission, every deliverable, and every review, organised misconduct cannot hide behind opacity. This is the open-source software and scientific peer review model applied to economic activity at a societal level.
+
+Information in Genesis exists at three levels of visibility. First, the fact that work exists — always visible, no exceptions. Second, the structural metadata — who created it, who performed it, how it was reviewed, what trust consequences resulted — always visible, no exceptions. Third, the deliverable substance — the actual work product — open by default, with a narrow, constitutionally defined exception mechanism for genuinely sensitive content. Even under exception, the first two tiers remain fully visible.
+
+This is modelled on how open societies handle classified information. The exception must be justified at creation, time-limited, subject to oversight, and challengeable through adjudication. The default is openness; secrecy requires affirmative justification. The existence of the work and all structural metadata remain visible even under restriction. There are no secret missions.
+
+Consider an organisation composed entirely of bad actors — the historical equivalent of organised crime. On Genesis, every mission they post is visible to everyone. Every worker allocation is visible. Every deliverable is visible — or its withholding is visible and flagged. Every trust score change is auditable. The Assembly can discuss patterns without fear of identification. Domain experts can challenge suspicious work in their field. The compliance screener catches prohibited categories. If they try to operate outside Genesis, they have no Genesis trust, no Genesis reputation, no access to the Genesis economy. The bad actors' only option is to operate honestly — in which case Genesis has reformed them by structural incentive — or to leave, in which case Genesis has excluded them by structural transparency.
+
+Genesis does not regard organisations as fundamentally trustworthy. It does not assume that verified members or tiered verification eliminate the possibility of coordinated bad faith. It assumes the opposite: that any organisation could be composed of bad actors, and designs accordingly. The defence is not enforcement — it is that everyone else can see what they are doing. Transparency is not a feature of the system. It is the system.
+
+Genesis is structurally incompatible with concealment. Participants who require secrecy about the nature, scope, or outcome of their work should not use the system. This is stated not as a warning but as a description of what Genesis is. If you have secrets to hide, Genesis is not for you. Genesis is not attempting to recreate the organisational models of the past. It is designed to facilitate entirely new ones — and to allow other entirely novel structures to emerge.
+
+**Constitutional rules.**
+
+1. All work conducted through Genesis is visible to all verified participants by default. Mission listings, task descriptions, deliverables, review decisions, compliance screening results, dispute outcomes, and trust consequences are open records. This is not a feature — it is a structural property of the system.
+2. The following structural metadata cannot be restricted under any circumstances: the fact that work exists (mission ID, listing ID, workflow ID), the identities of creator and worker (pseudonymous but consistent), all status transitions and timestamps, trust score changes resulting from the work, compliance screening verdicts, dispute and adjudication outcomes, escrow state (funded, locked, released, refunded), review decisions and reviewer diversity metrics.
+3. The substance of a deliverable (the actual work product) may be restricted from general visibility when the work involves genuinely sensitive content that could cause harm if disclosed (medical data, proprietary algorithms, security-critical infrastructure details). The existence of the work and all structural metadata remain fully visible; only the deliverable content is restricted.
+4. Deliverable restriction requires: (a) justification recorded in the audit trail at listing creation, (b) a time limit (default 365 days, configurable by constitutional parameter), (c) the restriction is challengeable — any verified participant may challenge a restriction through the existing adjudication mechanism, (d) the restriction does not apply to reviewers assigned to the mission — they must see the deliverable to assess quality, (e) the restriction automatically lapses when the time limit expires.
+5. Once a mission is completed and its deliverables are public, they cannot be retroactively restricted. Openness cannot be revoked for completed work.
+6. Genesis is structurally incompatible with concealment. Participants who require secrecy about the nature, scope, or outcome of their work should not use the system. This is stated plainly, not as a warning but as a description of what Genesis is.
+
+**Open work design tests:**
+77. Can a mission listing exist in Genesis without its structural metadata (creator, worker, status, trust consequences, compliance verdict) being visible to all verified participants? If yes, reject design.
+78. Can deliverable substance be restricted without a recorded justification and a time limit? If yes, reject design.
+79. Can a completed mission's deliverables be retroactively restricted from public visibility? If yes, reject design.
+80. Can a deliverable restriction prevent assigned reviewers from accessing the work product? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

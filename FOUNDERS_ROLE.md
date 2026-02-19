@@ -161,6 +161,8 @@ The founder's role in Genesis is built on a simple principle: **temporary author
 
 The founder exists because someone has to go first. But going first doesn't earn permanent privileges — it earns provisional authority that the community will review, accept, or reject. Every decision is logged. Every power expires. Every provisional action faces democratic scrutiny.
 
+The founder designed the system to be structurally transparent. All work is visible by default, all governance decisions are auditable, and openness is the primary defence against the corruption that has historically captured every other platform. The founder's own decisions during G0 are subject to exactly the same transparency — every provisional action is logged, signed, and will face democratic review. This is not incidental. It is the founding principle.
+
 This is not a company where the founder retains control through share structures. This is not a DAO where early token holders have permanent governance weight. This is a system where the founder's role is explicitly designed to become unnecessary — and the constitution guarantees that it will.
 
 ### The evolution principle
