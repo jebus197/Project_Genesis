@@ -140,6 +140,11 @@ class EventKind(str, enum.Enum):
     AMENDMENT_COOLING_OFF_STARTED = "amendment_cooling_off_started"
     AMENDMENT_CONFIRMED = "amendment_confirmed"
     AMENDMENT_REJECTED = "amendment_rejected"
+    # G0 retroactive ratification events (Gap 3)
+    G0_RATIFICATION_SUBMITTED = "g0_ratification_submitted"
+    G0_DECISION_RATIFIED = "g0_decision_ratified"
+    G0_DECISION_LAPSED = "g0_decision_lapsed"
+    G0_DECISION_REVERSED = "g0_decision_reversed"
 
 
 @dataclass(frozen=True)

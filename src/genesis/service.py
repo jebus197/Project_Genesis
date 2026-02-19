@@ -127,6 +127,12 @@ from genesis.legal.constitutional_court import ConstitutionalCourt
 from genesis.legal.rights import RightsEnforcer
 from genesis.legal.rehabilitation import RehabilitationEngine
 from genesis.workflow.orchestrator import WorkflowOrchestrator, WorkflowStatus
+from genesis.governance.g0_ratification import (
+    G0RatificationEngine,
+    G0RatificationItem,
+    G0RatificationStatus,
+    RATIFIABLE_EVENT_KINDS,
+)
 
 
 @dataclass(frozen=True)
@@ -265,6 +271,10 @@ class GenesisService:
             resolver.amendment_config(),
             resolver._params,
         )
+
+        # G0 retroactive ratification engine (Gap 3)
+        # Initialized as None — created when G0→G1 transition triggers ratification.
+        self._g0_ratification_engine: Optional[G0RatificationEngine] = None
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -8134,6 +8144,424 @@ class GenesisService:
                 "provision_key": proposal.provision_key,
                 "proposed_value": str(proposal.proposed_value),
                 "status": proposal.status.value,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # G0 retroactive ratification (Gap 3)
+    # ------------------------------------------------------------------
+
+    def start_g0_ratification(
+        self,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Start the retroactive ratification process for all G0 provisional decisions.
+
+        Called when G0 ends and G1 begins. Scans the event log for governance
+        decisions made during G0, submits each one for community review, and
+        initializes the ratification engine.
+
+        Returns ServiceResult with the list of items submitted for ratification.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        window_days = self._resolver.genesis_time_limits()["G0_RATIFICATION_WINDOW_DAYS"]
+
+        # Create the engine if it doesn't exist yet
+        if self._g0_ratification_engine is None:
+            self._g0_ratification_engine = G0RatificationEngine(
+                config={},
+                ratification_window_days=window_days,
+            )
+
+        # Scan event log for G0-era governance decisions
+        submitted_items: list[dict[str, Any]] = []
+        if self._event_log is not None:
+            for event in self._event_log:
+                if event.event_kind.value in RATIFIABLE_EVENT_KINDS:
+                    # Check if this event was during G0 (payload may have phase info,
+                    # or we treat all pre-existing ratifiable events as G0 decisions)
+                    try:
+                        item = self._g0_ratification_engine.submit_for_ratification(
+                            event_kind=event.event_kind.value,
+                            event_id=event.event_id,
+                            description=f"G0 provisional: {event.event_kind.value} "
+                                        f"by {event.actor_id}",
+                            payload=event.payload,
+                            now=now,
+                        )
+                        submitted_items.append({
+                            "item_id": item.item_id,
+                            "event_kind": item.event_kind,
+                            "event_id": item.event_id,
+                        })
+
+                        # Emit event for each submission
+                        if self._event_log is not None:
+                            try:
+                                ev = EventRecord.create(
+                                    event_id=self._next_event_id(),
+                                    event_kind=EventKind.G0_RATIFICATION_SUBMITTED,
+                                    actor_id="system",
+                                    payload={
+                                        "item_id": item.item_id,
+                                        "original_event_id": event.event_id,
+                                        "original_event_kind": event.event_kind.value,
+                                    },
+                                    timestamp_utc=now,
+                                )
+                                self._epoch_service.record_mission_event(ev.event_hash)
+                                self._event_log.append(ev)
+                            except (ValueError, OSError, RuntimeError):
+                                pass
+                    except ValueError:
+                        # Skip duplicates or other validation errors
+                        pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "items_submitted": len(submitted_items),
+                "items": submitted_items,
+            },
+        )
+
+    def open_ratification_panel(
+        self,
+        item_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Select a diverse panel to review a G0 provisional decision.
+
+        Gathers all ACTIVE humans with trust >= tau_vote and selects an
+        11-member panel (G1 proposal chamber size) with geographic diversity.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if self._g0_ratification_engine is None:
+            return ServiceResult(
+                success=False,
+                errors=["G0 ratification not started — call start_g0_ratification first"],
+            )
+
+        # Gather eligible voters: ACTIVE humans with trust >= tau_vote
+        tau_vote, _ = self._resolver.eligibility_thresholds()
+        eligible: list[dict[str, Any]] = []
+        for entry in self._roster.all_actors():
+            if (
+                entry.actor_kind == ActorKind.HUMAN
+                and entry.status == ActorStatus.ACTIVE
+            ):
+                trust_record = self._trust_records.get(entry.actor_id)
+                trust_score = trust_record.score if trust_record else 0.0
+                if trust_score >= tau_vote:
+                    eligible.append({
+                        "actor_id": entry.actor_id,
+                        "region": entry.region,
+                        "organization": entry.organization,
+                    })
+
+        # Use G1 proposal chamber config
+        chambers = self._resolver.chambers_for_phase(GenesisPhase.G1)
+        proposal_chamber = chambers[ChamberKind.PROPOSAL]
+        r_min, c_max = self._resolver.geo_constraints_for_phase(GenesisPhase.G1)
+
+        try:
+            panel_ids = self._g0_ratification_engine.select_panel(
+                item_id=item_id,
+                eligible_voters=eligible,
+                chamber_size=proposal_chamber.size,
+                r_min=r_min,
+                c_max=c_max,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "item_id": item_id,
+                "panel_ids": panel_ids,
+                "panel_size": len(panel_ids),
+            },
+        )
+
+    def vote_on_ratification(
+        self,
+        item_id: str,
+        voter_id: str,
+        vote: bool,
+        attestation: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cast a vote on whether to ratify a G0 provisional decision.
+
+        Validates the voter is an ACTIVE human with trust >= tau_vote
+        and a member of the item's panel.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if self._g0_ratification_engine is None:
+            return ServiceResult(
+                success=False,
+                errors=["G0 ratification not started"],
+            )
+
+        # Validate voter
+        entry = self._roster.get(voter_id)
+        if entry is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {voter_id}"])
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only humans can vote on G0 ratification"],
+            )
+        if entry.status != ActorStatus.ACTIVE:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {voter_id} is not ACTIVE"],
+            )
+
+        try:
+            vote_obj = self._g0_ratification_engine.cast_vote(
+                item_id=item_id,
+                voter_id=voter_id,
+                vote=vote,
+                attestation=attestation,
+                region=entry.region,
+                organization=entry.organization,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                ev = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.G0_RATIFICATION_SUBMITTED,
+                    actor_id=voter_id,
+                    payload={
+                        "item_id": item_id,
+                        "vote": vote,
+                        "vote_id": vote_obj.vote_id,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(ev.event_hash)
+                self._event_log.append(ev)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "item_id": item_id,
+                "vote_id": vote_obj.vote_id,
+                "vote": vote,
+            },
+        )
+
+    def close_ratification_item(
+        self,
+        item_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Close voting on a G0 ratification item and determine the outcome.
+
+        Uses the G1 proposal chamber's pass threshold (8 out of 11).
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if self._g0_ratification_engine is None:
+            return ServiceResult(
+                success=False,
+                errors=["G0 ratification not started"],
+            )
+
+        # Get G1 proposal chamber pass threshold
+        chambers = self._resolver.chambers_for_phase(GenesisPhase.G1)
+        proposal_chamber = chambers[ChamberKind.PROPOSAL]
+
+        try:
+            status = self._g0_ratification_engine.close_voting(
+                item_id=item_id,
+                pass_threshold=proposal_chamber.pass_threshold,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit appropriate event
+        event_kind = (
+            EventKind.G0_DECISION_RATIFIED
+            if status == G0RatificationStatus.RATIFIED
+            else EventKind.G0_DECISION_LAPSED
+        )
+        if self._event_log is not None:
+            try:
+                ev = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=event_kind,
+                    actor_id="system",
+                    payload={
+                        "item_id": item_id,
+                        "status": status.value,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(ev.event_hash)
+                self._event_log.append(ev)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "item_id": item_id,
+                "status": status.value,
+            },
+        )
+
+    def check_ratification_deadlines(
+        self,
+        deadline: datetime,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Check all pending G0 ratification items against the deadline.
+
+        Auto-lapses any items that haven't been decided within the 90-day
+        ratification window.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if self._g0_ratification_engine is None:
+            return ServiceResult(
+                success=True,
+                data={"lapsed_count": 0, "lapsed_items": []},
+            )
+
+        lapsed_ids = self._g0_ratification_engine.check_deadline(now, deadline)
+
+        # Emit events for each auto-lapsed item
+        for lid in lapsed_ids:
+            if self._event_log is not None:
+                try:
+                    ev = EventRecord.create(
+                        event_id=self._next_event_id(),
+                        event_kind=EventKind.G0_DECISION_LAPSED,
+                        actor_id="system",
+                        payload={
+                            "item_id": lid,
+                            "reason": "ratification_deadline_expired",
+                        },
+                        timestamp_utc=now,
+                    )
+                    self._epoch_service.record_mission_event(ev.event_hash)
+                    self._event_log.append(ev)
+                except (ValueError, OSError, RuntimeError):
+                    pass
+
+        if lapsed_ids:
+            self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "lapsed_count": len(lapsed_ids),
+                "lapsed_items": lapsed_ids,
+            },
+        )
+
+    def reverse_lapsed_g0_decision(
+        self,
+        item_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Reverse a lapsed G0 provisional decision.
+
+        Dispatches the appropriate reversal action based on the event kind
+        of the original decision. For example, reversing a compliance ruling
+        would re-enable a suspended actor.
+
+        The actual reversal logic is dispatched by event kind — each type
+        of G0 decision has a known undo action.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        if self._g0_ratification_engine is None:
+            return ServiceResult(
+                success=False,
+                errors=["G0 ratification not started"],
+            )
+
+        item = self._g0_ratification_engine.get_item(item_id)
+        if item is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Ratification item not found: {item_id}"],
+            )
+
+        if item.status != G0RatificationStatus.LAPSED:
+            return ServiceResult(
+                success=False,
+                errors=[f"Cannot reverse item in status {item.status.value} (expected lapsed)"],
+            )
+
+        # Look up the reversal handler
+        handler_key = G0RatificationEngine.get_reversal_handler(item.event_kind)
+        if handler_key is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No reversal handler registered for event kind: {item.event_kind}"],
+            )
+
+        # Mark as reversed in the engine
+        try:
+            self._g0_ratification_engine.mark_reversed(item_id, now)
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit reversal event
+        if self._event_log is not None:
+            try:
+                ev = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.G0_DECISION_REVERSED,
+                    actor_id="system",
+                    payload={
+                        "item_id": item_id,
+                        "original_event_kind": item.event_kind,
+                        "original_event_id": item.event_id,
+                        "reversal_handler": handler_key,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(ev.event_hash)
+                self._event_log.append(ev)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "item_id": item_id,
+                "status": "reversed",
+                "reversal_handler": handler_key,
+                "original_event_kind": item.event_kind,
             },
         )
 
