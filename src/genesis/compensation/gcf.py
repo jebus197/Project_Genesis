@@ -248,3 +248,77 @@ class GCFTracker:
     def get_disbursements(self) -> list[GCFDisbursement]:
         """Return all recorded disbursements (for audit)."""
         return list(self._disbursements)
+
+    # ------------------------------------------------------------------
+    # Persistence helpers
+    # ------------------------------------------------------------------
+
+    def to_dict(self) -> dict:
+        """Serialize GCF state for persistence."""
+        return {
+            "balance": str(self._state.balance),
+            "total_contributed": str(self._state.total_contributed),
+            "total_disbursed": str(self._state.total_disbursed),
+            "contribution_count": self._state.contribution_count,
+            "disbursement_count": self._state.disbursement_count,
+            "activated": self._state.activated,
+            "activated_utc": (
+                self._state.activated_utc.isoformat()
+                if self._state.activated_utc
+                else None
+            ),
+            "contributions": [
+                {
+                    "amount": str(c.amount),
+                    "mission_id": c.mission_id,
+                    "contributed_utc": c.contributed_utc.isoformat(),
+                }
+                for c in self._contributions
+            ],
+            "disbursements": [
+                {
+                    "disbursement_id": d.disbursement_id,
+                    "proposal_id": d.proposal_id,
+                    "amount": str(d.amount),
+                    "category": d.category,
+                    "recipient_description": d.recipient_description,
+                    "disbursed_utc": d.disbursed_utc.isoformat(),
+                }
+                for d in self._disbursements
+            ],
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "GCFTracker":
+        """Reconstruct a GCFTracker from persisted data."""
+        tracker = cls()
+        tracker._state.balance = Decimal(data["balance"])
+        tracker._state.total_contributed = Decimal(data["total_contributed"])
+        tracker._state.total_disbursed = Decimal(data["total_disbursed"])
+        tracker._state.contribution_count = data["contribution_count"]
+        tracker._state.disbursement_count = data["disbursement_count"]
+        tracker._state.activated = data["activated"]
+        if data.get("activated_utc"):
+            tracker._state.activated_utc = datetime.fromisoformat(
+                data["activated_utc"]
+            )
+        tracker._contributions = [
+            GCFContribution(
+                amount=Decimal(c["amount"]),
+                mission_id=c["mission_id"],
+                contributed_utc=datetime.fromisoformat(c["contributed_utc"]),
+            )
+            for c in data.get("contributions", [])
+        ]
+        tracker._disbursements = [
+            GCFDisbursement(
+                disbursement_id=d["disbursement_id"],
+                proposal_id=d["proposal_id"],
+                amount=Decimal(d["amount"]),
+                category=d["category"],
+                recipient_description=d["recipient_description"],
+                disbursed_utc=datetime.fromisoformat(d["disbursed_utc"]),
+            )
+            for d in data.get("disbursements", [])
+        ]
+        return tracker

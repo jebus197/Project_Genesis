@@ -298,6 +298,10 @@ class GenesisService:
             self._first_light_achieved = lifecycle["first_light_achieved"]
             self._founder_id = lifecycle["founder_id"]
             self._founder_last_action_utc = lifecycle["founder_last_action_utc"]
+            # Restore GCF tracker state (treasury balance, contributions, disbursements)
+            gcf_data = state_store.load_gcf()
+            if gcf_data:
+                self._gcf_tracker = GCFTracker.from_dict(gcf_data)
             # Restore PoC mode override, GCF activation, and veto expiry
             # if First Light was previously achieved
             if self._first_light_achieved:
@@ -5497,6 +5501,7 @@ class GenesisService:
             self._founder_id,
             self._founder_last_action_utc,
         )
+        self._state_store.save_gcf(self._gcf_tracker.to_dict())
         self._state_store.save_escrows(self._escrow_manager._escrows)
         self._state_store.save_workflows(self._workflow_orchestrator._workflows)
         self._state_store.save_disbursements(
@@ -6980,6 +6985,8 @@ class GenesisService:
             except (ValueError, OSError, RuntimeError):
                 pass  # Best-effort for audit trail
 
+        self._safe_persist_post_audit()
+
         return ServiceResult(
             success=True,
             data={
@@ -7023,6 +7030,8 @@ class GenesisService:
             )
         except ValueError as e:
             return ServiceResult(success=False, errors=[str(e)])
+
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -7124,6 +7133,8 @@ class GenesisService:
             except (ValueError, OSError, RuntimeError):
                 pass
 
+        self._safe_persist_post_audit()
+
         return ServiceResult(
             success=True,
             data={
@@ -7178,6 +7189,8 @@ class GenesisService:
                 self._event_log.append(event)
             except (ValueError, OSError, RuntimeError):
                 pass
+
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -7272,6 +7285,8 @@ class GenesisService:
                 self._event_log.append(event)
             except (ValueError, OSError, RuntimeError):
                 pass
+
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,
@@ -7647,6 +7662,8 @@ class GenesisService:
             )
         except ValueError as e:
             return ServiceResult(success=False, errors=[str(e)])
+
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,

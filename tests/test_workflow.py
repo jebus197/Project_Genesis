@@ -892,3 +892,170 @@ class TestWorkflowEscrowPersistence:
             f"escrow_id should be {escrow_id}, got {listing.escrow_id}"
         assert listing.deadline_days == 14, \
             f"deadline_days should be 14, got {listing.deadline_days}"
+
+
+class TestCXRegressionsP1Durability:
+    """Regression tests for CX P1 durability bugs (3c32e2d review cycle).
+
+    Covers:
+    - P1-1: GCF treasury balance, contributions, disbursements survive restart
+    - P1-2: Disbursement proposals survive restart
+    - P1-3: Amendment panel selection survives restart
+    """
+
+    def _make_service(self, resolver, store, log):
+        """Create a GenesisService with actors registered."""
+        svc = GenesisService(resolver, event_log=log, state_store=store)
+        svc.open_epoch("epoch-1")
+        svc.register_actor(
+            "human-1", ActorKind.HUMAN, "eu", "acme", initial_trust=0.8,
+        )
+        return svc
+
+    def test_gcf_treasury_survives_restart(self, tmp_path):
+        """GCF balance and contributions must survive service restart (P1-1)."""
+        from genesis.persistence.state_store import StateStore
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        # Activate GCF and record a contribution
+        now = _now()
+        svc1._gcf_tracker.activate(now=now)
+        svc1._gcf_tracker.record_contribution(
+            amount=Decimal("100.50"),
+            mission_id="m_treasury_test",
+            now=now,
+        )
+        # Persist state
+        svc1._safe_persist_post_audit()
+
+        state_before = svc1._gcf_tracker.get_state()
+        assert state_before.balance == Decimal("100.50")
+        assert state_before.activated is True
+        assert state_before.contribution_count == 1
+
+        # Restart: fresh service from same persisted state
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+
+        state_after = svc2._gcf_tracker.get_state()
+        assert state_after.activated is True, "GCF activation must survive restart"
+        assert state_after.balance == Decimal("100.50"), \
+            f"GCF balance should be 100.50, got {state_after.balance}"
+        assert state_after.contribution_count == 1, \
+            f"Contribution count should be 1, got {state_after.contribution_count}"
+
+    def test_disbursement_proposal_survives_restart(self, tmp_path):
+        """Disbursement proposals must survive service restart (P1-2)."""
+        from genesis.persistence.state_store import StateStore
+        from genesis.review.roster import ActorStatus
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        # Activate GCF and fund it
+        now = _now()
+        svc1._gcf_tracker.activate(now=now)
+        svc1._gcf_tracker.record_contribution(
+            amount=Decimal("10000"),
+            mission_id="synthetic_funding",
+            now=now,
+        )
+
+        # Propose a disbursement
+        result = svc1.propose_gcf_disbursement(
+            proposer_id="human-1",
+            title="Compute infrastructure",
+            description="Fund distributed compute nodes",
+            requested_amount=Decimal("500"),
+            recipient_description="Distributed compute node operators",
+            category="compute_infrastructure",
+            measurable_deliverables=["Deploy 10 compute nodes"],
+            now=now,
+        )
+        assert result.success, f"Proposal failed: {result.errors}"
+        proposal_id = result.data["proposal_id"]
+
+        # Restart: fresh service from same persisted state
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+
+        # Proposal must exist after restart
+        proposal = svc2._disbursement_engine.get_proposal(proposal_id)
+        assert proposal is not None, "Disbursement proposal must survive restart"
+        assert proposal.title == "Compute infrastructure"
+        assert proposal.requested_amount == Decimal("500")
+
+    def test_amendment_panel_survives_restart(self, tmp_path):
+        """Amendment panel selection must survive service restart (P1-3)."""
+        from genesis.persistence.state_store import StateStore
+        from genesis.models.governance import ChamberKind, GenesisPhase
+        from genesis.review.roster import ActorStatus
+
+        store_path = tmp_path / "genesis_state.json"
+        log_path = tmp_path / "events.jsonl"
+
+        resolver1 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        store1 = StateStore(store_path)
+        log1 = EventLog(log_path)
+
+        svc1 = self._make_service(resolver1, store1, log1)
+
+        # Register diverse voters for panel selection
+        regions = ["eu", "na", "as", "sa", "af", "me"]
+        for i in range(100):
+            svc1.register_actor(
+                f"voter_{i}", ActorKind.HUMAN,
+                regions[i % len(regions)], f"org_{i % 10}",
+                initial_trust=0.70,
+            )
+
+        # Propose an amendment
+        result = svc1.propose_amendment(
+            proposer_id="human-1",
+            provision_key="GCF_CONTRIBUTION_RATE",
+            proposed_value="0.02",
+            justification="Increase commons funding",
+            now=_now(),
+        )
+        assert result.success, f"Proposal failed: {result.errors}"
+        proposal_id = result.data["proposal_id"]
+
+        # Open the proposal chamber (selects panel)
+        result = svc1.open_amendment_chamber(
+            proposal_id, ChamberKind.PROPOSAL, GenesisPhase.G1,
+        )
+        assert result.success, f"open_amendment_chamber failed: {result.errors}"
+        panel_before = result.data["panel_ids"]
+        assert len(panel_before) > 0
+
+        # Restart: fresh service from same persisted state
+        store2 = StateStore(store_path)
+        log2 = EventLog(log_path)
+        resolver2 = PolicyResolver.from_config_dir(CONFIG_DIR)
+        svc2 = GenesisService(resolver2, event_log=log2, state_store=store2)
+
+        # Amendment must exist with panel preserved
+        amendment = svc2._amendment_engine.get_amendment(proposal_id)
+        assert amendment is not None, "Amendment must survive restart"
+        panel_after = amendment.chamber_panels.get(ChamberKind.PROPOSAL.value)
+        assert panel_after is not None, "Proposal chamber panel must survive restart"
+        assert panel_after == panel_before, \
+            f"Panel must survive restart: expected {panel_before}, got {panel_after}"

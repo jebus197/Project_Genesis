@@ -1153,6 +1153,18 @@ class StateStore:
         return workflows
 
     # ------------------------------------------------------------------
+    # GCF Tracker persistence (treasury state)
+    # ------------------------------------------------------------------
+
+    def save_gcf(self, gcf_data: dict) -> None:
+        """Serialize GCF tracker state (balance, contributions, disbursements)."""
+        self._state["gcf_tracker"] = gcf_data
+
+    def load_gcf(self) -> Optional[dict]:
+        """Load GCF tracker state, or None if never saved."""
+        return self._state.get("gcf_tracker")
+
+    # ------------------------------------------------------------------
     # GCF Disbursement persistence
     # ------------------------------------------------------------------
 
