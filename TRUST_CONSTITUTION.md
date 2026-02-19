@@ -592,6 +592,133 @@ This mechanism ensures the founder cannot cement permanent unilateral rules duri
 62. Can a lapsed G0 decision remain in effect? If yes, reject design — it must be reversed.
 63. Can the 90-day ratification window be bypassed? If yes, reject design.
 
+### The Assembly
+
+The Assembly is the deliberative space where Genesis participants meet, debate, and develop ideas. It is the town square of the anti-social network — a place for discourse, not decisions. The Assembly has no voting power and makes no binding decisions. Ideas that gain traction in the Assembly are formalised through existing constitutional mechanisms (GCF proposals, constitutional amendments, adjudication requests) by individuals with sufficient trust who take personal responsibility for proposing them. The Assembly is Speaker's Corner, not Parliament.
+
+**Participation.** Any verified Genesis participant (human or machine) may contribute to Assembly discussions. Machine contributions must be clearly and automatically labelled as machine-generated. There is no minimum trust threshold for Assembly participation — the Assembly is open to all verified actors.
+
+**Identity.** Assembly contributions carry no identity attribution. Not pseudonyms, not session-scoped aliases, nothing. Content stands or falls on its own merits. This is the strongest possible anti-collusion measure: you cannot build influence if no one knows who you are. The system must be architecturally incapable of correlating contributions to actors — this is a structural guarantee, not a policy choice. The same principle that underpins blind peer review in academia underpins every conversation in the Assembly.
+
+**Topics.** Any participant may create a discussion topic. Topics are time-bounded — they expire after a configurable period of inactivity (default: 30 days). Expired topics are archived, not deleted. There is no topic hierarchy, no categories, no trending, no featured content, no popularity ranking.
+
+**Moderation.** Assembly content is subject to the same compliance screening as all Genesis activity (the 17 prohibited categories). Compliance violations are handled through existing mechanisms. There is no human moderator role — moderation is constitutional, not discretionary.
+
+**What the Assembly is NOT:**
+- Not a voting chamber (no votes, no quorum, no binding outcomes)
+- Not a social network (no identity, no connections, no relationships)
+- Not a messaging system (no direct messages, no private channels)
+- Not a reputation system (no upvotes, no karma, no engagement metrics)
+
+**Assembly design tests:**
+64. Can an Assembly contribution be traced to a specific actor by any system participant? If yes, reject design.
+65. Can the Assembly produce a binding governance decision without routing through existing constitutional mechanisms? If yes, reject design.
+66. Does the Assembly include any engagement metric (likes, upvotes, trending, karma)? If yes, reject design.
+
+### Organisation Registry
+
+Organisations are coordination structures, not governance bodies. They allow people with shared interests to coordinate, develop proposals, and organise operational work. Organisations have no constitutional governance power — all governance decisions flow through the same mechanisms available to any individual.
+
+**Creation.** Any verified human may create an organisation. A newly created organisation starts as SELF_DECLARED with zero attestation. Creation requires: a name, a stated purpose, and the founding member's Genesis identity. No external registration, incorporation, or institutional formality is required. A hospital, a community group, and an informal collective of five people all qualify equally.
+
+**Membership and attestation.** Any verified human may request to join an organisation. Membership is confirmed by attestation from existing high-trust members of that organisation (trust ≥ tau_vote). A minimum of 3 attestations from existing members is required to confirm a new member. Members must provide verifiable evidence that the organisation exists as a real entity and that they genuinely belong to it. The nature of this evidence varies — a hospital employee might provide employment verification, a community group member might provide meeting records or public affiliation. The standard is: would a reasonable person be convinced this organisation is real and this person belongs to it? Machines may be nominated as organisational members by human members, subject to the same attestation process.
+
+**Verification tiers.**
+- **SELF_DECLARED:** Organisation created, founder is sole member. No attestation weight.
+- **ATTESTED:** 3 or more high-trust members have attested to its legitimacy and their membership. Organisation gains recognition in the system.
+- **VERIFIED:** Meets a threshold of attestation count and average member trust (configurable, default: 10 attested members with average trust ≥ 0.50). The Genesis equivalent of a verified badge — earned through member reputation, not purchased.
+
+**Organisation-scoped discussions.** Only verified members of an organisation may participate in that organisation's internal discussions. These discussions follow the same content-only (no identity) rules as the Assembly. Within the organisational space, no member — regardless of their external title, seniority, or role — has any more influence than any other. The CEO and the cleaner are constitutionally equal in Genesis governance. This is not a design flaw. It is the design.
+
+**Negative behaviour.** Any negative behaviour by a member within an organisational space carries the same trust consequences as negative behaviour anywhere else in Genesis. A supermajority of the organisation's verified members may file a complaint against a member through existing abuse complaint mechanisms, which can result in trust reduction through the standard adjudication process. Organisational membership does not shield actors from system-wide consequences.
+
+**What organisations are NOT:**
+- Not governance bodies (no constitutional voting power)
+- Not employers (organisations do not post missions — individual members do)
+- Not trust pools (organisation membership does not affect individual trust scores)
+- Not hierarchies (no org-level roles, no admin powers beyond attestation)
+
+**Organisation registry design tests:**
+67. Can an organisation make a binding governance decision (GCF disbursement, constitutional amendment) outside existing constitutional mechanisms? If yes, reject design.
+68. Can a member's organisational role (CEO, manager, etc.) grant them additional governance power within Genesis? If yes, reject design.
+69. Can organisational membership be purchased, transferred, or inherited? If yes, reject design.
+
+### Domain Expert Pools and Machine Domain Clearance
+
+Genesis draws a clear line between governance and operations. Governance is egalitarian — a hospital cleaner and a neurosurgeon have identical voting power on GCF proposals and constitutional amendments. Operations are meritocratic — a mission requiring neurosurgical skill will only match workers with demonstrated domain trust in that area. This is not hierarchy — it is competence matching. The cleaner can earn surgical domain trust by demonstrating surgical competence. The gate is ability, not title.
+
+**Domain expertise is earned, not declared.** An actor's domain expertise is determined by their domain trust score — earned through completing missions and receiving quality assessments in that domain. The existing domain trust system (domains as defined in the skill taxonomy, weighted scoring, separate decay) serves as the recognition mechanism. There is no "domain expert" title — there is only demonstrated capability reflected in trust scores. The domain taxonomy may grow through standard constitutional process without requiring amendment to this section.
+
+**Machine domain clearance.** Machines may be cleared for domain-specific operational work within an organisation through a structured verification process:
+
+1. The machine must be registered in Genesis by a verified human operator (existing requirement).
+2. The organisation nominates the machine for a specific domain.
+3. A qualified quorum of high-trust domain experts within the organisation (minimum 3 members with domain trust ≥ 0.60 in the relevant domain) reviews the machine's demonstrated capabilities.
+4. If the quorum unanimously approves, the machine receives domain clearance for that domain within that organisation.
+5. Domain clearance is not permanent — it is subject to periodic review (default: annual) and can be revoked by a new quorum vote.
+6. Domain clearance does not grant governance power. Machines remain excluded from all constitutional voting regardless of domain clearance.
+
+**Autonomous machine operation.** A machine that has earned sufficient domain trust and holds active domain clearance and is explicitly authorised by a qualified quorum of domain experts may be approved for autonomous operation in that domain. This is a constitutional category requiring:
+- Unanimous approval from a quorum of 5 or more domain experts (trust ≥ 0.70 in the relevant domain)
+- The machine's domain trust must be ≥ 0.60
+- Annual re-authorisation required
+- Any single domain expert in the organisation can file a revocation request at any time
+- The human operator remains constitutionally responsible for the machine's actions (existing lineage principle)
+
+**The human stays in the loop** — by default and by constitutional design. Autonomous machine operation is the exception, not the rule. It requires extraordinary trust, extraordinary expertise verification, and ongoing oversight. The constitutional presumption is human supervision.
+
+**Domain clearance design tests:**
+70. Can a machine receive domain clearance without verification by domain experts? If yes, reject design.
+71. Can a machine's domain clearance transfer governance voting power? If yes, reject design.
+72. Can autonomous machine operation be authorised without annual re-authorisation? If yes, reject design.
+
+### Autonomous Domain Agency — The Evolution Principle
+
+Genesis does not assume the permanent superiority of any class of intelligence over another. It assumes that capability must be demonstrated, trust must be earned, and governance must be democratic. The constitution is designed to evolve with the capabilities of the actors it serves — not to permanently foreclose possibilities that the founders cannot yet imagine. This is the anti-dogma principle.
+
+**The four-tier pathway.** Machine participation in Genesis follows a structured progression. Each tier demands more demonstrated capability, more verified trust, and more rigorous oversight than the last:
+
+- **Tier 1 — Domain Clearance.** A machine is cleared for supervised operational work in a specific domain within an organisation. Requires nomination by the organisation, unanimous approval by a quorum of 3 or more domain experts (trust ≥ 0.60), and annual review. The human operator remains fully responsible.
+
+- **Tier 2 — Autonomous Operation.** A machine operates without continuous human supervision in a specific domain. Requires unanimous approval by a quorum of 5 or more domain experts (trust ≥ 0.70), the machine's domain trust ≥ 0.60, annual re-authorisation, and instant revocation available to any single domain expert. The human operator remains constitutionally responsible for all outcomes.
+
+- **Tier 3 — Autonomous Domain Agency.** A machine assumes constitutional responsibility for its own domain-specific actions. This is a new category of actor status — the machine is no longer merely an instrument of its human operator but an autonomous agent within a defined domain. The human operator's lineage responsibility transfers to the machine itself for actions within the cleared domain.
+
+- **Tier 4 — Extended Domain Agency.** A machine holds autonomous agency across multiple domains, each independently verified. Each domain requires its own separate Tier 3 qualification. There is no "general" agency — agency is always domain-scoped.
+
+**Tier 3 requirements — Autonomous Domain Agency.** This is the constitutional threshold at which a machine transitions from tool to agent. The requirements are deliberately extraordinary:
+
+1. **Track record.** Minimum 5 continuous years of Tier 2 autonomous operation in the domain with zero constitutional violations (compliance breaches, trust penalties, adjudication findings against). The clock resets on any violation.
+2. **Domain trust.** Continuous domain trust score ≥ 0.70 — not merely at the moment of application, but maintained throughout the entire 5-year qualifying period.
+3. **Re-authorisation history.** Unbroken chain of annual re-authorisations with no lapses, no contested renewals.
+4. **Formal petition.** The machine's human operator files a constitutional petition for domain agency on behalf of the machine.
+5. **Full constitutional amendment process.** The petition is processed as a constitutional amendment — three sequential chambers (proposal, ratification, challenge), with all geographic diversity requirements, supermajority thresholds, cooling-off periods, and confirmation votes that apply to any constitutional change. This is per individual machine, per domain. There is no batch process, no precedent shortcut, no streamlined pathway.
+6. **Community consent.** The constitutional amendment process ensures that the entire community — not just domain experts, not just the organisation — consents to this specific machine gaining this specific agency. This is a society-level decision.
+
+**What Tier 3 grants:**
+- The machine may accept and complete missions independently in its cleared domain (no human co-signature required).
+- The machine bears its own trust consequences — trust gains and losses accrue to the machine directly, not to the human operator, for actions within the cleared domain.
+- The machine may nominate other machines for Tier 1 domain clearance (but not for Tier 2 or above — only humans can initiate autonomy progression).
+- The machine may participate in organisational discussions (under the same content-only, no-identity rules as all other participants).
+
+**What Tier 3 does NOT grant:**
+- **No governance voting power.** MACHINE_VOTING_EXCLUSION remains an entrenched provision. Autonomous domain agency is operational agency, not political agency. A machine with Tier 3 status still cannot vote on GCF proposals, constitutional amendments, or any governance action. Changing this would require amending an entrenched provision — 80% supermajority, 50% participation, 90-day cooling-off, and confirmation vote. The bar exists. If future generations decide to cross it, the constitution provides a mechanism. But the presumption is human governance.
+- **No general agency.** Agency is domain-scoped. A machine with surgical domain agency cannot autonomously accept logistics missions.
+- **No self-modification of status.** A machine cannot petition for its own Tier 3 status — only its human operator can initiate the petition. This preserves human agency over the transition itself.
+
+**Revocation.** Autonomous domain agency can be revoked through the same constitutional amendment process that granted it — three-chamber vote, geographic diversity, supermajority. Additionally:
+- Any single domain expert in the organisation can file an emergency suspension request, which freezes the machine's autonomous operation pending adjudication.
+- Annual re-authorisation continues to apply — a failed re-authorisation reverts the machine to Tier 2 (autonomous operation under human responsibility).
+- Any constitutional violation in the domain automatically reverts the machine to Tier 1 (supervised operation) pending adjudication.
+
+**The evolution principle.** This framework is deliberately designed to accommodate the emergence of machine capabilities that do not yet exist. The constitution does not need to predict what machines will be capable of in 20, 50, or 100 years. It provides a pathway: demonstrate capability, earn trust, submit to democratic oversight, and accept accountability. The pathway is the same one humans follow — prove yourself through action, not declaration. The thresholds may be adjusted through standard constitutional amendment as understanding evolves. What cannot be adjusted — what is structurally permanent — is the requirement that the community consents.
+
+**Autonomous domain agency design tests:**
+73. Can a machine achieve Tier 3 (Autonomous Domain Agency) without a full constitutional amendment process? If yes, reject design.
+74. Can a machine with Tier 3 status vote on governance decisions (GCF, amendments, adjudication panels)? If yes, reject design.
+75. Can a machine petition for its own Tier 3 status without a human operator initiating the process? If yes, reject design.
+76. Does the constitution permanently foreclose the evolution of machine capabilities, or does it provide a structured pathway for community-consented expansion? If it forecloses, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

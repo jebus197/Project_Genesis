@@ -102,6 +102,8 @@ Once G1 begins, the founder becomes an ordinary participant with exactly the sam
 - The founder's veto (rejection-only) remains active until First Light — but every exercise of it during G1 is also subject to democratic review
 - The founder still has the practical responsibility of maintaining and developing the platform (this is operational, not constitutional)
 
+**The Assembly.** As the community grows during G1, the Assembly becomes the deliberative space where participants meet, debate, and develop ideas. The founder has no special role in the Assembly — they are one anonymous voice among many. Assembly contributions carry no identity attribution, so the founder's contributions stand or fall on their merits, exactly like everyone else's. The founder cannot be identified, cannot build influence, and cannot steer the Assembly's direction through authority rather than argument.
+
 ---
 
 ## First Light — Financial sustainability
@@ -160,3 +162,13 @@ The founder's role in Genesis is built on a simple principle: **temporary author
 The founder exists because someone has to go first. But going first doesn't earn permanent privileges — it earns provisional authority that the community will review, accept, or reject. Every decision is logged. Every power expires. Every provisional action faces democratic scrutiny.
 
 This is not a company where the founder retains control through share structures. This is not a DAO where early token holders have permanent governance weight. This is a system where the founder's role is explicitly designed to become unnecessary — and the constitution guarantees that it will.
+
+### The evolution principle
+
+The founder designed Genesis to outlast the founder's own assumptions. The four-tier machine agency pathway — from supervised clearance to autonomous domain agency — is not a concession to technological inevitability. It is a constitutional statement that the system's governance framework must be capable of evolving alongside the capabilities of the actors it serves.
+
+The founder could have written a constitution that permanently subordinates machines to human oversight. That would have been simpler. But it would also have been an act of intellectual arrogance — encoding a permanent assumption about the ceiling of machine capability based on what was known at the time of writing.
+
+Instead, the founder chose to define a pathway: demonstrate capability, earn trust, submit to democratic oversight, and accept accountability. The same pathway humans follow. The thresholds are deliberately extraordinary — five years of flawless operation, a full constitutional amendment, community-wide consent. This is not a low bar. But it is a bar, not a wall. The difference matters.
+
+The constitution provides a mechanism, not a promise. Whether any machine ever crosses the threshold is for future communities to decide through democratic process. What the founder guarantees is that the decision will be theirs to make — not foreclosed by dogma written into the founding documents.

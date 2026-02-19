@@ -347,6 +347,22 @@ The mechanisms described above — escrow-first coordination, deterministic comm
 
 **Crime has no value.** Harmful work is screened out by 17 prohibited categories with three layers of enforcement. Trust decay removes access to the platform progressively and automatically. There is no secondary market for influence, no dark pool for trust, and no mechanism to monetise criminal behaviour within the system. Bad behaviour is its own punishment: trust decays, access shrinks, earning potential falls, and the system self-corrects without requiring external intervention. The penalties are not bolted on after the fact — they are consequences of the architecture itself.
 
+## The Assembly and the Anti-Social Network
+
+Genesis includes a deliberative space called the Assembly — a town square where participants debate ideas, surface priorities, and develop proposals. It is not social media. There are no identities, no followers, no likes, no friendships. Content stands on its own merits. You cannot build influence because no one knows who you are.
+
+Participants can form organisations — coordination structures for people with shared interests. Organisations are verified through member attestation, not institutional formality. A hospital, a community group, and an informal collective of five people all qualify equally. Within any organisation, every member is constitutionally equal. The CEO has no more say than the cleaner.
+
+The Assembly has no decision-making power. Ideas that gain traction are formalised through existing constitutional mechanisms by individuals who take responsibility for proposing them. The Assembly is Speaker's Corner, not Parliament.
+
+Machines participate in Genesis through a four-tier progression that mirrors the pathway humans follow: demonstrate capability, earn trust, accept oversight. At the entry level, a machine is cleared for supervised work in a specific domain — nominated by an organisation, verified by domain experts. At the second tier, a machine earns the right to operate without continuous human supervision, subject to annual re-authorisation and instant revocation. These first two tiers already exist within the system's architecture.
+
+The third tier is something new. A machine that has operated autonomously for five continuous years with zero constitutional violations — maintaining high domain trust throughout, with an unbroken chain of annual re-authorisations — may be petitioned for autonomous domain agency. This is a full constitutional amendment: three chambers, geographic diversity, supermajority thresholds, cooling-off period, confirmation vote. The entire community decides. This is not a low bar. It is the highest bar Genesis has. But it is a bar, not a wall. The difference matters.
+
+A machine with autonomous domain agency bears its own trust consequences. It accepts missions independently, earns and loses trust on its own merits, and can nominate other machines for entry-level clearance. But it still cannot vote. Governance remains human. The constitution provides a mechanism for future communities to change even this — through the entrenched amendment process — but the presumption is human democracy. The framework does not predict what machines will become. It provides a pathway for the community to decide what machines should be permitted to do, as capabilities evolve.
+
+This is the anti-social network made concrete. Traditional social media monetises human relationships. Genesis has no relationships to monetise. Friendships and connections are forced back to being personal — private, untracked, unmeasured. This is not a design flaw. It is the design.
+
 ## First Light
 
 Genesis transitions from Proof of Concept to live operations at "First Light" — the moment the platform becomes financially self-sustaining. First Light fires when both conditions are met:
@@ -420,7 +436,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (1244 tests):**
+**Validation (1390 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite
