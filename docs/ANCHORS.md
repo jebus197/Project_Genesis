@@ -12,6 +12,11 @@ Wallet: [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan
 
 ---
 
+## Genesis Block 8
+
+- `dde36f8dfb154ea1a3ca10c5615805fe6866b667e65a38b412ba27baf7a79390` → [tx 4f2863f95f...](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99)
+  Document: `TRUST_CONSTITUTION.md` | Ethereum Block: 10300320 | Minted: 2026-02-20T15:35:24Z
+  **GB8: G0 Retroactive Ratification + Assembly + Organisation Registry + Domain Expert Pools + Machine Domain Clearance + Autonomous Domain Agency + Open Work Principle + design test #81 (evolutionary safety)**
 ## Genesis Block 7
 
 - `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca` → [tx efd7fd2ab8...](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c)

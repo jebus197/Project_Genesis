@@ -368,4 +368,55 @@ The Input Data field contains `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c
 
 ---
 
+## Event GE-0007: Constitution Anchored v8 — Governance Operating Layer
+
+**Date:** 2026-02-20T15:30:00Z
+**Type:** Constitutional lifecycle event
+**Actor:** George Jackson (project founder)
+**Genesis phase:** G0 (founder stewardship)
+
+### What happened
+
+The Genesis constitution was anchored to Ethereum Sepolia after the completion of Phase F — the entire governance operating layer. This is one of the most constitutionally significant anchors to date, adding six new constitutional sections and 21 new design tests since GB7.
+
+**Constitutional additions since GB7:**
+
+1. **G0 Retroactive Ratification Engine (992443c):** Provisional decisions made during G0 (founder stewardship) are tracked and queued for democratic ratification once headcount thresholds are met. Design tests #61-63.
+
+2. **The Assembly (5647a72):** Anonymous deliberation engine — content-only discussion with zero identity attribution. Speaker's Corner, not Parliament. Design tests #64-66.
+
+3. **Organisation Registry (a616426):** Coordination structures for groups of actors. Tiered verification, all members constitutionally equal. Design tests #67-69.
+
+4. **Domain Expert Pools + Machine Domain Clearance (6c04147):** Machines receive operational clearance through domain expert verification. Unanimous quorum voting, annual re-authorisation. Clearance does not grant governance power. Design tests #70-72.
+
+5. **Autonomous Domain Agency / Machine Evolution Principle (504a3ba):** Four-tier machine capability pathway (Tier 0-4). Tier 3 requires full constitutional amendment — bar, not wall. Machine cannot self-petition. Design tests #73-76.
+
+6. **Open Work Principle (7801dc9 + 3879533):** All work visible by default. Three-tier visibility system. No retroactive concealment. Design tests #77-80.
+
+7. **Design test #81 — Evolutionary safety (67e6bdd):** Machine self-improvement cannot bypass constitutional constraints (domain clearance, amendment process, human oversight).
+
+**Code changes since GB7:** 371 new tests (1244 → 1615). Six new modules with full service integration, persistence round-trips, and design test proofs.
+
+| Field | Value |
+|---|---|
+| Document | `TRUST_CONSTITUTION.md` |
+| SHA-256 Hash | `dde36f8dfb154ea1a3ca10c5615805fe6866b667e65a38b412ba27baf7a79390` |
+| Chain | Ethereum Sepolia (Chain ID 11155111) |
+| Block | 10300320 |
+| Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
+| Transaction | [`4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99`](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99) |
+
+### Independent verification
+
+```bash
+shasum -a 256 TRUST_CONSTITUTION.md
+```
+
+Check the transaction on Etherscan:
+[https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99)
+
+The Input Data field contains `dde36f8dfb154ea1a3ca10c5615805fe6866b667e65a38b412ba27baf7a79390`. The git history preserves the exact file state that produced this hash.
+
+---
+
 *Future trust events will be appended to this ledger as the project progresses through its genesis phases.*
