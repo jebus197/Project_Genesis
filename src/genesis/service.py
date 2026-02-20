@@ -321,8 +321,6 @@ class GenesisService:
                 self._workflow_orchestrator = WorkflowOrchestrator.from_records(
                     resolver.workflow_config(), workflow_records,
                 )
-                # Open Work Principle: lapse any expired visibility restrictions
-                self.lapse_expired_visibility_restrictions()
             # Restore disbursement engine state
             disb_proposals, disb_votes = state_store.load_disbursements()
             if disb_proposals:
@@ -4516,8 +4514,13 @@ class GenesisService:
         """Open a new commitment epoch."""
         try:
             eid = self._epoch_service.open_epoch(epoch_id)
+            # Open Work Principle: lapse any expired visibility restrictions
+            # now that an epoch is open and audit events can be recorded.
+            lapse_result = self.lapse_expired_visibility_restrictions()
             warning = self._safe_persist_post_audit()
             data: dict[str, Any] = {"epoch_id": eid}
+            if lapse_result.success and lapse_result.data.get("count", 0) > 0:
+                data["visibility_lapsed"] = lapse_result.data
             if warning:
                 data["warning"] = warning
             return ServiceResult(success=True, data=data)

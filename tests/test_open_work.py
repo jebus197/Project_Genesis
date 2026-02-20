@@ -557,7 +557,12 @@ class TestVisibilityPersistence:
         assert wf.visibility == "public"
 
     def test_expired_restriction_lapsed_on_restart(self, resolver, tmp_path):
-        """Expired METADATA_ONLY restrictions are auto-lapsed during service init (P2 fix)."""
+        """Expired METADATA_ONLY restrictions are auto-lapsed on open_epoch (P1 audit fix).
+
+        The auto-lapse runs inside open_epoch() — NOT during init — so that
+        an epoch is open and VISIBILITY_RESTRICTION_LAPSED events are properly
+        recorded.  Silent state mutation without audit trail is a P1 violation.
+        """
         svc1, store_path, log_path = self._make_service_with_store(resolver, tmp_path, "3")
 
         # Create the restriction far enough in the past that it's already expired
@@ -582,8 +587,7 @@ class TestVisibilityPersistence:
         assert wf1.visibility == "metadata_only"
         # Expiry is 2025-01-02 — well in the past relative to wall-clock time
 
-        # Restart service — init calls lapse_expired_visibility_restrictions()
-        # which uses datetime.now() (wall clock), so the 2025-01-02 expiry is past
+        # Restart service — auto-lapse fires inside open_epoch(), not init
         store2 = StateStore(store_path)
         log2 = EventLog(log_path)
         svc2 = GenesisService(
@@ -591,14 +595,33 @@ class TestVisibilityPersistence:
             event_log=log2,
             state_store=store2,
         )
-        svc2.open_epoch("epoch-2")
 
-        # The restriction should have been auto-lapsed during init
+        # Before epoch open: restriction should still be metadata_only
+        # (no mutation without audit trail)
+        wf_pre = svc2._workflow_orchestrator.get_workflow(wf_id)
+        assert wf_pre is not None, "Workflow must survive restart"
+        assert wf_pre.visibility == "metadata_only", (
+            "Restriction must NOT lapse before epoch open (no audit trail)"
+        )
+
+        # Open epoch — triggers auto-lapse with proper event recording
+        epoch_result = svc2.open_epoch("epoch-2")
+        assert epoch_result.success
+
+        # The restriction should have been auto-lapsed during open_epoch
         wf2 = svc2._workflow_orchestrator.get_workflow(wf_id)
         assert wf2 is not None, "Workflow must survive restart"
-        assert wf2.visibility == "public", "Expired restriction must auto-lapse on restart"
+        assert wf2.visibility == "public", "Expired restriction must auto-lapse on epoch open"
         assert wf2.visibility_justification is None
         assert wf2.visibility_expiry_utc is None
+
+        # CRITICAL: verify audit event was recorded (the P1 fix)
+        lapse_events = svc2._event_log.events(EventKind.VISIBILITY_RESTRICTION_LAPSED)
+        assert len(lapse_events) >= 1, (
+            "VISIBILITY_RESTRICTION_LAPSED event must be emitted — "
+            "silent state mutation without audit trail is a P1 violation"
+        )
+        assert lapse_events[-1].payload["workflow_id"] == wf_id
 
 
 # ======================================================================
