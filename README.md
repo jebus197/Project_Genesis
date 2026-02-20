@@ -116,23 +116,23 @@ The technique has been in use since the early days of Bitcoin, through services 
 
 ### The Genesis constitution: a worked example
 
-The first document anchored in Genesis is its own constitution — the foundational document of the entire project. This serves as both a governance act and a concrete demonstration of how anchoring works. Like any foundational document, it evolved: the constitution has been anchored seven times, each version recording the rules at a new stage of the platform's evolution. All seven are independently verifiable on the blockchain. The rules were committed publicly and immutably before any user existed to lobby for changes.
+The first document anchored in Genesis is its own constitution — the foundational document of the entire project. This serves as both a governance act and a concrete demonstration of how anchoring works. Like any foundational document, it evolved: the constitution has been anchored eight times, each version recording the rules at a new stage of the platform's evolution. All eight are independently verifiable on the blockchain. The rules were committed publicly and immutably before any user existed to lobby for changes.
 
-**Current anchor (Genesis Block 7 — narrative alignment + comprehensive docs update):**
+**Current anchor (Genesis Block 8 — governance operating layer):**
 
 | Field | Value |
 |---|---|
 | Document | `TRUST_CONSTITUTION.md` |
-| SHA-256 Hash | `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca` |
+| SHA-256 Hash | `dde36f8dfb154ea1a3ca10c5615805fe6866b667e65a38b412ba27baf7a79390` |
 | Chain | Ethereum Sepolia (Chain ID 11155111) |
-| Block | 10287422 |
+| Block | 10300320 |
 | Sender | [`0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE`](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) |
-| Transaction | [`efd7fd2a...`](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c) |
-| Anchored | 2026-02-18T18:04:12Z |
+| Transaction | [`4f2863f9...`](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99) |
+| Anchored | 2026-02-20T15:35:24Z |
 
-This anchor captures: the full constitutional substance from Genesis Block 6 (Genesis Common Fund, harmful work prevention, three-tier justice, workflow orchestration, four entrenched provisions) plus narrative alignment and comprehensive documentation update. 1244 tests. Independently reviewed.
+This anchor captures: all prior constitutional substance (Genesis Blocks 1-7) plus G0 Retroactive Ratification, The Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #81 (evolutionary safety). 1615 tests. Independently reviewed.
 
-The complete anchoring history — all seven Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
+The complete anchoring history — all eight Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
 
 ### How to Verify It Yourself
 
@@ -144,7 +144,7 @@ Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/efd7
 
 **Step 2 — Verify earlier anchors:**
 
-The [Trust Mint Log](docs/ANCHORS.md) records all seven Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process — from the earliest draft to the current version.
+The [Trust Mint Log](docs/ANCHORS.md) records all eight Genesis Blocks with their transaction hashes and Etherscan links. Each can be independently verified using the same process — from the earliest draft to the current version.
 
 **What this proves:** The constitution existed in its exact form at each recorded time. No one — including the project owner — can alter the anchored versions without the mismatch being publicly detectable.
 
@@ -450,7 +450,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (1390 tests):**
+**Validation (1615 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite
