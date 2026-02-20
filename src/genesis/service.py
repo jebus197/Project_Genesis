@@ -9759,10 +9759,9 @@ class GenesisService:
         if clearance.level == ClearanceLevel.AUTONOMOUS:
             tr = self._trust_records.get(clearance.machine_id)
             if tr and hasattr(tr, 'domain_scores'):
-                for ds in tr.domain_scores:
-                    if ds.domain == clearance.domain:
-                        machine_domain_trust = ds.score
-                        break
+                ds = tr.domain_scores.get(clearance.domain)
+                if ds is not None:
+                    machine_domain_trust = ds.score
 
         try:
             result = self._domain_expert_engine.evaluate_clearance(
@@ -10027,7 +10026,7 @@ class GenesisService:
         tier2_granted_utc = None
         reauth_chain_broken = True
         if tier2_clearance is not None:
-            tier2_granted_utc = tier2_clearance.created_utc
+            tier2_granted_utc = tier2_clearance.approved_utc or tier2_clearance.nominated_utc
             reauth_chain_broken = False  # Active = chain intact
 
         # Get machine domain trust

@@ -497,6 +497,20 @@ class DomainExpertEngine:
                 f"cannot renew"
             )
 
+        # Guard against duplicate pending renewals for the same tuple
+        for existing in self._clearances.values():
+            if (existing.machine_id == old.machine_id
+                    and existing.org_id == old.org_id
+                    and existing.domain == old.domain
+                    and existing.level == old.level
+                    and existing.status == DomainClearanceStatus.PENDING
+                    and existing.clearance_id != clearance_id):
+                raise ValueError(
+                    f"Pending renewal already exists for "
+                    f"{old.machine_id}/{old.domain}/{old.level.value}: "
+                    f"{existing.clearance_id}"
+                )
+
         new_id = f"clr_{uuid.uuid4().hex[:12]}"
         new_clearance = DomainClearance(
             clearance_id=new_id,
