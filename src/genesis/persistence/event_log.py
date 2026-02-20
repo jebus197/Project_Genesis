@@ -152,6 +152,12 @@ class EventKind(str, enum.Enum):
     ASSEMBLY_TOPIC_CREATED = "assembly_topic_created"
     ASSEMBLY_CONTRIBUTION_ADDED = "assembly_contribution_added"
     ASSEMBLY_TOPIC_ARCHIVED = "assembly_topic_archived"
+    # Organisation Registry events (Phase F-2)
+    ORG_CREATED = "org_created"
+    ORG_MEMBER_NOMINATED = "org_member_nominated"
+    ORG_MEMBER_ATTESTED = "org_member_attested"
+    ORG_MEMBER_REMOVED = "org_member_removed"
+    ORG_TIER_CHANGED = "org_tier_changed"
 
 
 @dataclass(frozen=True)

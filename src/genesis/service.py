@@ -130,6 +130,11 @@ from genesis.legal.rights import RightsEnforcer
 from genesis.legal.rehabilitation import RehabilitationEngine
 from genesis.workflow.orchestrator import WorkflowOrchestrator, WorkflowStatus
 from genesis.governance.assembly import AssemblyEngine, AssemblyTopicStatus
+from genesis.governance.org_registry import (
+    OrgRegistryEngine,
+    OrgVerificationTier,
+    OrgMembershipStatus,
+)
 from genesis.governance.g0_ratification import (
     G0RatificationEngine,
     G0RatificationItem,
@@ -282,6 +287,11 @@ class GenesisService:
         # Assembly — anonymous deliberation (Phase F-1)
         self._assembly_engine = AssemblyEngine(resolver.assembly_config())
 
+        # Organisation Registry — coordination structures (Phase F-2)
+        self._org_registry_engine = OrgRegistryEngine(
+            resolver.org_registry_config()
+        )
+
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
         # attestation) resets the 50-year dormancy counter.
@@ -357,6 +367,13 @@ class GenesisService:
                 self._assembly_engine = AssemblyEngine.from_records(
                     resolver.assembly_config(),
                     assembly_topics,
+                )
+            # Restore Organisation Registry state (Phase F-2)
+            org_records = state_store.load_org_registry()
+            if org_records:
+                self._org_registry_engine = OrgRegistryEngine.from_records(
+                    resolver.org_registry_config(),
+                    org_records,
                 )
         else:
             self._roster = ActorRoster()
@@ -5539,6 +5556,10 @@ class GenesisService:
         self._state_store.save_assembly_topics(
             self._assembly_engine.to_records(),
         )
+        # Organisation Registry (Phase F-2)
+        self._state_store.save_org_registry(
+            self._org_registry_engine.to_records(),
+        )
 
     def _safe_persist(
         self,
@@ -9050,5 +9071,431 @@ class GenesisService:
                 "created_utc": topic.created_utc.isoformat(),
                 "last_activity_utc": topic.last_activity_utc.isoformat(),
                 "contributions": contributions,
+            },
+        )
+
+    # ==================================================================
+    # Organisation Registry — coordination structures, not governance
+    # (Phase F-2)
+    # ==================================================================
+
+    def create_organisation(
+        self,
+        founder_id: str,
+        name: str,
+        purpose: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Create a new organisation with the founder as sole member.
+
+        Only verified human actors can create organisations. The org
+        starts at SELF_DECLARED tier with the founder as its first
+        attested member.
+
+        Args:
+            founder_id: The verified human creating the organisation.
+            name: Organisation name.
+            purpose: Stated purpose.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with org_id and org details.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate founder exists and is available
+        entry = self._roster.get(founder_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {founder_id}"],
+            )
+        if entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only human actors can create organisations"],
+            )
+        if entry.status not in (ActorStatus.ACTIVE, ActorStatus.PROVISIONAL):
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {founder_id} is not available (status: {entry.status.value})"],
+            )
+
+        try:
+            org = self._org_registry_engine.create_organisation(
+                founder_id=founder_id,
+                founder_kind="human",
+                name=name,
+                purpose=purpose,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log event
+        err = self._record_actor_lifecycle_event(
+            founder_id,
+            EventKind.ORG_CREATED,
+            {
+                "org_id": org.org_id,
+                "name": org.name,
+                "purpose": org.purpose,
+                "tier": org.tier.value,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "org_id": org.org_id,
+                "name": org.name,
+                "purpose": org.purpose,
+                "founder_id": org.founder_id,
+                "tier": org.tier.value,
+                "member_count": org.member_count,
+            },
+        )
+
+    def nominate_org_member(
+        self,
+        org_id: str,
+        actor_id: str,
+        nominator_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Nominate an actor for membership in an organisation.
+
+        The nominator must be an existing attested member. Machine
+        actors can only be nominated by human members.
+
+        Args:
+            org_id: Target organisation.
+            actor_id: Actor to nominate.
+            nominator_id: Existing member making the nomination.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with member details.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate nominated actor exists
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+        if entry.status not in (ActorStatus.ACTIVE, ActorStatus.PROVISIONAL):
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {actor_id} is not available (status: {entry.status.value})"],
+            )
+
+        actor_kind = "human" if entry.actor_kind == ActorKind.HUMAN else "machine"
+
+        try:
+            member = self._org_registry_engine.nominate_member(
+                org_id=org_id,
+                actor_id=actor_id,
+                actor_kind=actor_kind,
+                nominator_id=nominator_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log event
+        err = self._record_actor_lifecycle_event(
+            nominator_id,
+            EventKind.ORG_MEMBER_NOMINATED,
+            {
+                "org_id": org_id,
+                "member_id": actor_id,
+                "actor_kind": actor_kind,
+                "nominated_by": nominator_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "org_id": org_id,
+                "member_id": actor_id,
+                "status": member.status.value,
+                "actor_kind": actor_kind,
+            },
+        )
+
+    def attest_org_member(
+        self,
+        org_id: str,
+        member_id: str,
+        attestor_id: str,
+        evidence_summary: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Attest a pending member's legitimacy.
+
+        Attestors must be existing attested members with trust above
+        the tau_vote threshold. When attestation count reaches the
+        configured threshold, the member is promoted to ATTESTED status.
+
+        Args:
+            org_id: Target organisation.
+            member_id: The member being attested.
+            attestor_id: The existing member providing attestation.
+            evidence_summary: Brief evidence of legitimacy.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with updated member details.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Get attestor trust score
+        trust_record = self._trust_records.get(attestor_id)
+        if trust_record is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No trust record for attestor: {attestor_id}"],
+            )
+        attestor_trust = trust_record.score
+
+        # Get tau_vote threshold
+        tau_vote, _ = self._resolver.eligibility_thresholds()
+
+        try:
+            member = self._org_registry_engine.attest_member(
+                org_id=org_id,
+                member_id=member_id,
+                attestor_id=attestor_id,
+                attestor_trust=attestor_trust,
+                evidence_summary=evidence_summary,
+                tau_vote=tau_vote,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log attestation event
+        err = self._record_actor_lifecycle_event(
+            attestor_id,
+            EventKind.ORG_MEMBER_ATTESTED,
+            {
+                "org_id": org_id,
+                "member_id": member_id,
+                "attestor_id": attestor_id,
+                "attestation_count": member.attestation_count,
+                "member_status": member.status.value,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        # Recalculate tier if member was promoted
+        if member.status == OrgMembershipStatus.ATTESTED:
+            org = self._org_registry_engine.get_organisation(org_id)
+            if org is not None:
+                member_trusts = {}
+                for mid, m in org.members.items():
+                    if m.status == OrgMembershipStatus.ATTESTED:
+                        tr = self._trust_records.get(mid)
+                        member_trusts[mid] = tr.score if tr else 0.0
+                old_tier = org.tier
+                new_tier = self._org_registry_engine.recalculate_tier(
+                    org_id, member_trusts,
+                )
+                if new_tier != old_tier:
+                    self._record_actor_lifecycle_event(
+                        attestor_id,
+                        EventKind.ORG_TIER_CHANGED,
+                        {
+                            "org_id": org_id,
+                            "old_tier": old_tier.value,
+                            "new_tier": new_tier.value,
+                            "member_count": org.member_count,
+                        },
+                    )
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "org_id": org_id,
+                "member_id": member_id,
+                "status": member.status.value,
+                "attestation_count": member.attestation_count,
+            },
+        )
+
+    def remove_org_member(
+        self,
+        org_id: str,
+        member_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Remove a member from an organisation.
+
+        The founder cannot be removed.
+
+        Args:
+            org_id: Target organisation.
+            member_id: The member to remove.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with updated member details.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            member = self._org_registry_engine.remove_member(
+                org_id=org_id,
+                member_id=member_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log event
+        err = self._record_actor_lifecycle_event(
+            member_id,
+            EventKind.ORG_MEMBER_REMOVED,
+            {
+                "org_id": org_id,
+                "member_id": member_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        # Recalculate tier after removal
+        org = self._org_registry_engine.get_organisation(org_id)
+        if org is not None:
+            member_trusts = {}
+            for mid, m in org.members.items():
+                if m.status == OrgMembershipStatus.ATTESTED:
+                    tr = self._trust_records.get(mid)
+                    member_trusts[mid] = tr.score if tr else 0.0
+            old_tier = org.tier
+            new_tier = self._org_registry_engine.recalculate_tier(
+                org_id, member_trusts,
+            )
+            if new_tier != old_tier:
+                self._record_actor_lifecycle_event(
+                    member_id,
+                    EventKind.ORG_TIER_CHANGED,
+                    {
+                        "org_id": org_id,
+                        "old_tier": old_tier.value,
+                        "new_tier": new_tier.value,
+                        "member_count": org.member_count,
+                    },
+                )
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "org_id": org_id,
+                "member_id": member_id,
+                "status": member.status.value,
+            },
+        )
+
+    def list_organisations(
+        self,
+        tier_filter: Optional[str] = None,
+    ) -> ServiceResult:
+        """List organisations, optionally filtered by verification tier.
+
+        Args:
+            tier_filter: Optional tier value to filter by
+                (e.g. "self_declared", "attested", "verified").
+
+        Returns:
+            ServiceResult with list of organisations.
+        """
+        tier = None
+        if tier_filter is not None:
+            try:
+                tier = OrgVerificationTier(tier_filter)
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Invalid tier filter: {tier_filter}"],
+                )
+
+        orgs = self._org_registry_engine.list_organisations(tier_filter=tier)
+        org_list = []
+        for org in orgs:
+            org_list.append({
+                "org_id": org.org_id,
+                "name": org.name,
+                "purpose": org.purpose,
+                "founder_id": org.founder_id,
+                "tier": org.tier.value,
+                "member_count": org.member_count,
+                "created_utc": org.created_utc.isoformat(),
+            })
+
+        return ServiceResult(
+            success=True,
+            data={"organisations": org_list, "count": len(org_list)},
+        )
+
+    def get_organisation(self, org_id: str) -> ServiceResult:
+        """Retrieve a single organisation with member details.
+
+        Args:
+            org_id: Organisation ID to retrieve.
+
+        Returns:
+            ServiceResult with organisation data including members.
+        """
+        org = self._org_registry_engine.get_organisation(org_id)
+        if org is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Organisation not found: {org_id}"],
+            )
+
+        members = []
+        for mid, m in org.members.items():
+            members.append({
+                "actor_id": m.actor_id,
+                "actor_kind": m.actor_kind,
+                "status": m.status.value,
+                "attestation_count": m.attestation_count,
+                "joined_utc": m.joined_utc.isoformat() if m.joined_utc else None,
+                "nominated_by": m.nominated_by,
+            })
+
+        return ServiceResult(
+            success=True,
+            data={
+                "org_id": org.org_id,
+                "name": org.name,
+                "purpose": org.purpose,
+                "founder_id": org.founder_id,
+                "tier": org.tier.value,
+                "member_count": org.member_count,
+                "created_utc": org.created_utc.isoformat(),
+                "members": members,
             },
         )

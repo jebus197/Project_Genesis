@@ -807,6 +807,20 @@ class PolicyResolver:
         config = self._params.get("assembly", {})
         return {**defaults, **config}
 
+    def org_registry_config(self) -> dict[str, Any]:
+        """Return Organisation Registry configuration.
+
+        Keys: attestation_count_required, verified_min_members, verified_min_avg_trust.
+        Reads from constitutional_params.json org_registry section.
+        """
+        defaults = {
+            "attestation_count_required": 3,
+            "verified_min_members": 10,
+            "verified_min_avg_trust": 0.50,
+        }
+        config = self._params.get("org_registry", {})
+        return {**defaults, **config}
+
     def amendment_config(self) -> dict[str, Any]:
         """Return constitutional amendment configuration.
 

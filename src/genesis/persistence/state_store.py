@@ -1443,3 +1443,27 @@ class StateStore:
         AssemblyEngine.from_records().
         """
         return self._state.get("assembly_topics", [])
+
+    # ------------------------------------------------------------------
+    # Organisation Registry persistence (Phase F-2)
+    # ------------------------------------------------------------------
+
+    def save_org_registry(
+        self,
+        orgs_data: list[dict[str, Any]],
+    ) -> None:
+        """Serialize Organisation Registry data to state.
+
+        Args:
+            orgs_data: Serialised org records from OrgRegistryEngine.to_records().
+        """
+        self._state["org_registry"] = orgs_data
+        self._save()
+
+    def load_org_registry(self) -> list[dict[str, Any]]:
+        """Deserialize Organisation Registry data from state.
+
+        Returns list of org dicts in the format expected by
+        OrgRegistryEngine.from_records().
+        """
+        return self._state.get("org_registry", [])

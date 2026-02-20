@@ -179,6 +179,11 @@
   "assembly": {
     "inactivity_expiry_days": 30
   },
+  "org_registry": {
+    "attestation_count_required": 3,
+    "verified_min_members": 10,
+    "verified_min_avg_trust": 0.50
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,
