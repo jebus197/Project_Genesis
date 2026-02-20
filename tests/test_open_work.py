@@ -385,6 +385,55 @@ class TestVisibilityRestrictionLapse:
         last = events[-1]
         assert last.payload["listing_id"] == "L-LAPSE-EVT"
 
+    def test_lapse_fails_closed_on_event_log_error(self, service):
+        """If audit event recording fails, visibility is NOT mutated (fail-closed).
+
+        This is a P1 regression test: silent state mutation without audit trail
+        violates constitutional auditability. The lapse method must record the
+        event BEFORE mutating state, and skip the workflow if recording fails.
+        """
+        now = _now()
+        result = service.create_funded_listing(
+            listing_id="L-FAILCLOSE",
+            title="Fail-closed lapse test",
+            description="Visibility must not change if audit fails",
+            creator_id="creator-1",
+            mission_reward=Decimal("500"),
+            visibility=WorkVisibility.METADATA_ONLY,
+            visibility_justification="Temporary restriction",
+            visibility_expiry_days=1,
+            now=now,
+        )
+        assert result.success
+        wf_id = result.data["workflow_id"]
+
+        # Monkey-patch the event recorder to simulate failure
+        original = service._record_actor_lifecycle_event
+
+        def _fail_recorder(actor_id, event_kind, payload):
+            return "Simulated event log failure: disk full"
+
+        service._record_actor_lifecycle_event = _fail_recorder
+
+        try:
+            future = now + timedelta(days=2)
+            lapse_result = service.lapse_expired_visibility_restrictions(now=future)
+
+            # Method should report failure
+            assert not lapse_result.success, "Must report failure when audit fails"
+            assert lapse_result.data.get("audit_failures"), "Must include audit_failures"
+            assert lapse_result.data["count"] == 0, "No workflows should have been lapsed"
+
+            # CRITICAL: visibility must NOT have been mutated
+            wf = service.get_workflow(wf_id)
+            assert wf.visibility == "metadata_only", (
+                "Visibility must NOT change when audit event recording fails"
+            )
+            assert wf.visibility_justification is not None
+            assert wf.visibility_expiry_utc is not None
+        finally:
+            service._record_actor_lifecycle_event = original
+
 
 # ======================================================================
 # 5. No Downgrade After Completion

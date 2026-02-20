@@ -4519,8 +4519,10 @@ class GenesisService:
             lapse_result = self.lapse_expired_visibility_restrictions()
             warning = self._safe_persist_post_audit()
             data: dict[str, Any] = {"epoch_id": eid}
-            if lapse_result.success and lapse_result.data.get("count", 0) > 0:
+            if lapse_result.data.get("count", 0) > 0:
                 data["visibility_lapsed"] = lapse_result.data
+            if lapse_result.data.get("audit_failures"):
+                data["visibility_lapse_audit_failures"] = lapse_result.data["audit_failures"]
             if warning:
                 data["warning"] = warning
             return ServiceResult(success=True, data=data)
@@ -6893,14 +6895,20 @@ class GenesisService:
 
         Constitutional requirement: deliverable restrictions are time-limited
         and automatically lapse when their expiry passes. This method should
-        be called periodically (e.g. on a timer or at service startup).
+        be called periodically (e.g. on a timer or at epoch open).
 
-        Returns the list of workflow IDs whose restrictions were lapsed.
+        Fail-closed audit semantics: the audit event is recorded BEFORE any
+        state mutation. If event recording fails (no epoch, I/O error), the
+        workflow is skipped — no silent mutation without audit trail.
+
+        Returns the list of workflow IDs whose restrictions were lapsed,
+        plus any audit failures for workflows that could not be lapsed.
         """
         if now is None:
             now = datetime.now(timezone.utc)
 
         lapsed_ids: list[str] = []
+        audit_failures: list[dict[str, Any]] = []
 
         for wf_id, wf in self._workflow_orchestrator._workflows.items():
             if (
@@ -6908,7 +6916,21 @@ class GenesisService:
                 and wf.visibility_expiry_utc is not None
                 and wf.visibility_expiry_utc <= now
             ):
-                # Lapse the restriction — restore to public
+                # Fail-closed: record audit event BEFORE mutating state.
+                # If event recording fails, skip this workflow entirely.
+                err = self._record_actor_lifecycle_event(
+                    wf.creator_id,
+                    EventKind.VISIBILITY_RESTRICTION_LAPSED,
+                    {
+                        "workflow_id": wf_id,
+                        "listing_id": wf.listing_id,
+                    },
+                )
+                if err is not None:
+                    audit_failures.append({"workflow_id": wf_id, "error": err})
+                    continue  # Do NOT mutate — fail closed
+
+                # Event recorded successfully — now safe to mutate state
                 wf.visibility = "public"
                 wf.visibility_justification = None
                 wf.visibility_expiry_utc = None
@@ -6920,23 +6942,26 @@ class GenesisService:
                     listing.visibility_justification = None
                     listing.visibility_expiry_utc = None
 
-                # Emit lapse event
-                self._record_actor_lifecycle_event(
-                    wf.creator_id,
-                    EventKind.VISIBILITY_RESTRICTION_LAPSED,
-                    {
-                        "workflow_id": wf_id,
-                        "listing_id": wf.listing_id,
-                    },
-                )
                 lapsed_ids.append(wf_id)
 
         if lapsed_ids:
             self._safe_persist_post_audit()
 
+        data: dict[str, Any] = {
+            "lapsed_workflow_ids": lapsed_ids,
+            "count": len(lapsed_ids),
+        }
+        if audit_failures:
+            data["audit_failures"] = audit_failures
+
         return ServiceResult(
-            success=True,
-            data={"lapsed_workflow_ids": lapsed_ids, "count": len(lapsed_ids)},
+            success=len(audit_failures) == 0,
+            data=data,
+            errors=(
+                [f"Audit-trail failure for {len(audit_failures)} workflow(s)"]
+                if audit_failures
+                else []
+            ),
         )
 
     # ------------------------------------------------------------------
