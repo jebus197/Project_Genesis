@@ -1491,3 +1491,22 @@ class StateStore:
         DomainExpertEngine.from_records().
         """
         return self._state.get("domain_clearances", [])
+
+    def save_machine_agency(
+        self,
+        agency_data: list[dict[str, Any]],
+    ) -> None:
+        """Serialize machine agency Tier 3 grant data to state.
+
+        Expects a list of grant dicts from MachineAgencyEngine.to_records().
+        """
+        self._state["machine_agency"] = agency_data
+        self._save()
+
+    def load_machine_agency(self) -> list[dict[str, Any]]:
+        """Deserialize machine agency data from state.
+
+        Returns list of Tier 3 grant dicts in the format expected by
+        MachineAgencyEngine.from_records().
+        """
+        return self._state.get("machine_agency", [])

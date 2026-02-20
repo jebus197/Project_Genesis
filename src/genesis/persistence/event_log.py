@@ -165,6 +165,13 @@ class EventKind(str, enum.Enum):
     CLEARANCE_REVOKED = "clearance_revoked"
     CLEARANCE_EXPIRED = "clearance_expired"
     CLEARANCE_RENEWAL_STARTED = "clearance_renewal_started"
+    # Machine Agency Tier events (Phase F-4)
+    TIER3_PETITION_FILED = "tier3_petition_filed"
+    TIER3_GRANTED = "tier3_granted"
+    TIER3_REJECTED = "tier3_rejected"
+    TIER3_REVOKED = "tier3_revoked"
+    TIER3_SUSPENDED = "tier3_suspended"
+    TIER3_VIOLATION_REVERT = "tier3_violation_revert"
 
 
 @dataclass(frozen=True)

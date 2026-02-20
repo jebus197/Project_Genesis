@@ -192,6 +192,10 @@
     "autonomous_min_machine_trust": 0.60,
     "clearance_expiry_days": 365
   },
+  "machine_agency": {
+    "tier3_min_years_at_tier2": 5,
+    "tier3_min_domain_trust": 0.70
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,

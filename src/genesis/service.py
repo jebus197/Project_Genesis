@@ -140,6 +140,12 @@ from genesis.governance.domain_expert import (
     DomainClearanceStatus,
     DomainExpertEngine,
 )
+from genesis.governance.machine_agency import (
+    MachineAgencyEngine,
+    MachineTier,
+    Tier3PetitionStatus,
+    TIER3_PROVISION_KEY_PREFIX,
+)
 from genesis.governance.g0_ratification import (
     G0RatificationEngine,
     G0RatificationItem,
@@ -301,6 +307,9 @@ class GenesisService:
         self._domain_expert_engine = DomainExpertEngine(
             resolver.domain_clearance_config()
         )
+        self._machine_agency_engine = MachineAgencyEngine(
+            resolver.machine_agency_config()
+        )
 
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
@@ -391,6 +400,13 @@ class GenesisService:
                 self._domain_expert_engine = DomainExpertEngine.from_records(
                     resolver.domain_clearance_config(),
                     clearance_records,
+                )
+            # Restore Machine Agency Tier state (Phase F-4)
+            agency_records = state_store.load_machine_agency()
+            if agency_records:
+                self._machine_agency_engine = MachineAgencyEngine.from_records(
+                    resolver.machine_agency_config(),
+                    agency_records,
                 )
         else:
             self._roster = ActorRoster()
@@ -5581,6 +5597,9 @@ class GenesisService:
         self._state_store.save_domain_clearances(
             self._domain_expert_engine.to_records(),
         )
+        self._state_store.save_machine_agency(
+            self._machine_agency_engine.to_records(),
+        )
 
     def _safe_persist(
         self,
@@ -9912,4 +9931,514 @@ class GenesisService:
         return ServiceResult(
             success=True,
             data={"clearances": items, "count": len(items)},
+        )
+
+    # ----------------------------------------------------------------
+    # Machine Agency Tier (Phase F-4)
+    # ----------------------------------------------------------------
+
+    def compute_machine_tier(
+        self,
+        machine_id: str,
+    ) -> ServiceResult:
+        """Compute the current agency tier for a machine across all domains.
+
+        Returns domain-level tiers and the effective (highest) tier.
+        """
+        entry = self._roster.get(machine_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Machine not found: {machine_id}"],
+            )
+        if entry.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(
+                success=False,
+                errors=[f"{machine_id} is not a machine"],
+            )
+
+        # Get active clearances as dicts for the engine
+        active_clearances = self._domain_expert_engine.get_active_clearances(
+            machine_id=machine_id,
+        )
+        clearance_dicts = [
+            {
+                "machine_id": c.machine_id,
+                "domain": c.domain,
+                "level": c.level.value,
+            }
+            for c in active_clearances
+        ]
+
+        domain_tiers = self._machine_agency_engine.compute_current_tier(
+            machine_id, clearance_dicts,
+        )
+        effective = self._machine_agency_engine.compute_effective_tier(
+            machine_id, clearance_dicts,
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "machine_id": machine_id,
+                "domain_tiers": {
+                    d: t.value for d, t in domain_tiers.items()
+                },
+                "effective_tier": effective.value,
+            },
+        )
+
+    def check_tier3_prerequisites(
+        self,
+        machine_id: str,
+        domain: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Check whether a machine meets Tier 3 prerequisites.
+
+        Evaluates all constitutional requirements without initiating
+        a petition. Used for informational purposes only.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        entry = self._roster.get(machine_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Machine not found: {machine_id}"],
+            )
+        if entry.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(
+                success=False,
+                errors=[f"{machine_id} is not a machine"],
+            )
+
+        # Check for active Tier 2 clearance (autonomous operation)
+        tier2_clearance = None
+        active = self._domain_expert_engine.get_active_clearances(
+            machine_id=machine_id, domain=domain,
+        )
+        for c in active:
+            if c.level == ClearanceLevel.AUTONOMOUS:
+                tier2_clearance = c
+                break
+
+        tier2_granted_utc = None
+        reauth_chain_broken = True
+        if tier2_clearance is not None:
+            tier2_granted_utc = tier2_clearance.created_utc
+            reauth_chain_broken = False  # Active = chain intact
+
+        # Get machine domain trust
+        domain_trust = 0.0
+        trust_record = self._trust_records.get(machine_id)
+        if trust_record is not None:
+            ds = trust_record.domain_scores.get(domain)
+            if ds is not None:
+                domain_trust = ds.score
+
+        # Count violations (simplified — uses trust penalty events)
+        violation_count = 0
+        for event in self._event_log.events():
+            if (
+                event.actor_id == machine_id
+                and event.payload.get("domain") == domain
+                and event.event_kind in (
+                    EventKind.ADJUDICATION_DECIDED,
+                    EventKind.ACTOR_SUSPENDED,
+                )
+            ):
+                violation_count += 1
+
+        prereqs = self._machine_agency_engine.check_tier3_prerequisites(
+            machine_id=machine_id,
+            domain=domain,
+            tier2_granted_utc=tier2_granted_utc,
+            domain_trust_score=domain_trust,
+            violation_count=violation_count,
+            reauth_chain_broken=reauth_chain_broken,
+            now=now,
+        )
+
+        return ServiceResult(
+            success=True,
+            data={
+                "machine_id": prereqs.machine_id,
+                "domain": prereqs.domain,
+                "has_5_years_tier2": prereqs.has_5_years_tier2,
+                "domain_trust_above_threshold": prereqs.domain_trust_above_threshold,
+                "zero_violations": prereqs.zero_violations,
+                "unbroken_reauth_chain": prereqs.unbroken_reauth_chain,
+                "all_met": prereqs.all_met,
+            },
+        )
+
+    def initiate_tier3_petition(
+        self,
+        machine_id: str,
+        domain: str,
+        petitioner_id: str,
+        justification: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File a Tier 3 (Autonomous Domain Agency) petition.
+
+        Creates a constitutional amendment with provision key
+        'machine_agency.{machine_id}.{domain}' and routes it through
+        the standard three-chamber amendment process.
+
+        The petitioner MUST be a human operator — machines cannot
+        self-petition (design test #75).
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate petitioner is human
+        petitioner = self._roster.get(petitioner_id)
+        if petitioner is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Petitioner not found: {petitioner_id}"],
+            )
+        if petitioner.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Only human operators can petition for Tier 3 "
+                    "(machine cannot self-petition)"
+                ],
+            )
+
+        # Validate machine exists
+        machine = self._roster.get(machine_id)
+        if machine is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Machine not found: {machine_id}"],
+            )
+        if machine.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(
+                success=False,
+                errors=[f"{machine_id} is not a machine"],
+            )
+
+        # Create amendment via the existing AmendmentEngine
+        provision_key = self._machine_agency_engine.provision_key_for(
+            machine_id, domain,
+        )
+        try:
+            proposal = self._amendment_engine.create_amendment(
+                proposer_id=petitioner_id,
+                provision_key=provision_key,
+                current_value="tier_2",
+                proposed_value="tier_3",
+                justification=justification,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Record the petition in the MachineAgencyEngine
+        try:
+            grant = self._machine_agency_engine.initiate_tier3_petition(
+                machine_id=machine_id,
+                domain=domain,
+                petitioner_id=petitioner_id,
+                amendment_proposal_id=proposal.proposal_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Record event
+        err = self._record_actor_lifecycle_event(
+            petitioner_id,
+            EventKind.TIER3_PETITION_FILED,
+            {
+                "machine_id": machine_id,
+                "domain": domain,
+                "grant_id": grant.grant_id,
+                "amendment_proposal_id": proposal.proposal_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "machine_id": machine_id,
+                "domain": domain,
+                "amendment_proposal_id": proposal.proposal_id,
+                "status": grant.status.value,
+            },
+        )
+
+    def on_tier3_amendment_confirmed(
+        self,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Handle a confirmed amendment that grants Tier 3 agency.
+
+        Called by the service layer when an amendment with a
+        machine_agency.* provision key completes the three-chamber
+        process and is confirmed.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        grant = self._machine_agency_engine.on_amendment_confirmed(
+            amendment_proposal_id, now,
+        )
+        if grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No pending petition for amendment: {amendment_proposal_id}"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            grant.petitioner_id,
+            EventKind.TIER3_GRANTED,
+            {
+                "machine_id": grant.machine_id,
+                "domain": grant.domain,
+                "grant_id": grant.grant_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "machine_id": grant.machine_id,
+                "domain": grant.domain,
+                "status": grant.status.value,
+            },
+        )
+
+    def on_tier3_amendment_rejected(
+        self,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Handle a rejected Tier 3 amendment."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        grant = self._machine_agency_engine.on_amendment_rejected(
+            amendment_proposal_id, now,
+        )
+        if grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No pending petition for amendment: {amendment_proposal_id}"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            grant.petitioner_id,
+            EventKind.TIER3_REJECTED,
+            {
+                "machine_id": grant.machine_id,
+                "domain": grant.domain,
+                "grant_id": grant.grant_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "machine_id": grant.machine_id,
+                "domain": grant.domain,
+                "status": grant.status.value,
+            },
+        )
+
+    def revoke_tier3(
+        self,
+        machine_id: str,
+        domain: str,
+        reason: str,
+        actor_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Revoke Tier 3 agency — reverts machine to Tier 1 (supervised)."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        grant = self._machine_agency_engine.revoke_tier3(
+            machine_id, domain, reason, now,
+        )
+        if grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No active Tier 3 grant for {machine_id} in '{domain}'"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.TIER3_REVOKED,
+            {
+                "machine_id": machine_id,
+                "domain": domain,
+                "grant_id": grant.grant_id,
+                "reason": reason,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "status": grant.status.value,
+            },
+        )
+
+    def emergency_suspend_tier3(
+        self,
+        machine_id: str,
+        domain: str,
+        reason: str,
+        actor_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Emergency suspension of Tier 3 agency pending adjudication."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        grant = self._machine_agency_engine.emergency_suspend(
+            machine_id, domain, reason, now,
+        )
+        if grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No active Tier 3 grant for {machine_id} in '{domain}'"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.TIER3_SUSPENDED,
+            {
+                "machine_id": machine_id,
+                "domain": domain,
+                "grant_id": grant.grant_id,
+                "reason": reason,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "status": grant.status.value,
+            },
+        )
+
+    def on_machine_violation(
+        self,
+        machine_id: str,
+        domain: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Handle a constitutional violation — auto-reverts to Tier 1.
+
+        Any violation auto-reverts Tier 3 to Tier 1 (supervised), not
+        Tier 0. The domain clearance remains; only autonomous agency
+        is revoked.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        grant = self._machine_agency_engine.on_violation(
+            machine_id, domain, now,
+        )
+        if grant is None:
+            # No Tier 3 to revert — not an error, just nothing to do
+            return ServiceResult(
+                success=True,
+                data={"reverted": False, "reason": "No active Tier 3 grant"},
+            )
+
+        err = self._record_actor_lifecycle_event(
+            machine_id,
+            EventKind.TIER3_VIOLATION_REVERT,
+            {
+                "machine_id": machine_id,
+                "domain": domain,
+                "grant_id": grant.grant_id,
+                "reverted_to": "tier_1",
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "reverted": True,
+                "grant_id": grant.grant_id,
+                "reverted_to": "tier_1",
+            },
+        )
+
+    def get_machine_tier3_grants(
+        self,
+        machine_id: Optional[str] = None,
+        status: Optional[str] = None,
+    ) -> ServiceResult:
+        """List Tier 3 grants with optional filters."""
+        petition_status = None
+        if status is not None:
+            try:
+                petition_status = Tier3PetitionStatus(status)
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Invalid petition status: {status}"],
+                )
+
+        grants = self._machine_agency_engine.get_all_grants(
+            machine_id=machine_id,
+            status=petition_status,
+        )
+
+        items = []
+        for g in grants:
+            items.append({
+                "grant_id": g.grant_id,
+                "machine_id": g.machine_id,
+                "domain": g.domain,
+                "petitioner_id": g.petitioner_id,
+                "status": g.status.value,
+                "granted_utc": (
+                    g.granted_utc.isoformat() if g.granted_utc else None
+                ),
+            })
+
+        return ServiceResult(
+            success=True,
+            data={"grants": items, "count": len(items)},
         )

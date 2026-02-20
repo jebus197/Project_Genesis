@@ -840,6 +840,19 @@ class PolicyResolver:
         config = self._params.get("domain_clearance", {})
         return {**defaults, **config}
 
+    def machine_agency_config(self) -> dict[str, Any]:
+        """Return Machine Agency Tier configuration.
+
+        Keys: tier3_min_years_at_tier2, tier3_min_domain_trust.
+        Reads from constitutional_params.json machine_agency section.
+        """
+        defaults = {
+            "tier3_min_years_at_tier2": 5,
+            "tier3_min_domain_trust": 0.70,
+        }
+        config = self._params.get("machine_agency", {})
+        return {**defaults, **config}
+
     def amendment_config(self) -> dict[str, Any]:
         """Return constitutional amendment configuration.
 
