@@ -1419,3 +1419,27 @@ class StateStore:
         for _iid, data in self._state.get("g0_ratification_items", {}).items():
             items.append(data)
         return items
+
+    # ------------------------------------------------------------------
+    # Assembly persistence (Phase F-1)
+    # ------------------------------------------------------------------
+
+    def save_assembly_topics(
+        self,
+        topics_data: list[dict[str, Any]],
+    ) -> None:
+        """Serialize Assembly topics to state.
+
+        Args:
+            topics_data: Serialised topic records from AssemblyEngine.to_records().
+        """
+        self._state["assembly_topics"] = topics_data
+        self._save()
+
+    def load_assembly_topics(self) -> list[dict[str, Any]]:
+        """Deserialize Assembly topics from state.
+
+        Returns list of topic dicts in the format expected by
+        AssemblyEngine.from_records().
+        """
+        return self._state.get("assembly_topics", [])

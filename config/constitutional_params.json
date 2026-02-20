@@ -176,6 +176,9 @@
   "gcf_compute": {
     "GCF_COMPUTE_CEILING": "0.25"
   },
+  "assembly": {
+    "inactivity_expiry_days": 30
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,

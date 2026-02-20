@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -128,6 +129,7 @@ from genesis.legal.constitutional_court import ConstitutionalCourt
 from genesis.legal.rights import RightsEnforcer
 from genesis.legal.rehabilitation import RehabilitationEngine
 from genesis.workflow.orchestrator import WorkflowOrchestrator, WorkflowStatus
+from genesis.governance.assembly import AssemblyEngine, AssemblyTopicStatus
 from genesis.governance.g0_ratification import (
     G0RatificationEngine,
     G0RatificationItem,
@@ -277,6 +279,9 @@ class GenesisService:
         # Initialized as None — created when G0→G1 transition triggers ratification.
         self._g0_ratification_engine: Optional[G0RatificationEngine] = None
 
+        # Assembly — anonymous deliberation (Phase F-1)
+        self._assembly_engine = AssemblyEngine(resolver.assembly_config())
+
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
         # attestation) resets the 50-year dormancy counter.
@@ -345,6 +350,13 @@ class GenesisService:
                     config={},
                     ratification_window_days=window_days,
                     items=rat_items,
+                )
+            # Restore Assembly state (Phase F-1)
+            assembly_topics = state_store.load_assembly_topics()
+            if assembly_topics:
+                self._assembly_engine = AssemblyEngine.from_records(
+                    resolver.assembly_config(),
+                    assembly_topics,
                 )
         else:
             self._roster = ActorRoster()
@@ -5523,6 +5535,10 @@ class GenesisService:
             self._state_store.save_ratification_items(
                 self._g0_ratification_engine.items,
             )
+        # Assembly (Phase F-1)
+        self._state_store.save_assembly_topics(
+            self._assembly_engine.to_records(),
+        )
 
     def _safe_persist(
         self,
@@ -8736,3 +8752,303 @@ class GenesisService:
         for m in self._missions.values():
             counts[m.state.value] = counts.get(m.state.value, 0) + 1
         return counts
+
+    # ------------------------------------------------------------------
+    # Assembly — anonymous deliberation (Phase F-1)
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _assembly_compliance_hash(actor_id: str) -> tuple[str, str]:
+        """Compute a one-way salted hash for Assembly compliance enforcement.
+
+        Returns (hash, salt). The salt is per-contribution so multiple
+        contributions by the same actor produce different hashes —
+        preventing correlation across contributions.
+
+        The service layer stores the salt in a compliance-only structure.
+        The Assembly engine sees only the hash.
+        """
+        salt = secrets.token_hex(16)
+        raw = f"{actor_id}:{salt}".encode("utf-8")
+        h = hashlib.sha256(raw).hexdigest()
+        return h, salt
+
+    def create_assembly_topic(
+        self,
+        actor_id: str,
+        title: str,
+        content: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Create a new Assembly topic with an initial contribution.
+
+        The actor's identity is stripped before reaching the Assembly engine.
+        Content is screened via the compliance screener.
+
+        Args:
+            actor_id: The contributing actor (identity stripped by this method).
+            title: Topic title.
+            content: First contribution content.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with topic_id and contribution_id on success.
+        """
+        # Validate actor exists and is active
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+        if not entry.is_available():
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {actor_id} is not in an active state"],
+            )
+
+        # Compliance screening
+        screening = self._compliance_screener.screen_mission(
+            title=title,
+            description=content,
+        )
+        if screening.verdict == ComplianceVerdict.REJECTED:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Content rejected by compliance screening: "
+                    f"{', '.join(screening.categories_matched)}"
+                ],
+            )
+
+        is_machine = entry.actor_kind == ActorKind.MACHINE
+        compliance_hash, _salt = self._assembly_compliance_hash(actor_id)
+
+        try:
+            if now is None:
+                now = datetime.now(timezone.utc)
+            topic = self._assembly_engine.create_topic(
+                title=title,
+                content=content,
+                compliance_hash=compliance_hash,
+                is_machine=is_machine,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log event (no actor_id in payload — identity blinding)
+        self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.ASSEMBLY_TOPIC_CREATED,
+            {"topic_id": topic.topic_id},
+        )
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "topic_id": topic.topic_id,
+                "contribution_id": topic.contributions[0].contribution_id,
+                "compliance_flagged": screening.verdict == ComplianceVerdict.FLAGGED,
+            },
+        )
+
+    def contribute_to_assembly(
+        self,
+        actor_id: str,
+        topic_id: str,
+        content: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Add a contribution to an existing Assembly topic.
+
+        The actor's identity is stripped before reaching the Assembly engine.
+        Content is screened via the compliance screener.
+
+        Args:
+            actor_id: The contributing actor (identity stripped by this method).
+            topic_id: Target topic ID.
+            content: Contribution text.
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with contribution_id on success.
+        """
+        # Validate actor exists and is active
+        entry = self._roster.get(actor_id)
+        if entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor not found: {actor_id}"],
+            )
+        if not entry.is_available():
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {actor_id} is not in an active state"],
+            )
+
+        # Compliance screening
+        screening = self._compliance_screener.screen_mission(
+            title="",
+            description=content,
+        )
+        if screening.verdict == ComplianceVerdict.REJECTED:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Content rejected by compliance screening: "
+                    f"{', '.join(screening.categories_matched)}"
+                ],
+            )
+
+        is_machine = entry.actor_kind == ActorKind.MACHINE
+        compliance_hash, _salt = self._assembly_compliance_hash(actor_id)
+
+        try:
+            if now is None:
+                now = datetime.now(timezone.utc)
+            contribution = self._assembly_engine.contribute(
+                topic_id=topic_id,
+                content=content,
+                compliance_hash=compliance_hash,
+                is_machine=is_machine,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Log event (no actor_id in payload — identity blinding)
+        self._record_actor_lifecycle_event(
+            actor_id,
+            EventKind.ASSEMBLY_CONTRIBUTION_ADDED,
+            {"topic_id": topic_id, "contribution_id": contribution.contribution_id},
+        )
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "contribution_id": contribution.contribution_id,
+                "topic_id": topic_id,
+                "compliance_flagged": screening.verdict == ComplianceVerdict.FLAGGED,
+            },
+        )
+
+    def archive_inactive_assembly_topics(
+        self,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Sweep and archive Assembly topics that have exceeded their inactivity period.
+
+        Args:
+            now: Current UTC time.
+
+        Returns:
+            ServiceResult with list of archived topic IDs.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        archived_ids = self._assembly_engine.archive_inactive_topics(now)
+
+        for topic_id in archived_ids:
+            self._record_actor_lifecycle_event(
+                "system",
+                EventKind.ASSEMBLY_TOPIC_ARCHIVED,
+                {"topic_id": topic_id},
+            )
+
+        if archived_ids:
+            self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "archived_topic_ids": archived_ids,
+                "count": len(archived_ids),
+            },
+        )
+
+    def list_assembly_topics(
+        self,
+        status_filter: Optional[str] = None,
+    ) -> ServiceResult:
+        """List Assembly topics, optionally filtered by status.
+
+        No identity information is ever returned.
+
+        Args:
+            status_filter: Optional status filter ("active" or "archived").
+
+        Returns:
+            ServiceResult with list of topic summaries.
+        """
+        sf = None
+        if status_filter is not None:
+            try:
+                sf = AssemblyTopicStatus(status_filter)
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Invalid status filter: {status_filter}"],
+                )
+
+        topics = self._assembly_engine.list_topics(status_filter=sf)
+        summaries = []
+        for t in topics:
+            summaries.append({
+                "topic_id": t.topic_id,
+                "title": t.title,
+                "status": t.status.value,
+                "contribution_count": t.contribution_count,
+                "created_utc": t.created_utc.isoformat(),
+                "last_activity_utc": t.last_activity_utc.isoformat(),
+            })
+
+        return ServiceResult(
+            success=True,
+            data={"topics": summaries, "count": len(summaries)},
+        )
+
+    def get_assembly_topic(self, topic_id: str) -> ServiceResult:
+        """Retrieve a single Assembly topic with all contributions.
+
+        No identity information is ever returned. Contributions include
+        only content, is_machine flag, and timestamp.
+
+        Args:
+            topic_id: Topic ID to retrieve.
+
+        Returns:
+            ServiceResult with topic data including contributions.
+        """
+        topic = self._assembly_engine.get_topic(topic_id)
+        if topic is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Topic not found: {topic_id}"],
+            )
+
+        contributions = []
+        for c in topic.contributions:
+            contributions.append({
+                "contribution_id": c.contribution_id,
+                "content": c.content,
+                "is_machine": c.is_machine,
+                "contributed_utc": c.contributed_utc.isoformat(),
+                # NOTE: compliance_hash intentionally NOT included in read API
+            })
+
+        return ServiceResult(
+            success=True,
+            data={
+                "topic_id": topic.topic_id,
+                "title": topic.title,
+                "status": topic.status.value,
+                "contribution_count": topic.contribution_count,
+                "created_utc": topic.created_utc.isoformat(),
+                "last_activity_utc": topic.last_activity_utc.isoformat(),
+                "contributions": contributions,
+            },
+        )

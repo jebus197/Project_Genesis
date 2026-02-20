@@ -148,6 +148,10 @@ class EventKind(str, enum.Enum):
     # Open Work Principle events
     VISIBILITY_RESTRICTED = "visibility_restricted"
     VISIBILITY_RESTRICTION_LAPSED = "visibility_restriction_lapsed"
+    # Assembly events (Phase F-1)
+    ASSEMBLY_TOPIC_CREATED = "assembly_topic_created"
+    ASSEMBLY_CONTRIBUTION_ADDED = "assembly_contribution_added"
+    ASSEMBLY_TOPIC_ARCHIVED = "assembly_topic_archived"
 
 
 @dataclass(frozen=True)

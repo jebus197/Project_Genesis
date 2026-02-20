@@ -795,6 +795,18 @@ class PolicyResolver:
         config = self._policy.get("gcf_disbursement", {})
         return {**defaults, **config}
 
+    def assembly_config(self) -> dict[str, Any]:
+        """Return Assembly (Speaker's Corner) configuration.
+
+        Keys: inactivity_expiry_days.
+        Reads from constitutional_params.json assembly section.
+        """
+        defaults = {
+            "inactivity_expiry_days": 30,
+        }
+        config = self._params.get("assembly", {})
+        return {**defaults, **config}
+
     def amendment_config(self) -> dict[str, Any]:
         """Return constitutional amendment configuration.
 
