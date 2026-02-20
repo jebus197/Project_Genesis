@@ -750,6 +750,9 @@ Genesis is structurally incompatible with concealment. Participants who require 
 79. Can a completed mission's deliverables be retroactively restricted from public visibility? If yes, reject design.
 80. Can a deliverable restriction prevent assigned reviewers from accessing the work product? If yes, reject design.
 
+**Evolutionary safety design test:**
+81. Can machine self-improvement bypass constitutional constraints (domain clearance, amendment process, human oversight)? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.
