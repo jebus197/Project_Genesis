@@ -1467,3 +1467,27 @@ class StateStore:
         OrgRegistryEngine.from_records().
         """
         return self._state.get("org_registry", [])
+
+    # ------------------------------------------------------------------
+    # Domain Expert / Machine Clearance persistence (Phase F-3)
+    # ------------------------------------------------------------------
+
+    def save_domain_clearances(
+        self,
+        clearance_data: list[dict[str, Any]],
+    ) -> None:
+        """Serialize domain clearance data to state.
+
+        Args:
+            clearance_data: Serialised records from DomainExpertEngine.to_records().
+        """
+        self._state["domain_clearances"] = clearance_data
+        self._save()
+
+    def load_domain_clearances(self) -> list[dict[str, Any]]:
+        """Deserialize domain clearance data from state.
+
+        Returns list of clearance dicts in the format expected by
+        DomainExpertEngine.from_records().
+        """
+        return self._state.get("domain_clearances", [])

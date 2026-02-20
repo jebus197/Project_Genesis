@@ -135,6 +135,11 @@ from genesis.governance.org_registry import (
     OrgVerificationTier,
     OrgMembershipStatus,
 )
+from genesis.governance.domain_expert import (
+    ClearanceLevel,
+    DomainClearanceStatus,
+    DomainExpertEngine,
+)
 from genesis.governance.g0_ratification import (
     G0RatificationEngine,
     G0RatificationItem,
@@ -292,6 +297,11 @@ class GenesisService:
             resolver.org_registry_config()
         )
 
+        # Domain Expert / Machine Clearance (Phase F-3)
+        self._domain_expert_engine = DomainExpertEngine(
+            resolver.domain_clearance_config()
+        )
+
         # Founder dormancy tracking — last cryptographically signed action.
         # Any signed action (login, transaction, governance, proof-of-life
         # attestation) resets the 50-year dormancy counter.
@@ -374,6 +384,13 @@ class GenesisService:
                 self._org_registry_engine = OrgRegistryEngine.from_records(
                     resolver.org_registry_config(),
                     org_records,
+                )
+            # Restore Domain Expert / Machine Clearance state (Phase F-3)
+            clearance_records = state_store.load_domain_clearances()
+            if clearance_records:
+                self._domain_expert_engine = DomainExpertEngine.from_records(
+                    resolver.domain_clearance_config(),
+                    clearance_records,
                 )
         else:
             self._roster = ActorRoster()
@@ -5560,6 +5577,10 @@ class GenesisService:
         self._state_store.save_org_registry(
             self._org_registry_engine.to_records(),
         )
+        # Domain Expert / Machine Clearance (Phase F-3)
+        self._state_store.save_domain_clearances(
+            self._domain_expert_engine.to_records(),
+        )
 
     def _safe_persist(
         self,
@@ -9498,4 +9519,397 @@ class GenesisService:
                 "created_utc": org.created_utc.isoformat(),
                 "members": members,
             },
+        )
+
+    # ==================================================================
+    # Domain Expert Pools / Machine Domain Clearance
+    # (Phase F-3)
+    # ==================================================================
+
+    def nominate_for_clearance(
+        self,
+        machine_id: str,
+        org_id: str,
+        domain: str,
+        nominator_id: str,
+        level: str = "supervised",
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Nominate a machine for domain clearance.
+
+        The nominator must be a human member of the organisation.
+        The machine must be a registered machine actor.
+
+        Args:
+            machine_id: Machine to clear.
+            org_id: Organisation context.
+            domain: Domain for clearance.
+            nominator_id: Human member making nomination.
+            level: "supervised" (Tier 1) or "autonomous" (Tier 2).
+            now: Current UTC time.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate machine exists and is a machine
+        machine_entry = self._roster.get(machine_id)
+        if machine_entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Machine not found: {machine_id}"],
+            )
+        if machine_entry.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(
+                success=False,
+                errors=[f"Actor {machine_id} is not a machine"],
+            )
+
+        # Validate nominator is human and in roster
+        nom_entry = self._roster.get(nominator_id)
+        if nom_entry is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Nominator not found: {nominator_id}"],
+            )
+        if nom_entry.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=["Only human actors can nominate for clearance"],
+            )
+
+        try:
+            cl = ClearanceLevel(level)
+        except ValueError:
+            return ServiceResult(
+                success=False,
+                errors=[f"Invalid clearance level: {level}"],
+            )
+
+        try:
+            clearance = self._domain_expert_engine.nominate_for_clearance(
+                machine_id=machine_id,
+                org_id=org_id,
+                domain=domain,
+                nominator_id=nominator_id,
+                level=cl,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        err = self._record_actor_lifecycle_event(
+            nominator_id,
+            EventKind.CLEARANCE_NOMINATED,
+            {
+                "clearance_id": clearance.clearance_id,
+                "machine_id": machine_id,
+                "org_id": org_id,
+                "domain": domain,
+                "level": cl.value,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "clearance_id": clearance.clearance_id,
+                "machine_id": machine_id,
+                "org_id": org_id,
+                "domain": domain,
+                "level": cl.value,
+                "status": clearance.status.value,
+            },
+        )
+
+    def vote_on_clearance(
+        self,
+        clearance_id: str,
+        voter_id: str,
+        domain: str,
+        approve: bool,
+        evidence_summary: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Cast a vote on a pending clearance nomination.
+
+        The voter must be a domain expert with sufficient domain trust.
+
+        Args:
+            clearance_id: The clearance being voted on.
+            voter_id: The domain expert voting.
+            domain: The domain (to look up voter's domain trust).
+            approve: Whether the voter approves.
+            evidence_summary: Evidence supporting the vote.
+            now: Current UTC time.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Get voter's domain trust
+        trust_record = self._trust_records.get(voter_id)
+        if trust_record is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No trust record for voter: {voter_id}"],
+            )
+
+        # Look up domain trust from domain_scores (dict[str, DomainTrustScore])
+        voter_domain_trust = 0.0
+        ds = trust_record.domain_scores.get(domain)
+        if ds is not None:
+            voter_domain_trust = ds.score
+
+        try:
+            clearance = self._domain_expert_engine.vote_on_clearance(
+                clearance_id=clearance_id,
+                voter_id=voter_id,
+                voter_domain_trust=voter_domain_trust,
+                approve=approve,
+                evidence_summary=evidence_summary,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        err = self._record_actor_lifecycle_event(
+            voter_id,
+            EventKind.CLEARANCE_VOTE_CAST,
+            {
+                "clearance_id": clearance_id,
+                "voter_id": voter_id,
+                "approve": approve,
+                "clearance_status": clearance.status.value,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        # If rejected (unanimous requirement), log revocation
+        if clearance.status == DomainClearanceStatus.REVOKED:
+            self._record_actor_lifecycle_event(
+                voter_id,
+                EventKind.CLEARANCE_REVOKED,
+                {
+                    "clearance_id": clearance_id,
+                    "revoked_by": voter_id,
+                    "reason": "Rejected during voting (unanimous requirement)",
+                },
+            )
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "clearance_id": clearance_id,
+                "status": clearance.status.value,
+                "approve_count": clearance.approve_count,
+                "reject_count": clearance.reject_count,
+            },
+        )
+
+    def evaluate_clearance(
+        self,
+        clearance_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Evaluate whether a clearance has met its quorum.
+
+        Called after voting to check if enough approvals have been received.
+
+        Args:
+            clearance_id: The clearance to evaluate.
+            now: Current UTC time.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        clearance = self._domain_expert_engine.get_clearance(clearance_id)
+        if clearance is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Clearance not found: {clearance_id}"],
+            )
+
+        # For autonomous clearance, get machine's domain trust
+        machine_domain_trust = 0.0
+        if clearance.level == ClearanceLevel.AUTONOMOUS:
+            tr = self._trust_records.get(clearance.machine_id)
+            if tr and hasattr(tr, 'domain_scores'):
+                for ds in tr.domain_scores:
+                    if ds.domain == clearance.domain:
+                        machine_domain_trust = ds.score
+                        break
+
+        try:
+            result = self._domain_expert_engine.evaluate_clearance(
+                clearance_id=clearance_id,
+                machine_domain_trust=machine_domain_trust,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        if result.status == DomainClearanceStatus.ACTIVE:
+            err = self._record_actor_lifecycle_event(
+                clearance.nominated_by,
+                EventKind.CLEARANCE_APPROVED,
+                {
+                    "clearance_id": clearance_id,
+                    "machine_id": clearance.machine_id,
+                    "domain": clearance.domain,
+                    "level": clearance.level.value,
+                    "expires_utc": result.expires_utc.isoformat()
+                    if result.expires_utc else None,
+                },
+            )
+            if err:
+                return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "clearance_id": clearance_id,
+                "status": result.status.value,
+                "approve_count": result.approve_count,
+                "expires_utc": (
+                    result.expires_utc.isoformat()
+                    if result.expires_utc else None
+                ),
+            },
+        )
+
+    def revoke_clearance(
+        self,
+        clearance_id: str,
+        revoker_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Revoke an active clearance. Any domain expert can revoke.
+
+        Args:
+            clearance_id: The clearance to revoke.
+            revoker_id: The domain expert revoking.
+            now: Current UTC time.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            clearance = self._domain_expert_engine.revoke_clearance(
+                clearance_id=clearance_id,
+                revoker_id=revoker_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        err = self._record_actor_lifecycle_event(
+            revoker_id,
+            EventKind.CLEARANCE_REVOKED,
+            {
+                "clearance_id": clearance_id,
+                "machine_id": clearance.machine_id,
+                "revoked_by": revoker_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "clearance_id": clearance_id,
+                "status": clearance.status.value,
+            },
+        )
+
+    def check_clearance_expirations(
+        self,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Expire any clearances past their expiry date.
+
+        Args:
+            now: Current UTC time.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        expired = self._domain_expert_engine.check_expirations(now=now)
+
+        for c in expired:
+            self._record_actor_lifecycle_event(
+                c.nominated_by,
+                EventKind.CLEARANCE_EXPIRED,
+                {
+                    "clearance_id": c.clearance_id,
+                    "machine_id": c.machine_id,
+                    "domain": c.domain,
+                    "level": c.level.value,
+                },
+            )
+
+        if expired:
+            self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "expired_count": len(expired),
+                "expired_ids": [c.clearance_id for c in expired],
+            },
+        )
+
+    def get_active_clearances(
+        self,
+        machine_id: Optional[str] = None,
+        org_id: Optional[str] = None,
+        domain: Optional[str] = None,
+        level: Optional[str] = None,
+    ) -> ServiceResult:
+        """List active clearances with optional filters."""
+        cl = None
+        if level is not None:
+            try:
+                cl = ClearanceLevel(level)
+            except ValueError:
+                return ServiceResult(
+                    success=False,
+                    errors=[f"Invalid clearance level: {level}"],
+                )
+
+        clearances = self._domain_expert_engine.get_active_clearances(
+            machine_id=machine_id,
+            org_id=org_id,
+            domain=domain,
+            level=cl,
+        )
+
+        items = []
+        for c in clearances:
+            items.append({
+                "clearance_id": c.clearance_id,
+                "machine_id": c.machine_id,
+                "org_id": c.org_id,
+                "domain": c.domain,
+                "level": c.level.value,
+                "status": c.status.value,
+                "expires_utc": (
+                    c.expires_utc.isoformat() if c.expires_utc else None
+                ),
+                "renewal_count": c.renewal_count,
+            })
+
+        return ServiceResult(
+            success=True,
+            data={"clearances": items, "count": len(items)},
         )

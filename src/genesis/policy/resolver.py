@@ -821,6 +821,25 @@ class PolicyResolver:
         config = self._params.get("org_registry", {})
         return {**defaults, **config}
 
+    def domain_clearance_config(self) -> dict[str, Any]:
+        """Return Domain Expert / Machine Clearance configuration.
+
+        Keys: clearance_min_quorum, clearance_min_domain_trust,
+              autonomous_min_quorum, autonomous_min_domain_trust,
+              autonomous_min_machine_trust, clearance_expiry_days.
+        Reads from constitutional_params.json domain_clearance section.
+        """
+        defaults = {
+            "clearance_min_quorum": 3,
+            "clearance_min_domain_trust": 0.60,
+            "autonomous_min_quorum": 5,
+            "autonomous_min_domain_trust": 0.70,
+            "autonomous_min_machine_trust": 0.60,
+            "clearance_expiry_days": 365,
+        }
+        config = self._params.get("domain_clearance", {})
+        return {**defaults, **config}
+
     def amendment_config(self) -> dict[str, Any]:
         """Return constitutional amendment configuration.
 

@@ -158,6 +158,13 @@ class EventKind(str, enum.Enum):
     ORG_MEMBER_ATTESTED = "org_member_attested"
     ORG_MEMBER_REMOVED = "org_member_removed"
     ORG_TIER_CHANGED = "org_tier_changed"
+    # Domain Expert / Machine Clearance events (Phase F-3)
+    CLEARANCE_NOMINATED = "clearance_nominated"
+    CLEARANCE_VOTE_CAST = "clearance_vote_cast"
+    CLEARANCE_APPROVED = "clearance_approved"
+    CLEARANCE_REVOKED = "clearance_revoked"
+    CLEARANCE_EXPIRED = "clearance_expired"
+    CLEARANCE_RENEWAL_STARTED = "clearance_renewal_started"
 
 
 @dataclass(frozen=True)

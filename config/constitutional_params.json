@@ -184,6 +184,14 @@
     "verified_min_members": 10,
     "verified_min_avg_trust": 0.50
   },
+  "domain_clearance": {
+    "clearance_min_quorum": 3,
+    "clearance_min_domain_trust": 0.60,
+    "autonomous_min_quorum": 5,
+    "autonomous_min_domain_trust": 0.70,
+    "autonomous_min_machine_trust": 0.60,
+    "clearance_expiry_days": 365
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,
