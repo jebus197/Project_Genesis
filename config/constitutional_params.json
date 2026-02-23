@@ -204,6 +204,10 @@
     "entrenched_amendment_threshold": 0.80,
     "entrenched_participation_minimum": 0.50,
     "entrenched_cooling_off_days": 90,
-    "entrenched_confirmation_vote_required": true
+    "entrenched_confirmation_vote_required": true,
+    "MINIMUM_INDEPENDENT_PAYMENT_RAILS": 2,
+    "MINIMUM_INDEPENDENT_PAYMENT_RAILS_AT_FIRST_LIGHT": 3,
+    "PAYMENT_RAIL_MIGRATION_DAYS": 30,
+    "PAYMENT_SOVEREIGNTY": true
   }
 }

@@ -300,13 +300,22 @@ class TestResolverAmendmentConfig:
         assert cfg["entrenched_confirmation_vote_required"] is True
 
     def test_entrenched_provision_keys(self, resolver: PolicyResolver) -> None:
-        """entrenched_provision_keys() returns the 4 entrenched provisions."""
+        """entrenched_provision_keys() returns all entrenched provisions.
+
+        Original 4 + 4 payment sovereignty provisions = 8 total.
+        """
         keys = resolver.entrenched_provision_keys()
+        # Original 4 entrenched provisions
         assert "GCF_CONTRIBUTION_RATE" in keys
         assert "TRUST_FLOOR_H_POSITIVE" in keys
         assert "NO_BUY_TRUST" in keys
         assert "MACHINE_VOTING_EXCLUSION" in keys
-        assert len(keys) == 4
+        # Payment sovereignty provisions (entrenched)
+        assert "MINIMUM_INDEPENDENT_PAYMENT_RAILS" in keys
+        assert "MINIMUM_INDEPENDENT_PAYMENT_RAILS_AT_FIRST_LIGHT" in keys
+        assert "PAYMENT_RAIL_MIGRATION_DAYS" in keys
+        assert "PAYMENT_SOVEREIGNTY" in keys
+        assert len(keys) == 8
 
 
 # =====================================================================

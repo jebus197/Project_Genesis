@@ -333,6 +333,28 @@ Trust without compensation is volunteerism. Genesis has not disinvented money �
 3. No Genesis-branded token may be created. A native token would create a financial instrument that contradicts the core rule: trust cannot be bought.
 4. Stablecoins (USDC, USDT) are the recommended default for staking to avoid exchange rate risk.
 
+### Payment infrastructure sovereignty (entrenched)
+
+No single external entity — no payment processor, stablecoin issuer, blockchain validator, exchange, financial intermediary, or infrastructure provider — may have the ability to freeze, restrict, surveil, or shut down Genesis operations through control of payment infrastructure.
+
+This principle is structural, not aspirational. It is enforced through the following constitutional requirements:
+
+1. **Multi-rail mandate.** Genesis must maintain operational capability across at least `MINIMUM_INDEPENDENT_PAYMENT_RAILS` independent settlement pathways at all times. "Independent" means: different issuing entities, different underlying protocols, no shared single point of failure. At least one accepted settlement pathway must be fully decentralised (no single entity can freeze or blacklist transactions on it).
+2. **Scaled minimums.** `MINIMUM_INDEPENDENT_PAYMENT_RAILS` is 2 during G0 (proof-of-concept and alpha). It escalates to `MINIMUM_INDEPENDENT_PAYMENT_RAILS_AT_FIRST_LIGHT` (currently 3) when First Light is achieved. The Economic Advisory mechanism may increase these minimums through standard amendment but may never decrease them — they are entrenched floors, not targets.
+3. **No single-provider dependency.** No single payment provider, stablecoin issuer, or blockchain validator's unilateral business decision may render Genesis unable to process escrow, pay workers, collect commission, or distribute GCF funds. If any provider restricts Genesis, operations must continue on remaining rails without manual intervention beyond configuration.
+4. **Self-custody.** Genesis holds its own cryptographic keys for all fund custody. No external custodian, escrow agent, or financial institution holds Genesis funds or has the ability to freeze, seize, or redirect them. The distributed ledger state is the fund.
+5. **Rail-agnostic architecture.** The escrow state machine (escrow lifecycle, commission computation, GCF contribution, creator allocation) must be structurally independent of any specific payment rail. Settlement is a pluggable backend behind a common interface. The financial rules are constitutional; the settlement plumbing is implementation. Adding or removing a payment rail must require zero changes to escrow logic, commission computation, or any other financial module.
+6. **Migration capability.** Genesis must maintain the demonstrated ability to migrate away from any single payment rail within `PAYMENT_RAIL_MIGRATION_DAYS` (currently 30) of a restriction event. Migration plans must be documented and tested before any rail is adopted. Untested migration is not a fallback — it is a vulnerability.
+7. **Provider evaluation test (three criteria).** Before any payment rail integration is adopted, it must satisfy all three:
+   - **(a) No leverage:** The provider cannot unilaterally restrict Genesis operations.
+   - **(b) No surveillance beyond settlement:** The provider cannot extract usage data, transaction patterns, or participant identity beyond what the settlement protocol structurally requires.
+   - **(c) No lock-in:** Genesis can exit the provider within `PAYMENT_RAIL_MIGRATION_DAYS`, with funds intact, without operational disruption.
+   If any criterion fails, the integration must not proceed.
+
+All payment sovereignty constants are entrenched. Reducing any minimum requires 4/5 supermajority + 50% participation + 90-day cooling-off + confirmation vote.
+
+This provision applies at every stage: PoC, alpha, production, and post-First-Light. There are no exceptions for convenience, cost, or speed-to-market. A system that can be shut down by a single provider's business decision is not sovereign — it is rented.
+
 ### Escrow and staking
 
 1. Before any mission listing goes live, the work poster must stake the full reward amount into escrow.
@@ -752,6 +774,12 @@ Genesis is structurally incompatible with concealment. Participants who require 
 
 **Evolutionary safety design test:**
 81. Can machine self-improvement bypass constitutional constraints (domain clearance, amendment process, human oversight)? If yes, reject design.
+
+**Payment infrastructure sovereignty design tests:**
+82. Can any single payment provider, stablecoin issuer, or financial intermediary freeze, restrict, or shut down Genesis escrow operations? If yes, reject design.
+83. Can Genesis become operationally dependent on a single payment rail with no tested fallback? If yes, reject design.
+84. Can an external custodian hold Genesis funds or possess the ability to freeze or redirect them? If yes, reject design.
+85. Does adding or removing a payment rail require changes to escrow logic, commission computation, or GCF contribution code? If yes, reject design.
 
 ### Legal compliance layer
 
