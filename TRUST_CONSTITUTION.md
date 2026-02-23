@@ -588,6 +588,22 @@ Each chamber panel is selected using greedy diversity-first selection with geogr
 59. Can a commission rate be changed by ballot? If yes, reject design.
 60. Can the cooling-off period be shortened without going through its own entrenched process? If yes, reject design.
 
+### Distributed authority
+
+Genesis rejects executive/legislative/judicial hierarchy. No governance body has superiority over another. The separation of powers is structural — each body has a defined domain, none can override or subsume the authority of any other, and no role, trust level, or contribution history creates permanent authority over the system.
+
+**The three amendment chambers are parallel veto points, not a hierarchy.** The Proposal Chamber, Ratification Chamber, and Challenge Chamber each independently evaluate constitutional amendments. No chamber's approval overrides another's rejection. All three must independently concur (or not challenge) for an amendment to advance. No member may serve on more than one chamber for the same amendment. The proposer of an amendment is excluded from all panels on that amendment.
+
+**The Constitutional Court interprets but cannot legislate.** Court rulings are advisory — soft precedent only. No ruling binds future panels, creates new obligations, or modifies the constitution. Ambiguities revealed by rulings may be flagged as amendment candidates, but the amendment process is the only path to constitutional change.
+
+**The Assembly deliberates but cannot decide.** The Assembly is Speaker's Corner, not Parliament. It produces no binding resolutions, no votes, no mandates. Content is anonymous — zero identity attribution. Assembly threads may inform amendment proposals, but the Assembly itself has no governance power.
+
+**Organisations coordinate but cannot govern.** The Organisation Registry provides coordination structures. Organisations cannot vote as blocs, impose rules on members beyond Genesis's own constitution, or acquire governance authority. All members remain constitutionally equal regardless of organisational affiliation. No single organisation may dominate any amendment chamber — organisational diversity is enforced alongside geographic diversity.
+
+**The Founder's Veto is bounded.** The veto is rejection-only, early-stage only, and expires irreversibly at First Light. It may only be exercised on amendments that have not yet completed ratification chamber voting — once both the proposal and ratification chambers have independently approved, the community's decision stands. The veto exists because a self-governing system cannot bootstrap itself — it needs a guardian until it can stand. A guardian who refuses to leave is not a guardian but a ruler.
+
+**Governance liveness.** No amendment may be permanently stalled by non-participation. Each chamber has a voting window (`chamber_voting_window_days`). When the window expires, votes cast so far are counted. If participation is below 50%, the amendment lapses (distinct from rejection — may be re-proposed). If participation meets 50%, the standard threshold applies to votes received. This prevents governance capture through inaction.
+
 ### G0 Retroactive Ratification
 
 During Phase G0 (the founder stewardship period), the founder makes governance decisions because there aren't yet enough people to form democratic panels. These decisions are tagged as "provisional" — temporary until the community has enough people to review them.
@@ -783,6 +799,13 @@ Genesis is structurally incompatible with concealment. Participants who require 
 
 **Disability accommodation design test:**
 86. Is the disability accommodation verification path structurally harder than the standard voice liveness path? If yes, reject design.
+
+**Distributed authority design tests:**
+87. Can any single governance body override, bypass, or functionally subsume the authority of another? If yes, reject design.
+88. Does any governance mechanism create a permanent ruling class, executive authority, legislative supremacy, or binding judicial precedent? If yes, reject design.
+89. Can a constitutional amendment be permanently stalled by a minority of non-participating panel members? If yes, reject design.
+90. Can a single organisation dominate any constitutional amendment chamber through geographic distribution of its members? If yes, reject design.
+91. Can the founder veto an amendment that has been independently approved by both the proposal and ratification chambers? If yes, reject design.
 
 ### Legal compliance layer
 

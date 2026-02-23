@@ -844,6 +844,47 @@ def check() -> int:
         if kind not in REVERSAL_HANDLERS:
             errors.append(f"Ratifiable event kind '{kind}' has no reversal handler")
 
+    # ------------------------------------------------------------------
+    # Distributed authority invariants (design tests #87-91)
+    # ------------------------------------------------------------------
+
+    amendment_lifecycle = params.get("amendment_lifecycle", {})
+    if not amendment_lifecycle:
+        errors.append("amendment_lifecycle section must exist in constitutional_params.json")
+    else:
+        # Voting deadline (design test #89)
+        voting_window = amendment_lifecycle.get("chamber_voting_window_days")
+        if voting_window is None or voting_window < 1:
+            errors.append(
+                f"amendment_lifecycle.chamber_voting_window_days must be >= 1, got {voting_window}"
+            )
+
+        # Org diversity minimum (design test #90)
+        org_div = amendment_lifecycle.get("chamber_org_diversity_min")
+        if org_div is None or org_div < 2:
+            errors.append(
+                f"amendment_lifecycle.chamber_org_diversity_min must be >= 2, got {org_div}"
+            )
+
+        # Lapse participation threshold
+        lapse_thresh = amendment_lifecycle.get("lapse_participation_threshold")
+        if lapse_thresh is None or not (0 < lapse_thresh <= 1.0):
+            errors.append(
+                f"amendment_lifecycle.lapse_participation_threshold must be in (0, 1.0], got {lapse_thresh}"
+            )
+
+    # Founder veto scope — allowed statuses must be early-stage only (design test #91)
+    founder_allowed = genesis_block.get("founder_veto_allowed_statuses", [])
+    if founder_allowed:
+        post_ratification = {"challenge_window", "challenge_chamber_voting",
+                             "cooling_off", "confirmation_vote", "confirmed", "applied"}
+        for status in founder_allowed:
+            if status in post_ratification:
+                errors.append(
+                    f"founder_veto_allowed_statuses must not include post-ratification "
+                    f"status '{status}' (design test #91)"
+                )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

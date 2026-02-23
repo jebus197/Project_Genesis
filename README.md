@@ -417,7 +417,7 @@ No serious system should claim to be invulnerable. Genesis identifies its risks 
 - **Correlated errors** — addressed through mandatory diversity in AI model families and review methods.
 - **Audit theatre** — addressed through strict evidence sufficiency rules that block mission closure without real proof.
 - **Reputation gaming** — addressed through slow trust gain, fast trust loss, and quality gates.
-- **Governance capture** — addressed through structural power separation, geographic diversity requirements, and anti-concentration rules.
+- **Governance capture** — addressed through structural power separation, geographic and organisational diversity requirements, voting deadlines, and anti-concentration rules. No governance body can override another. The three amendment chambers are parallel veto points, not a hierarchy. The Constitutional Court interprets but cannot legislate. The Assembly deliberates but cannot decide. The Founder's Veto is bounded to early-stage only and expires irreversibly.
 
 Genesis aims for **measurable risk reduction**, not perfection. If the metrics improve over time, the system is working.
 

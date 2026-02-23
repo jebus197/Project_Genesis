@@ -321,10 +321,15 @@ Constitutional decisions pass through three independent human chambers:
 Each chamber is populated through **constrained-random selection** from the eligible pool. "Constrained-random" means:
 
 1. Members are drawn randomly (using a pre-committed public randomness source for verifiability).
-2. But hard constraints are enforced: minimum regional diversity, maximum regional concentration caps, organisation diversity limits, and conflict-of-interest exclusions.
+2. But hard constraints are enforced: minimum regional diversity, maximum regional concentration caps, organisation diversity limits (minimum 2 distinct organisations per chamber), and conflict-of-interest exclusions.
 3. No actor can serve on more than one chamber for the same decision.
+4. The proposer of an amendment is excluded from all panels on that amendment.
 
 Chamber sizes scale with the genesis phase (see below).
+
+**Governance liveness.** Each chamber has a voting window (default 14 days). If the window expires with less than 50% participation, the amendment lapses (distinct from rejection — may be re-proposed). This prevents governance capture through inaction.
+
+**Distributed authority.** Genesis rejects executive/legislative/judicial hierarchy. No governance body has superiority over another. The three chambers are parallel veto points. The Constitutional Court interprets but cannot legislate (soft precedent only). The Assembly deliberates but cannot decide. Organisations coordinate but cannot govern. The Founder's Veto is bounded to early-stage statuses only — once both the proposal and ratification chambers have independently approved, the community's decision stands. The veto expires irreversibly at First Light.
 
 ### Constitutional change requirements
 

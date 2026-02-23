@@ -104,7 +104,17 @@
       "o_h": 3
     },
     "founder_veto_active": true,
-    "founder_veto_expiry": "first_light"
+    "founder_veto_expiry": "first_light",
+    "founder_veto_allowed_statuses": [
+      "proposed",
+      "proposal_chamber_voting",
+      "ratification_chamber_voting"
+    ]
+  },
+  "amendment_lifecycle": {
+    "chamber_voting_window_days": 14,
+    "chamber_org_diversity_min": 2,
+    "lapse_participation_threshold": 0.50
   },
   "commitment_tiers": {
     "EPOCH_HOURS": 1,

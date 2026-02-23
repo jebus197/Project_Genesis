@@ -4675,6 +4675,25 @@ class GenesisService:
                 ],
             )
 
+        # Gate 3: Veto scope — only allowed before community ratification
+        # completes (design test #91). Once both proposal and ratification
+        # chambers have independently approved, the community's decision stands.
+        if self._amendment_engine is not None:
+            proposal = self._amendment_engine.get_amendment(proposal_id)
+            if proposal is not None:
+                allowed_statuses = {"proposed", "proposal_chamber_voting",
+                                    "ratification_chamber_voting"}
+                if proposal.status.value not in allowed_statuses:
+                    return ServiceResult(
+                        success=False,
+                        errors=[
+                            f"Founder veto cannot be exercised on amendment in "
+                            f"status '{proposal.status.value}'. The veto is an "
+                            f"early-warning brake — once both chambers have "
+                            f"independently approved, the community's decision stands."
+                        ],
+                    )
+
         # Log the veto exercise — transparent, on-chain, auditable
         if self._event_log is not None:
             try:
@@ -8397,6 +8416,65 @@ class GenesisService:
                 "provision_key": proposal.provision_key,
                 "proposed_value": str(proposal.proposed_value),
                 "status": proposal.status.value,
+            },
+        )
+
+    # ------------------------------------------------------------------
+    # Proposal withdrawal (distributed authority)
+    # ------------------------------------------------------------------
+
+    def withdraw_amendment(
+        self,
+        proposer_id: str,
+        proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Withdraw a constitutional amendment before any vote is cast.
+
+        Only the original proposer can withdraw. Once any vote is cast,
+        the proposal belongs to the community and cannot be withdrawn.
+
+        Returns:
+            ServiceResult with withdrawal details.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        try:
+            proposal = self._amendment_engine.withdraw_amendment(
+                proposal_id=proposal_id,
+                withdrawer_id=proposer_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit event
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.AMENDMENT_PROPOSED,  # reuse closest kind
+                    actor_id=proposer_id,
+                    payload={
+                        "proposal_id": proposal_id,
+                        "action": "withdrawn",
+                        "provision_key": proposal.provision_key,
+                    },
+                    timestamp_utc=now,
+                )
+                self._epoch_service.record_mission_event(event.event_hash)
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                pass
+
+        self._safe_persist_post_audit()
+        return ServiceResult(
+            success=True,
+            data={
+                "proposal_id": proposal_id,
+                "status": proposal.status.value,
+                "provision_key": proposal.provision_key,
             },
         )
 

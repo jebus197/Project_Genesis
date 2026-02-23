@@ -69,6 +69,10 @@ class AmendmentStatus(str, enum.Enum):
         PROPOSED → PROPOSAL_CHAMBER_VOTING → RATIFICATION_CHAMBER_VOTING →
         CHALLENGE_WINDOW → CHALLENGE_CHAMBER_VOTING (if challenged) →
         CONFIRMED / REJECTED  (skip COOLING_OFF + CONFIRMATION_VOTE)
+
+    Terminal states:
+        LAPSED — voting window expired with insufficient participation (can re-propose)
+        WITHDRAWN — proposer withdrew before any vote was cast (terminal)
     """
     PROPOSED = "proposed"
     PROPOSAL_CHAMBER_VOTING = "proposal_chamber_voting"
@@ -80,6 +84,8 @@ class AmendmentStatus(str, enum.Enum):
     CONFIRMED = "confirmed"
     REJECTED = "rejected"
     APPLIED = "applied"
+    LAPSED = "lapsed"
+    WITHDRAWN = "withdrawn"
 
 
 @dataclass(frozen=True)
@@ -124,6 +130,12 @@ class AmendmentProposal:
     # Confirmation vote (entrenched only)
     confirmation_panel: Optional[list[str]] = None
     confirmation_votes: list[AmendmentVote] = field(default_factory=list)
+    # Voting deadline — governance liveness (design test #89)
+    voting_deadline_utc: Optional[datetime] = None
+    # Org tracking per chamber: ChamberKind value → {org: count}
+    chamber_org_counts: dict[str, dict[str, int]] = field(default_factory=dict)
+    # Phase at creation (for phase-transition handling)
+    created_at_phase: Optional[str] = None
 
 
 class ConstitutionalViolation(Exception):
@@ -228,6 +240,9 @@ class AmendmentEngine:
                 cooling_off_ends_utc=datetime.fromisoformat(p["cooling_off_ends_utc"]) if p.get("cooling_off_ends_utc") else None,
                 confirmation_panel=p.get("confirmation_panel"),
                 confirmation_votes=confirmation_votes,
+                voting_deadline_utc=datetime.fromisoformat(p["voting_deadline_utc"]) if p.get("voting_deadline_utc") else None,
+                chamber_org_counts=p.get("chamber_org_counts", {}),
+                created_at_phase=p.get("created_at_phase"),
             )
             engine._proposals[proposal.proposal_id] = proposal
         return engine
@@ -315,8 +330,9 @@ class AmendmentEngine:
         r_min: int,
         c_max: float,
         now: Optional[datetime] = None,
+        org_diversity_min: int = 2,
     ) -> list[str]:
-        """Select a geographically diverse chamber panel.
+        """Select a geographically and organisationally diverse chamber panel.
 
         Args:
             proposal_id: The amendment to select a panel for.
@@ -326,6 +342,7 @@ class AmendmentEngine:
             r_min: Minimum regions required.
             c_max: Maximum concentration from any single region (0.0-1.0).
             now: Timestamp.
+            org_diversity_min: Minimum distinct organisations required (design test #90).
 
         Returns:
             List of selected voter IDs.
@@ -338,13 +355,6 @@ class AmendmentEngine:
             raise ValueError(f"Amendment not found: {proposal_id}")
 
         # Validate status transitions
-        expected_status = {
-            ChamberKind.PROPOSAL: AmendmentStatus.PROPOSED,
-            ChamberKind.RATIFICATION: AmendmentStatus.PROPOSAL_CHAMBER_VOTING,
-            ChamberKind.CHALLENGE: AmendmentStatus.CHALLENGE_WINDOW,
-        }
-        # Ratification panel is selected after proposal passes
-        # (close_chamber_voting advances PROPOSAL → RATIFICATION_CHAMBER_VOTING)
         if chamber_kind == ChamberKind.RATIFICATION:
             if proposal.status != AmendmentStatus.RATIFICATION_CHAMBER_VOTING:
                 raise ValueError(
@@ -367,6 +377,9 @@ class AmendmentEngine:
         for panel_members in proposal.chamber_panels.values():
             existing_panelists.update(panel_members)
 
+        # Proposer recusal — proposer excluded from own panels (design test #91)
+        existing_panelists.add(proposal.proposer_id)
+
         candidates = [
             v for v in eligible_voters
             if v["actor_id"] not in existing_panelists
@@ -380,12 +393,20 @@ class AmendmentEngine:
                 f"need {size}, have {len(candidates)}"
             )
 
-        # Check diversity is achievable
+        # Check geographic diversity is achievable
         unique_regions = {c["region"] for c in candidates}
         if len(unique_regions) < r_min:
             raise ValueError(
                 f"Not enough regional diversity: need {r_min} regions, "
                 f"have {len(unique_regions)}"
+            )
+
+        # Check organisational diversity is achievable (design test #90)
+        unique_orgs = {c["organization"] for c in candidates}
+        if len(unique_orgs) < org_diversity_min:
+            raise ValueError(
+                f"Not enough organisational diversity: need {org_diversity_min} "
+                f"organisations, have {len(unique_orgs)}"
             )
 
         # Greedy diversity-first selection (same pattern as AdjudicationEngine)
@@ -404,35 +425,77 @@ class AmendmentEngine:
                     selected_regions.add(region)
                     break
 
-        # Fill remaining slots respecting c_max concentration
+        # Second pass: ensure minimum org diversity
+        selected_orgs: set[str] = {s["organization"] for s in selected}
+        for org in unique_orgs:
+            if len(selected_orgs) >= org_diversity_min:
+                break
+            if org in selected_orgs:
+                continue
+            for c in remaining:
+                if c["organization"] == org and c not in selected:
+                    if len(selected) < size:
+                        selected.append(c)
+                        remaining.remove(c)
+                        selected_orgs.add(org)
+                        break
+
+        # Fill remaining slots respecting c_max concentration (geographic)
+        # AND org c_max (no single org exceeds c_max of the chamber)
         max_per_region = max(1, int(size * c_max))
+        max_per_org = max(1, int(size * c_max))
         while len(selected) < size and remaining:
             region_counts: dict[str, int] = {}
+            org_counts: dict[str, int] = {}
             for s in selected:
                 region_counts[s["region"]] = region_counts.get(s["region"], 0) + 1
+                org_counts[s["organization"]] = org_counts.get(s["organization"], 0) + 1
 
             added = False
             for c in remaining:
-                if region_counts.get(c["region"], 0) < max_per_region:
+                region_ok = region_counts.get(c["region"], 0) < max_per_region
+                org_ok = org_counts.get(c["organization"], 0) < max_per_org
+                if region_ok and org_ok:
                     selected.append(c)
                     remaining.remove(c)
                     added = True
                     break
 
             if not added:
-                # If all remaining violate c_max, we can't fill the panel
+                # Relax org constraint if impossible with both
+                for c in remaining:
+                    if region_counts.get(c["region"], 0) < max_per_region:
+                        selected.append(c)
+                        remaining.remove(c)
+                        added = True
+                        break
+
+            if not added:
                 raise ValueError(
                     f"Cannot fill {chamber_kind.value} chamber to size {size} "
                     f"while respecting c_max={c_max}"
                 )
 
+        # Record org distribution for this chamber
+        org_dist: dict[str, int] = {}
+        for s in selected:
+            org_dist[s["organization"]] = org_dist.get(s["organization"], 0) + 1
+        proposal.chamber_org_counts[chamber_kind.value] = org_dist
+
         panel_ids = [s["actor_id"] for s in selected]
         proposal.chamber_panels[chamber_kind.value] = panel_ids
+
+        if now is None:
+            now = datetime.now(timezone.utc)
 
         # Advance status for proposal chamber
         if chamber_kind == ChamberKind.PROPOSAL:
             proposal.status = AmendmentStatus.PROPOSAL_CHAMBER_VOTING
             proposal.chamber_votes[chamber_kind.value] = []
+
+        # Set voting deadline — governance liveness (design test #89)
+        voting_window_days = self._config.get("chamber_voting_window_days", 14)
+        proposal.voting_deadline_utc = now + timedelta(days=voting_window_days)
 
         return panel_ids
 
@@ -528,6 +591,11 @@ class AmendmentEngine:
     ) -> tuple[AmendmentProposal, bool]:
         """Close voting in a chamber and determine outcome.
 
+        Governance liveness (design test #89): If the voting deadline has
+        passed and participation is below 50%, the amendment LAPSES (distinct
+        from rejection — may be re-proposed). If participation meets 50%,
+        votes cast so far are counted normally.
+
         For entrenched amendments, additionally checks:
         - 80% supermajority of votes cast.
         - 50% participation of panel members.
@@ -561,6 +629,19 @@ class AmendmentEngine:
         no_count = sum(1 for v in votes if not v.vote)
         total_votes = yes_count + no_count
         panel_size = len(proposal.chamber_panels.get(chamber_kind.value, []))
+
+        # Governance liveness: check voting deadline (design test #89)
+        deadline_expired = (
+            proposal.voting_deadline_utc is not None
+            and now >= proposal.voting_deadline_utc
+        )
+        if deadline_expired and panel_size > 0:
+            participation_rate = total_votes / panel_size
+            if participation_rate < 0.50:
+                # Insufficient participation after deadline — LAPSED, not REJECTED
+                proposal.status = AmendmentStatus.LAPSED
+                proposal.decided_utc = now
+                return proposal, False
 
         # Standard chamber pass threshold
         passed = yes_count >= chamber_def.pass_threshold
@@ -1016,3 +1097,126 @@ class AmendmentEngine:
 
         proposal.status = AmendmentStatus.APPLIED
         return proposal
+
+    # ------------------------------------------------------------------
+    # Proposal withdrawal (Fix 4)
+    # ------------------------------------------------------------------
+
+    def withdraw_amendment(
+        self,
+        proposal_id: str,
+        withdrawer_id: str,
+        now: Optional[datetime] = None,
+    ) -> AmendmentProposal:
+        """Withdraw a proposal before any vote has been cast.
+
+        Withdrawal is allowed in PROPOSED or PROPOSAL_CHAMBER_VOTING
+        (if zero votes cast). Once any vote is cast, the proposal belongs
+        to the community and cannot be withdrawn.
+
+        Args:
+            proposal_id: The amendment to withdraw.
+            withdrawer_id: Must be the original proposer.
+            now: Timestamp.
+
+        Returns:
+            The updated proposal (status → WITHDRAWN).
+
+        Raises:
+            ValueError: If not found, not the proposer, or votes already cast.
+        """
+        proposal = self._proposals.get(proposal_id)
+        if proposal is None:
+            raise ValueError(f"Amendment not found: {proposal_id}")
+
+        if withdrawer_id != proposal.proposer_id:
+            raise ValueError(
+                f"Only the proposer ({proposal.proposer_id}) can withdraw "
+                f"this amendment"
+            )
+
+        # Withdrawal only in pre-vote states
+        if proposal.status == AmendmentStatus.PROPOSED:
+            pass  # OK — no panel even selected yet
+        elif proposal.status == AmendmentStatus.PROPOSAL_CHAMBER_VOTING:
+            # Only if zero votes cast
+            votes = proposal.chamber_votes.get(ChamberKind.PROPOSAL.value, [])
+            if len(votes) > 0:
+                raise ValueError(
+                    "Cannot withdraw: votes have been cast. "
+                    "The proposal belongs to the community."
+                )
+        else:
+            raise ValueError(
+                f"Cannot withdraw in status {proposal.status.value} — "
+                f"withdrawal is only allowed before voting begins"
+            )
+
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        proposal.status = AmendmentStatus.WITHDRAWN
+        proposal.decided_utc = now
+        return proposal
+
+    # ------------------------------------------------------------------
+    # Phase transition handling (Fix 5)
+    # ------------------------------------------------------------------
+
+    def handle_phase_transition(
+        self,
+        new_phase: str,
+        now: Optional[datetime] = None,
+    ) -> dict[str, str]:
+        """Handle in-flight amendments during a governance phase transition.
+
+        Amendments with no chamber vote cast → reset to PROPOSED under
+        new thresholds. Amendments with at least one completed chamber →
+        continue under original thresholds with a recorded note.
+
+        Args:
+            new_phase: The new governance phase (e.g., "G1", "G2").
+            now: Timestamp.
+
+        Returns:
+            Dict of proposal_id → action taken ("reset" or "continued").
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        results: dict[str, str] = {}
+        active_statuses = {
+            AmendmentStatus.PROPOSED,
+            AmendmentStatus.PROPOSAL_CHAMBER_VOTING,
+            AmendmentStatus.RATIFICATION_CHAMBER_VOTING,
+            AmendmentStatus.CHALLENGE_WINDOW,
+            AmendmentStatus.CHALLENGE_CHAMBER_VOTING,
+            AmendmentStatus.COOLING_OFF,
+            AmendmentStatus.CONFIRMATION_VOTE,
+        }
+
+        for proposal_id, proposal in self._proposals.items():
+            if proposal.status not in active_statuses:
+                continue
+
+            # Check if any chamber has completed voting
+            has_completed_chamber = False
+            for chamber_kind_val, votes in proposal.chamber_votes.items():
+                if len(votes) > 0:
+                    has_completed_chamber = True
+                    break
+
+            if not has_completed_chamber:
+                # No votes cast anywhere — reset to PROPOSED
+                proposal.status = AmendmentStatus.PROPOSED
+                proposal.chamber_panels.clear()
+                proposal.chamber_votes.clear()
+                proposal.chamber_org_counts.clear()
+                proposal.voting_deadline_utc = None
+                proposal.created_at_phase = new_phase
+                results[proposal_id] = "reset"
+            else:
+                # Has votes — continue under original thresholds
+                results[proposal_id] = "continued"
+
+        return results

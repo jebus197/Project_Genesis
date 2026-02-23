@@ -859,10 +859,14 @@ class PolicyResolver:
         """Return constitutional amendment configuration.
 
         Keys: entrenched_amendment_threshold, entrenched_participation_minimum,
-              entrenched_cooling_off_days, entrenched_confirmation_vote_required.
-        Reads from constitutional_params.json entrenched_provisions section.
+              entrenched_cooling_off_days, entrenched_confirmation_vote_required,
+              chamber_voting_window_days, chamber_org_diversity_min,
+              lapse_participation_threshold.
+        Reads from constitutional_params.json entrenched_provisions +
+        amendment_lifecycle sections.
         """
         entrenched = self._params.get("entrenched_provisions", {})
+        lifecycle = self._params.get("amendment_lifecycle", {})
         return {
             "entrenched_amendment_threshold": entrenched.get(
                 "entrenched_amendment_threshold", 0.80
@@ -875,6 +879,15 @@ class PolicyResolver:
             ),
             "entrenched_confirmation_vote_required": entrenched.get(
                 "entrenched_confirmation_vote_required", True
+            ),
+            "chamber_voting_window_days": lifecycle.get(
+                "chamber_voting_window_days", 14
+            ),
+            "chamber_org_diversity_min": lifecycle.get(
+                "chamber_org_diversity_min", 2
+            ),
+            "lapse_participation_threshold": lifecycle.get(
+                "lapse_participation_threshold", 0.50
             ),
         }
 
