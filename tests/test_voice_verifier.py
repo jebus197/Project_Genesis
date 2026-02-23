@@ -25,13 +25,14 @@ def _default_verifier_config() -> dict:
 
 def _default_quorum_config() -> dict:
     return {
-        "min_quorum_size": 3,
-        "max_quorum_size": 5,
+        "facilitator_count": 1,
         "verification_timeout_hours": 48,
-        "min_verifier_trust": 0.60,
+        "min_verifier_trust": 0.70,
         "geographic_region_required": True,
         "require_vote_attestation": False,
         "verifier_cooldown_hours": 0,
+        "prefer_domain_expert": True,
+        "domain_expert_timeout_hours": 24,
     }
 
 
@@ -208,7 +209,7 @@ class TestQuorumVerifier:
             ("V-001", 0.80, "EU"),
             ("V-002", 0.75, "EU"),
             ("V-003", 0.90, "EU"),
-            ("V-004", 0.65, "EU"),
+            ("V-004", 0.72, "EU"),
             ("V-005", 0.85, "EU"),
         ]
 
@@ -216,8 +217,8 @@ class TestQuorumVerifier:
     # 11. Quorum selection from same region
     # ------------------------------------------------------------------
 
-    def test_quorum_selection_same_region(self) -> None:
-        """Selected verifiers should all be from the actor's region."""
+    def test_facilitator_selection_same_region(self) -> None:
+        """Selected facilitator should be from the actor's region."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         request = qv.request_quorum_verification(
@@ -225,8 +226,8 @@ class TestQuorumVerifier:
             region="EU",
             available_verifiers=verifiers,
         )
-        assert request.quorum_size == 3
-        assert len(request.verifier_ids) == 3
+        assert request.quorum_size == 1
+        assert len(request.verifier_ids) == 1
         assert request.region_constraint == "EU"
 
     # ------------------------------------------------------------------
@@ -234,24 +235,25 @@ class TestQuorumVerifier:
     # ------------------------------------------------------------------
 
     def test_minimum_trust_filter(self) -> None:
-        """Verifiers below min_verifier_trust (0.60) should be excluded."""
+        """Verifiers below min_verifier_trust (0.70) should be excluded."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = [
             ("V-001", 0.50, "EU"),  # below threshold
             ("V-002", 0.55, "EU"),  # below threshold
             ("V-003", 0.90, "EU"),
             ("V-004", 0.80, "EU"),
-            ("V-005", 0.70, "EU"),
+            ("V-005", 0.65, "EU"),  # below 0.70 threshold
         ]
         request = qv.request_quorum_verification(
             actor_id="ACTOR-002",
             region="EU",
             available_verifiers=verifiers,
         )
-        # V-001 and V-002 should be excluded; 3 remain and are selected
-        assert len(request.verifier_ids) == 3
+        # V-001, V-002, V-005 excluded; single facilitator from remaining 2
+        assert len(request.verifier_ids) == 1
         assert "V-001" not in request.verifier_ids
         assert "V-002" not in request.verifier_ids
+        assert "V-005" not in request.verifier_ids
 
     # ------------------------------------------------------------------
     # 13. Region filter excludes other regions
@@ -272,7 +274,7 @@ class TestQuorumVerifier:
             region="EU",
             available_verifiers=verifiers,
         )
-        assert len(request.verifier_ids) == 3
+        assert len(request.verifier_ids) == 1
         assert "V-002" not in request.verifier_ids
         assert "V-004" not in request.verifier_ids
 
@@ -281,14 +283,13 @@ class TestQuorumVerifier:
     # ------------------------------------------------------------------
 
     def test_not_enough_verifiers_raises(self) -> None:
-        """Should raise ValueError if eligible verifiers < quorum_size."""
+        """Should raise ValueError if no eligible facilitator available."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = [
-            ("V-001", 0.80, "EU"),
-            ("V-002", 0.80, "EU"),
-            # Only 2 eligible but need 3
+            ("V-001", 0.50, "EU"),  # below trust threshold
+            ("V-002", 0.50, "EU"),  # below trust threshold
         ]
-        with pytest.raises(ValueError, match="Not enough eligible verifiers"):
+        with pytest.raises(ValueError, match="Not enough eligible facilitators"):
             qv.request_quorum_verification(
                 actor_id="ACTOR-004",
                 region="EU",
@@ -296,11 +297,11 @@ class TestQuorumVerifier:
             )
 
     # ------------------------------------------------------------------
-    # 15. Unanimous approval -> True
+    # 15. Facilitator approval -> True
     # ------------------------------------------------------------------
 
-    def test_unanimous_approval(self) -> None:
-        """All verifiers approve -> check_result returns True."""
+    def test_facilitator_approval(self) -> None:
+        """Single facilitator approves -> check_result returns True."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         now = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -311,20 +312,20 @@ class TestQuorumVerifier:
             available_verifiers=verifiers,
             now=now,
         )
+        assert len(request.verifier_ids) == 1
 
-        # All vote yes
-        for vid in request.verifier_ids:
-            qv.submit_vote(request.request_id, vid, approved=True)
+        # Single facilitator approves
+        qv.submit_vote(request.request_id, request.verifier_ids[0], approved=True)
 
         result = qv.check_result(request.request_id, now=now + timedelta(hours=1))
         assert result is True
 
     # ------------------------------------------------------------------
-    # 16. Single rejection -> False
+    # 16. Facilitator rejection -> False
     # ------------------------------------------------------------------
 
-    def test_single_rejection(self) -> None:
-        """One rejection -> check_result returns False immediately."""
+    def test_facilitator_rejection(self) -> None:
+        """Single facilitator rejects -> check_result returns False."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         now = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -336,19 +337,18 @@ class TestQuorumVerifier:
             now=now,
         )
 
-        # First approves, second rejects
-        qv.submit_vote(request.request_id, request.verifier_ids[0], approved=True)
-        qv.submit_vote(request.request_id, request.verifier_ids[1], approved=False)
+        # Single facilitator rejects
+        qv.submit_vote(request.request_id, request.verifier_ids[0], approved=False)
 
         result = qv.check_result(request.request_id, now=now + timedelta(hours=1))
         assert result is False
 
     # ------------------------------------------------------------------
-    # 17. Pending result (not all votes in)
+    # 17. Pending result (no vote yet, not expired)
     # ------------------------------------------------------------------
 
     def test_pending_result(self) -> None:
-        """Not all votes in and not expired -> check_result returns None."""
+        """No facilitator vote yet and not expired -> check_result returns None."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         now = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -360,9 +360,7 @@ class TestQuorumVerifier:
             now=now,
         )
 
-        # Only one vote
-        qv.submit_vote(request.request_id, request.verifier_ids[0], approved=True)
-
+        # No votes yet — should be pending
         result = qv.check_result(request.request_id, now=now + timedelta(hours=1))
         assert result is None
 
@@ -370,8 +368,8 @@ class TestQuorumVerifier:
     # 18. Timeout without all votes -> False
     # ------------------------------------------------------------------
 
-    def test_timeout_without_all_votes(self) -> None:
-        """Request expires without all votes -> check_result returns False."""
+    def test_timeout_without_vote(self) -> None:
+        """Request expires without facilitator vote -> check_result returns False."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         now = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
@@ -383,9 +381,7 @@ class TestQuorumVerifier:
             now=now,
         )
 
-        qv.submit_vote(request.request_id, request.verifier_ids[0], approved=True)
-
-        # Check after timeout (48 hours)
+        # No vote submitted — check after timeout (48 hours)
         result = qv.check_result(
             request.request_id,
             now=now + timedelta(hours=49),
@@ -409,15 +405,15 @@ class TestQuorumVerifier:
         vid = request.verifier_ids[0]
         qv.submit_vote(request.request_id, vid, approved=True)
 
-        with pytest.raises(ValueError, match="already voted"):
+        with pytest.raises(ValueError, match="already attested"):
             qv.submit_vote(request.request_id, vid, approved=True)
 
     # ------------------------------------------------------------------
-    # 20. Non-panel verifier vote raises ValueError
+    # 20. Non-assigned verifier vote raises ValueError
     # ------------------------------------------------------------------
 
-    def test_non_panel_verifier_raises(self) -> None:
-        """Verifier not on the panel cannot vote."""
+    def test_non_assigned_verifier_raises(self) -> None:
+        """Verifier not assigned as facilitator cannot vote."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
         request = qv.request_quorum_verification(
@@ -426,7 +422,7 @@ class TestQuorumVerifier:
             available_verifiers=verifiers,
         )
 
-        with pytest.raises(ValueError, match="not on the panel"):
+        with pytest.raises(ValueError, match="not assigned to request"):
             qv.submit_vote(request.request_id, "OUTSIDER-999", approved=True)
 
     # ------------------------------------------------------------------
@@ -442,39 +438,23 @@ class TestQuorumVerifier:
             qv.check_result("fake-request")
 
     # ------------------------------------------------------------------
-    # 22. Quorum size below minimum raises ValueError
+    # 22. Facilitator count is always 1
     # ------------------------------------------------------------------
 
-    def test_quorum_below_minimum_raises(self) -> None:
-        """Quorum size below min_quorum_size should raise ValueError."""
+    def test_facilitator_count_is_one(self) -> None:
+        """Facilitator model always assigns exactly one facilitator."""
         qv = QuorumVerifier(_default_quorum_config())
         verifiers = self._sample_verifiers()
-        with pytest.raises(ValueError, match="below minimum"):
-            qv.request_quorum_verification(
-                actor_id="ACTOR-011",
-                region="EU",
-                available_verifiers=verifiers,
-                quorum_size=1,
-            )
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-011",
+            region="EU",
+            available_verifiers=verifiers,
+        )
+        assert request.quorum_size == 1
+        assert len(request.verifier_ids) == 1
 
     # ------------------------------------------------------------------
-    # 23. Quorum size above maximum raises ValueError
-    # ------------------------------------------------------------------
-
-    def test_quorum_above_maximum_raises(self) -> None:
-        """Quorum size above max_quorum_size should raise ValueError."""
-        qv = QuorumVerifier(_default_quorum_config())
-        verifiers = self._sample_verifiers()
-        with pytest.raises(ValueError, match="exceeds maximum"):
-            qv.request_quorum_verification(
-                actor_id="ACTOR-012",
-                region="EU",
-                available_verifiers=verifiers,
-                quorum_size=10,
-            )
-
-    # ------------------------------------------------------------------
-    # 24. Request has correct expiry time
+    # 23. Request has correct expiry time
     # ------------------------------------------------------------------
 
     def test_request_expiry_time(self) -> None:

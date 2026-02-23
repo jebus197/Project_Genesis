@@ -366,18 +366,20 @@ class PolicyResolver:
         return {**defaults, **config}
 
     def quorum_verification_config(self) -> dict[str, Any]:
-        """Return quorum verification configuration for disability accommodation.
+        """Return facilitated verification configuration for disability accommodation.
 
-        Geographically-bound randomised quorum of verified humans can
-        verify someone live on video as an alternative to voice challenge.
+        A single randomly-assigned facilitator (preferably a domain expert,
+        falling back to any high-trust human in the same geographic region)
+        helps the participant complete an equivalent identity verification.
+        The accommodation path must not be harder than the voice path.
         """
         defaults = {
-            "min_quorum_size": 3,
-            "max_quorum_size": 5,
+            "facilitator_count": 1,
+            "prefer_domain_expert": True,
+            "domain_expert_timeout_hours": 24,
             "verification_timeout_hours": 48,
-            "min_verifier_trust": 0.60,
+            "min_verifier_trust": 0.70,
             "geographic_region_required": True,
-            "unanimous_required": True,
         }
         config = self._policy.get("quorum_verification", {})
         return {**defaults, **config}

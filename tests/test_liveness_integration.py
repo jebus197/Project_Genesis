@@ -250,17 +250,16 @@ class TestFullMintLifecycle:
 
 
 class TestQuorumVerificationIntegration:
-    """Tests for quorum-based verification via service layer."""
+    """Tests for facilitated verification (single facilitator) via service layer."""
 
-    def test_request_quorum_verification(self) -> None:
-        """Can request quorum verification when enough eligible verifiers exist."""
+    def test_request_facilitated_verification(self) -> None:
+        """Can request facilitated verification when eligible facilitators exist."""
         event_log = EventLog()
         svc = _make_service(event_log=event_log)
         svc.open_epoch("test-epoch")
 
-        # Set up 5 verified, active, minted humans as potential verifiers
-        # Use distinct orgs to satisfy panel diversity requirements
-        for i in range(5):
+        # Set up 2 verified, active, minted humans as facilitator candidates
+        for i in range(2):
             _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         # Register the actor to be verified
@@ -269,16 +268,16 @@ class TestQuorumVerificationIntegration:
 
         result = svc.request_quorum_verification("SUBJECT-1")
         assert result.success, f"Failed: {result.errors}"
-        assert result.data["quorum_size"] == 3
-        assert len(result.data["verifier_ids"]) == 3
+        assert result.data["facilitator_count"] == 1
+        assert len(result.data["facilitator_ids"]) == 1
 
-    def test_quorum_unanimous_approval_verifies(self) -> None:
-        """All verifiers approve → identity verified."""
+    def test_facilitator_approval_verifies(self) -> None:
+        """Single facilitator approves → identity verified."""
         event_log = EventLog()
         svc = _make_service(event_log=event_log)
         svc.open_epoch("test-epoch")
 
-        for i in range(5):
+        for i in range(2):
             _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         svc.register_human(actor_id="SUBJECT-2", region="EU", organization="Org")
@@ -286,14 +285,13 @@ class TestQuorumVerificationIntegration:
 
         qr = svc.request_quorum_verification("SUBJECT-2")
         request_id = qr.data["request_id"]
-        verifier_ids = qr.data["verifier_ids"]
+        facilitator_ids = qr.data["facilitator_ids"]
 
-        # All approve (attestation required by config)
-        for vid in verifier_ids:
-            result = svc.submit_quorum_vote(
-                request_id, vid, approved=True,
-                attestation="I attest this verification was conducted fairly",
-            )
+        # Single facilitator approves (attestation required by config)
+        result = svc.submit_quorum_vote(
+            request_id, facilitator_ids[0], approved=True,
+            attestation="I attest this verification was conducted fairly",
+        )
 
         assert result.data["outcome"] == "approved"
         assert result.data["verification_completed"] is True
@@ -302,13 +300,13 @@ class TestQuorumVerificationIntegration:
         entry = svc.get_actor("SUBJECT-2")
         assert entry.identity_status == IdentityVerificationStatus.VERIFIED
 
-    def test_quorum_rejection(self) -> None:
-        """One rejection → verification not completed."""
+    def test_facilitator_rejection(self) -> None:
+        """Facilitator rejects → verification not completed."""
         event_log = EventLog()
         svc = _make_service(event_log=event_log)
         svc.open_epoch("test-epoch")
 
-        for i in range(5):
+        for i in range(2):
             _setup_active_verifier(svc, event_log, f"VERIFIER-{i}", score=0.75, org=f"Org{i}")
 
         svc.register_human(actor_id="SUBJECT-3", region="EU", organization="Org")
@@ -316,16 +314,12 @@ class TestQuorumVerificationIntegration:
 
         qr = svc.request_quorum_verification("SUBJECT-3")
         request_id = qr.data["request_id"]
-        verifier_ids = qr.data["verifier_ids"]
+        facilitator_ids = qr.data["facilitator_ids"]
 
-        # First approves, second rejects (attestation required)
-        svc.submit_quorum_vote(
-            request_id, verifier_ids[0], approved=True,
-            attestation="I attest this verification was conducted fairly",
-        )
+        # Single facilitator rejects
         result = svc.submit_quorum_vote(
-            request_id, verifier_ids[1], approved=False,
-            attestation="I attest this verification was conducted fairly",
+            request_id, facilitator_ids[0], approved=False,
+            attestation="Could not confirm identity",
         )
 
         assert result.data["outcome"] == "rejected"
@@ -334,8 +328,8 @@ class TestQuorumVerificationIntegration:
         entry = svc.get_actor("SUBJECT-3")
         assert entry.identity_status == IdentityVerificationStatus.PENDING
 
-    def test_quorum_requires_pending_status(self) -> None:
-        """Cannot request quorum if actor is not in PENDING status."""
+    def test_facilitated_requires_pending_status(self) -> None:
+        """Cannot request facilitated verification if not in PENDING status."""
         svc = _make_service(event_log=EventLog())
         actor = _setup_actor(svc)
         # Actor is UNVERIFIED, not PENDING

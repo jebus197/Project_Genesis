@@ -101,14 +101,12 @@
     "require_face_presence": false
   },
   "quorum_verification": {
-    "min_quorum_size": 3,
-    "max_quorum_size": 5,
+    "facilitator_count": 1,
+    "prefer_domain_expert": true,
+    "domain_expert_timeout_hours": 24,
     "verification_timeout_hours": 48,
     "min_verifier_trust": 0.70,
     "geographic_region_required": true,
-    "unanimous_required": true,
-    "panel_diversity_min_organizations": 2,
-    "panel_diversity_min_regions": 1,
     "verifier_cooldown_hours": 168,
     "max_panels_per_verifier_per_month": 10,
     "max_concurrent_panels_per_verifier": 3,

@@ -781,6 +781,9 @@ Genesis is structurally incompatible with concealment. Participants who require 
 84. Can an external custodian hold Genesis funds or possess the ability to freeze or redirect them? If yes, reject design.
 85. Does adding or removing a payment rail require changes to escrow logic, commission computation, or GCF contribution code? If yes, reject design.
 
+**Disability accommodation design test:**
+86. Is the disability accommodation verification path structurally harder than the standard voice liveness path? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

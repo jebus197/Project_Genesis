@@ -1,8 +1,14 @@
-"""Tests for quorum verification safeguards (Phase D-5).
+"""Tests for facilitated verification safeguards (Phase D-5 / D-5c).
 
-Covers panel diversity, verifier cooldown/workload, blind adjudication,
-high-trust gate, vote attestation, recusal, session protocol, abuse
-protection, and appeal mechanism.
+Covers facilitator assignment (single facilitator for accommodation),
+verifier cooldown/workload, blind adjudication, high-trust gate,
+facilitator attestation, facilitator decline, session protocol, abuse
+protection (3-member panel), appeal mechanism, nuke appeal (5-member panel),
+and equivalent standard (design test #86).
+
+Phase D-5c: Corrected confabulated 3-5 member panel for accommodation to
+single facilitator model. The 3-member panel is correctly used ONLY for
+abuse review, not for accommodation verification.
 """
 
 import pytest
@@ -13,7 +19,6 @@ from genesis.identity.quorum_verifier import (
     QuorumVerifier,
     QuorumVerificationRequest,
     NukeAppealResult,
-    PanelDiversityResult,
     AbuseReviewResult,
     SCRIPTED_INTRO_V1,
     PRE_SESSION_BRIEFING_V1,
@@ -38,15 +43,14 @@ CONFIG_DIR = Path(__file__).resolve().parents[1] / "config"
 # ---------------------------------------------------------------------------
 
 def _safeguard_config(**overrides) -> dict:
-    """Full D-5 quorum config with optional overrides."""
+    """Full D-5/D-5c facilitated verification config with optional overrides."""
     cfg = {
-        "min_quorum_size": 3,
-        "max_quorum_size": 5,
+        "facilitator_count": 1,
+        "prefer_domain_expert": True,
+        "domain_expert_timeout_hours": 24,
         "verification_timeout_hours": 48,
         "min_verifier_trust": 0.70,
         "geographic_region_required": True,
-        "panel_diversity_min_organizations": 2,
-        "panel_diversity_min_regions": 1,
         "verifier_cooldown_hours": 168,
         "max_panels_per_verifier_per_month": 10,
         "max_concurrent_panels_per_verifier": 3,
@@ -67,8 +71,8 @@ def _safeguard_config(**overrides) -> dict:
     return cfg
 
 
-def _diverse_verifiers() -> list[tuple[str, float, str]]:
-    """5 high-trust verifiers from different orgs in EU."""
+def _eligible_facilitators() -> list[tuple[str, float, str]]:
+    """5 high-trust humans in EU — pool for facilitator selection."""
     return [
         ("V-001", 0.80, "EU"),
         ("V-002", 0.75, "EU"),
@@ -78,8 +82,8 @@ def _diverse_verifiers() -> list[tuple[str, float, str]]:
     ]
 
 
-def _diverse_orgs() -> dict[str, str]:
-    """Organization mapping for diverse panel selection."""
+def _facilitator_orgs() -> dict[str, str]:
+    """Organization mapping for facilitators."""
     return {
         "V-001": "OrgAlpha",
         "V-002": "OrgBeta",
@@ -89,83 +93,88 @@ def _diverse_orgs() -> dict[str, str]:
     }
 
 
-def _same_org_verifiers() -> list[tuple[str, float, str]]:
-    """3 verifiers from the same org — should fail diversity."""
-    return [
-        ("V-001", 0.80, "EU"),
-        ("V-002", 0.85, "EU"),
-        ("V-003", 0.90, "EU"),
-    ]
-
-
-def _same_org_map() -> dict[str, str]:
-    return {"V-001": "SameOrg", "V-002": "SameOrg", "V-003": "SameOrg"}
-
-
 NOW = datetime(2026, 6, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 # ===========================================================================
-# Panel Diversity Tests
+# Facilitator Assignment Tests (Phase D-5c)
 # ===========================================================================
 
-class TestPanelDiversity:
-    """Prove panel diversity enforcement."""
+class TestFacilitatorAssignment:
+    """Prove single facilitator assignment for disability accommodation.
 
-    def test_panel_meets_diversity_requirements(self) -> None:
-        """Panel with distinct orgs and regions passes diversity check."""
+    Phase D-5c correction: accommodation uses a SINGLE facilitator, not a panel.
+    The 3-member panel is used only for abuse review (TestAbuseProtection).
+    """
+
+    def test_single_facilitator_assigned(self) -> None:
+        """Accommodation request must assign exactly 1 facilitator."""
         qv = QuorumVerifier(_safeguard_config())
-        panel = [
-            ("V-001", "OrgAlpha", "EU"),
-            ("V-002", "OrgBeta", "EU"),
-            ("V-003", "OrgGamma", "EU"),
-        ]
-        result = qv.check_panel_diversity(panel)
-        assert result.meets_requirements is True
-        assert result.distinct_organizations == 3
-        assert len(result.violations) == 0
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            now=NOW,
+        )
+        assert request.quorum_size == 1
+        assert len(request.verifier_ids) == 1
 
-    def test_panel_violates_min_organizations(self) -> None:
-        """Panel from a single org violates diversity."""
+    def test_domain_expert_preferred(self) -> None:
+        """When domain experts available, one is selected as facilitator."""
         qv = QuorumVerifier(_safeguard_config())
-        panel = [
-            ("V-001", "SameOrg", "EU"),
-            ("V-002", "SameOrg", "EU"),
-            ("V-003", "SameOrg", "EU"),
-        ]
-        result = qv.check_panel_diversity(panel)
-        assert result.meets_requirements is False
-        assert result.distinct_organizations == 1
-        assert len(result.violations) >= 1
-        assert "organizations" in result.violations[0].lower()
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            domain_expert_ids={"V-003"},
+            now=NOW,
+        )
+        assert request.verifier_ids == ["V-003"]
 
-    def test_panel_violates_min_regions(self) -> None:
-        """Panel with no regions when min_regions=2 violates diversity."""
-        qv = QuorumVerifier(_safeguard_config(panel_diversity_min_regions=2))
-        panel = [
-            ("V-001", "OrgA", "EU"),
-            ("V-002", "OrgB", "EU"),
-            ("V-003", "OrgC", "EU"),
-        ]
-        result = qv.check_panel_diversity(panel)
-        assert result.meets_requirements is False
-        assert result.distinct_regions == 1
-
-    def test_panel_resampled_on_diversity_failure(self) -> None:
-        """With diverse verifiers, selection eventually meets diversity."""
+    def test_fallback_to_high_trust_when_no_expert(self) -> None:
+        """When no domain expert in pool, falls back to any eligible."""
         qv = QuorumVerifier(_safeguard_config())
-        verifiers = _diverse_verifiers()
-        orgs = _diverse_orgs()
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            domain_expert_ids=set(),  # no experts
+            now=NOW,
+        )
+        assert len(request.verifier_ids) == 1
+        assert request.verifier_ids[0] in {"V-001", "V-002", "V-003", "V-004", "V-005"}
+
+    def test_region_constraint_enforced(self) -> None:
+        """Facilitators from wrong region are excluded."""
+        qv = QuorumVerifier(_safeguard_config())
+        verifiers = [
+            ("V-001", 0.80, "US"),  # wrong region
+            ("V-002", 0.85, "EU"),  # correct region
+        ]
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
             available_verifiers=verifiers,
-            verifier_orgs=orgs,
+            verifier_orgs={"V-001": "OrgA", "V-002": "OrgB"},
             now=NOW,
         )
-        # Panel should have at least 2 distinct orgs
-        panel_orgs = set(request.verifier_organizations.values())
-        assert len(panel_orgs) >= 2
+        assert request.verifier_ids == ["V-002"]
+
+    def test_no_eligible_facilitator_raises(self) -> None:
+        """ValueError if no eligible facilitator after filtering."""
+        qv = QuorumVerifier(_safeguard_config())
+        verifiers = [("V-001", 0.50, "EU")]  # below trust threshold
+        with pytest.raises(ValueError, match="Not enough eligible"):
+            qv.request_quorum_verification(
+                actor_id="ACTOR-001",
+                region="EU",
+                available_verifiers=verifiers,
+                verifier_orgs={"V-001": "OrgA"},
+                now=NOW,
+            )
 
 
 # ===========================================================================
@@ -176,17 +185,17 @@ class TestVerifierCooldown:
     """Prove cooldown and workload enforcement."""
 
     def test_recently_served_verifier_excluded(self) -> None:
-        """Verifier who served recently should be on cooldown."""
+        """Facilitator who served recently should be on cooldown."""
         qv = QuorumVerifier(_safeguard_config())
-        # Serve on a panel
+        # Serve as facilitator
         qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
-        # All selected verifiers should now be on cooldown
+        # Selected facilitator should now be on cooldown
         for vid in qv._verifier_history:
             assert qv.check_verifier_cooldown(vid, NOW + timedelta(hours=1)) is True
 
@@ -235,16 +244,16 @@ class TestVerifierCooldown:
 # ===========================================================================
 
 class TestBlindAdjudication:
-    """Prove blind adjudication generates pseudonyms."""
+    """Prove facilitator sees pseudonym only (blind identity)."""
 
     def test_request_returns_pseudonym_not_actor_id(self) -> None:
-        """Request should have a pseudonym, not the actor's real ID."""
+        """Facilitator should see a pseudonym, not the actor's real ID."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
             actor_id="REAL-ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         assert request.applicant_pseudonym != "REAL-ACTOR-001"
@@ -262,8 +271,8 @@ class TestBlindAdjudication:
             request = qv.request_quorum_verification(
                 actor_id=f"ACTOR-{i:03d}",
                 region="EU",
-                available_verifiers=_diverse_verifiers(),
-                verifier_orgs=_diverse_orgs(),
+                available_verifiers=_eligible_facilitators(),
+                verifier_orgs=_facilitator_orgs(),
                 now=NOW + timedelta(seconds=i),
             )
             pseudonyms.add(request.applicant_pseudonym)
@@ -275,20 +284,18 @@ class TestBlindAdjudication:
 # ===========================================================================
 
 class TestHighTrustGate:
-    """Prove high-trust gate (>=0.70) for quorum verifiers."""
+    """Prove high-trust gate (>=0.70) for facilitators."""
 
     def test_verifier_below_070_excluded(self) -> None:
-        """Verifiers with trust < 0.70 should be filtered out."""
+        """Facilitators with trust < 0.70 should be filtered out."""
         qv = QuorumVerifier(_safeguard_config())
         verifiers = [
             ("V-001", 0.65, "EU"),  # below 0.70
             ("V-002", 0.69, "EU"),  # below 0.70
             ("V-003", 0.50, "EU"),  # below 0.70
             ("V-004", 0.80, "EU"),  # above
-            ("V-005", 0.75, "EU"),  # above
-            ("V-006", 0.90, "EU"),  # above
         ]
-        orgs = {"V-004": "OrgA", "V-005": "OrgB", "V-006": "OrgC"}
+        orgs = {"V-004": "OrgA"}
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
@@ -296,19 +303,15 @@ class TestHighTrustGate:
             verifier_orgs=orgs,
             now=NOW,
         )
-        assert "V-001" not in request.verifier_ids
-        assert "V-002" not in request.verifier_ids
-        assert "V-003" not in request.verifier_ids
+        assert request.verifier_ids == ["V-004"]
 
     def test_verifier_at_070_included(self) -> None:
-        """Verifier at exactly 0.70 should be eligible."""
+        """Facilitator at exactly 0.70 should be eligible."""
         qv = QuorumVerifier(_safeguard_config())
         verifiers = [
             ("V-001", 0.70, "EU"),
-            ("V-002", 0.80, "EU"),
-            ("V-003", 0.90, "EU"),
         ]
-        orgs = {"V-001": "OrgA", "V-002": "OrgB", "V-003": "OrgC"}
+        orgs = {"V-001": "OrgA"}
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
@@ -316,39 +319,39 @@ class TestHighTrustGate:
             verifier_orgs=orgs,
             now=NOW,
         )
-        # All 3 should be selected (exactly 3 eligible, quorum=3)
-        assert len(request.verifier_ids) == 3
+        assert len(request.verifier_ids) == 1
+        assert request.verifier_ids[0] == "V-001"
 
 
 # ===========================================================================
 # Vote Attestation Tests
 # ===========================================================================
 
-class TestVoteAttestation:
-    """Prove vote attestation enforcement."""
+class TestFacilitatorAttestation:
+    """Prove facilitator attestation enforcement."""
 
-    def test_vote_requires_attestation(self) -> None:
-        """Vote without attestation should raise ValueError when required."""
+    def test_attestation_requires_written_statement(self) -> None:
+        """Attestation without written statement should raise when required."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
         with pytest.raises(ValueError, match="attestation is required"):
             qv.submit_vote(request.request_id, vid, approved=True)
 
-    def test_vote_without_attestation_accepted_when_not_required(self) -> None:
-        """Vote without attestation should work if not required."""
+    def test_attestation_accepted_when_not_required(self) -> None:
+        """Attestation without written statement should work if not required."""
         qv = QuorumVerifier(_safeguard_config(require_vote_attestation=False))
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
@@ -356,79 +359,94 @@ class TestVoteAttestation:
         assert vid in request.votes
 
     def test_attestation_stored_in_request(self) -> None:
-        """Attestation text should be stored in the request."""
+        """Written attestation should be stored in the request."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
         qv.submit_vote(
             request.request_id, vid, approved=True,
-            attestation="Confirmed identity via live video",
+            attestation="Confirmed identity via live session",
         )
-        assert request.vote_attestations[vid] == "Confirmed identity via live video"
+        assert request.vote_attestations[vid] == "Confirmed identity via live session"
+
+    def test_single_attestation_determines_result(self) -> None:
+        """One facilitator attestation immediately determines the outcome."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            now=NOW,
+        )
+        vid = request.verifier_ids[0]
+        qv.submit_vote(
+            request.request_id, vid, approved=True,
+            attestation="Confirmed identity",
+        )
+        result = qv.check_result(request.request_id, now=NOW)
+        assert result is True  # single attestation = immediate approval
 
 
 # ===========================================================================
 # Recusal Tests
 # ===========================================================================
 
-class TestRecusal:
-    """Prove recusal mechanism."""
+class TestFacilitatorDecline:
+    """Prove facilitator can decline assignment (recusal).
 
-    def test_verifier_can_recuse(self) -> None:
-        """Verifier can recuse if panel stays above min quorum."""
+    In the single-facilitator model, a decline leaves the request with
+    no active facilitator. The service layer must assign a replacement.
+    """
+
+    def test_facilitator_can_decline(self) -> None:
+        """Facilitator can decline — request left with no active facilitator."""
         qv = QuorumVerifier(_safeguard_config())
-        # Need 4+ verifiers so panel of 3 can survive a recusal with min_quorum=3
-        verifiers = _diverse_verifiers()
-        orgs = _diverse_orgs()
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=verifiers,
-            verifier_orgs=orgs,
-            quorum_size=4,
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
         qv.declare_recusal(request.request_id, vid, "conflict of interest")
         assert vid not in request.verifier_ids
         assert vid in request.recusals
-        assert request.quorum_size == 3
+        assert request.quorum_size == 0  # no active facilitator
 
-    def test_recusal_below_quorum_size_errors(self) -> None:
-        """Recusal that would drop below min quorum should raise ValueError."""
+    def test_decline_reason_recorded(self) -> None:
+        """Decline reason should be stored in the request."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
-            now=NOW,
-        )
-        # Panel is 3, min_quorum is 3 — can't recuse
-        vid = request.verifier_ids[0]
-        with pytest.raises(ValueError, match="below minimum quorum"):
-            qv.declare_recusal(request.request_id, vid, "reason")
-
-    def test_recusal_reason_recorded(self) -> None:
-        """Recusal reason should be stored in the request."""
-        qv = QuorumVerifier(_safeguard_config())
-        request = qv.request_quorum_verification(
-            actor_id="ACTOR-001",
-            region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
-            quorum_size=4,
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
         qv.declare_recusal(request.request_id, vid, "I know this person")
         assert request.recusals[vid] == "I know this person"
+
+    def test_non_assigned_facilitator_cannot_decline(self) -> None:
+        """A verifier not assigned to the request cannot decline."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            now=NOW,
+        )
+        with pytest.raises(ValueError, match="not assigned"):
+            qv.declare_recusal(request.request_id, "NONEXISTENT", "reason")
 
 
 # ===========================================================================
@@ -444,8 +462,8 @@ class TestSessionProtocol:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         assert request.session_max_seconds == 240
@@ -456,8 +474,8 @@ class TestSessionProtocol:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         assert request.recording_retention_hours == 72
@@ -468,8 +486,8 @@ class TestSessionProtocol:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         assert request.scripted_intro_version == "v1"
@@ -492,8 +510,8 @@ class TestAbuseProtection:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         qv.file_abuse_complaint(
@@ -508,8 +526,8 @@ class TestAbuseProtection:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         qv.file_abuse_complaint(request.request_id, "ACTOR-001", "bad behavior")
@@ -532,8 +550,8 @@ class TestAbuseProtection:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         qv.file_abuse_complaint(request.request_id, "ACTOR-001", "abuse")
@@ -553,8 +571,8 @@ class TestAbuseProtection:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         with pytest.raises(ValueError, match="at least 3"):
@@ -570,15 +588,15 @@ class TestAbuseProtection:
 # ===========================================================================
 
 class TestAppeal:
-    """Prove appeal mechanism."""
+    """Prove appeal mechanism — assigns a DIFFERENT single facilitator."""
 
     def _make_rejected_request(self, qv):
-        """Helper: create and reject a quorum request."""
+        """Helper: create and reject a facilitated verification request."""
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         vid = request.verifier_ids[0]
@@ -593,67 +611,45 @@ class TestAppeal:
         qv = QuorumVerifier(_safeguard_config(verifier_cooldown_hours=0))
         original = self._make_rejected_request(qv)
 
-        # Need extra verifiers for appeal panel (original panel is excluded)
-        extra_verifiers = _diverse_verifiers() + [
-            ("V-006", 0.85, "EU"),
-            ("V-007", 0.80, "EU"),
-            ("V-008", 0.75, "EU"),
-        ]
-        extra_orgs = {**_diverse_orgs(), "V-006": "OrgF", "V-007": "OrgG", "V-008": "OrgH"}
-
         appeal = qv.request_appeal(
             original.request_id,
-            extra_verifiers,
-            verifier_orgs=extra_orgs,
+            _eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW + timedelta(hours=24),
         )
         assert appeal.request_id != original.request_id
         assert appeal.appeal_of == original.request_id
         assert appeal.actor_id == "ACTOR-001"
+        assert len(appeal.verifier_ids) == 1  # single facilitator
 
     def test_appeal_after_window_rejected(self) -> None:
         """Appeal after window should raise ValueError."""
         qv = QuorumVerifier(_safeguard_config(verifier_cooldown_hours=0))
         original = self._make_rejected_request(qv)
 
-        extra_verifiers = _diverse_verifiers() + [
-            ("V-006", 0.85, "EU"),
-            ("V-007", 0.80, "EU"),
-            ("V-008", 0.75, "EU"),
-        ]
-        extra_orgs = {**_diverse_orgs(), "V-006": "OrgF", "V-007": "OrgG", "V-008": "OrgH"}
-
         with pytest.raises(ValueError, match="Appeal window has expired"):
             qv.request_appeal(
                 original.request_id,
-                extra_verifiers,
-                verifier_orgs=extra_orgs,
+                _eligible_facilitators(),
+                verifier_orgs=_facilitator_orgs(),
                 now=NOW + timedelta(hours=100),  # well past 72h
             )
 
-    def test_appeal_selects_different_panel(self) -> None:
-        """Appeal panel should not overlap with original panel."""
+    def test_appeal_selects_different_facilitator(self) -> None:
+        """Appeal facilitator should not be the same as original facilitator."""
         qv = QuorumVerifier(_safeguard_config(verifier_cooldown_hours=0))
         original = self._make_rejected_request(qv)
 
-        # Need more verifiers than original panel to have non-overlapping options
-        extra_verifiers = _diverse_verifiers() + [
-            ("V-006", 0.85, "EU"),
-            ("V-007", 0.80, "EU"),
-            ("V-008", 0.75, "EU"),
-        ]
-        extra_orgs = {**_diverse_orgs(), "V-006": "OrgF", "V-007": "OrgG", "V-008": "OrgH"}
-
         appeal = qv.request_appeal(
             original.request_id,
-            extra_verifiers,
-            verifier_orgs=extra_orgs,
+            _eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW + timedelta(hours=24),
         )
-        original_panel = set(original.verifier_ids)
-        appeal_panel = set(appeal.verifier_ids)
-        assert original_panel.isdisjoint(appeal_panel), (
-            f"Appeal panel {appeal_panel} overlaps with original {original_panel}"
+        original_facilitator = set(original.verifier_ids)
+        appeal_facilitator = set(appeal.verifier_ids)
+        assert original_facilitator.isdisjoint(appeal_facilitator), (
+            f"Appeal facilitator {appeal_facilitator} same as original {original_facilitator}"
         )
 
     def test_appeal_of_approved_request_rejected(self) -> None:
@@ -662,29 +658,22 @@ class TestAppeal:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
-        # Approve all votes
-        for vid in request.verifier_ids:
-            qv.submit_vote(
-                request.request_id, vid, approved=True,
-                attestation="Confirmed identity",
-            )
-
-        extra_verifiers = _diverse_verifiers() + [
-            ("V-006", 0.85, "EU"),
-            ("V-007", 0.80, "EU"),
-            ("V-008", 0.75, "EU"),
-        ]
-        extra_orgs = {**_diverse_orgs(), "V-006": "OrgF", "V-007": "OrgG", "V-008": "OrgH"}
+        # Facilitator approves
+        vid = request.verifier_ids[0]
+        qv.submit_vote(
+            request.request_id, vid, approved=True,
+            attestation="Confirmed identity",
+        )
 
         with pytest.raises(ValueError, match="Can only appeal rejected"):
             qv.request_appeal(
                 request.request_id,
-                extra_verifiers,
-                verifier_orgs=extra_orgs,
+                _eligible_facilitators(),
+                verifier_orgs=_facilitator_orgs(),
                 now=NOW + timedelta(hours=1),
             )
 
@@ -703,7 +692,7 @@ class TestServiceIntegration:
 
     @staticmethod
     def _setup_active_verifier(service, event_log, actor_id, score=0.80, org="Org"):
-        """Register and fully mint a human for use as a quorum verifier."""
+        """Register and fully mint a human for use as a facilitator."""
         result = service.register_human(
             actor_id=actor_id, region="EU", organization=org,
             status=ActorStatus.ACTIVE, initial_trust=score,
@@ -726,7 +715,7 @@ class TestServiceIntegration:
         mint_result = service.mint_trust_profile(actor_id)
         assert mint_result.success, f"Minting failed for {actor_id}: {mint_result.errors}"
 
-    def test_quorum_emits_panel_formed_event(self) -> None:
+    def test_facilitated_emits_panel_formed_event(self) -> None:
         """request_quorum_verification should emit QUORUM_PANEL_FORMED."""
         event_log = EventLog()
         service = self._make_service(event_log)
@@ -738,21 +727,22 @@ class TestServiceIntegration:
         )
         service.request_verification(actor_id)
 
-        # Set up 5 verifiers with distinct orgs
-        for i in range(5):
+        # Set up 2 facilitator candidates
+        for i in range(2):
             self._setup_active_verifier(
                 service, event_log, f"VERIFIER-{i:03d}",
                 score=0.80, org=f"Org{i}",
             )
 
         result = service.request_quorum_verification(actor_id)
-        assert result.success, f"Quorum request failed: {result.errors}"
+        assert result.success, f"Facilitated request failed: {result.errors}"
+        assert result.data["facilitator_count"] == 1
 
         panel_events = event_log.events(EventKind.QUORUM_PANEL_FORMED)
         assert len(panel_events) >= 1
         assert panel_events[0].payload["request_id"] == result.data["request_id"]
 
-    def test_quorum_emits_vote_cast_events(self) -> None:
+    def test_facilitated_emits_vote_cast_events(self) -> None:
         """submit_quorum_vote should emit QUORUM_VOTE_CAST."""
         event_log = EventLog()
         service = self._make_service(event_log)
@@ -764,7 +754,7 @@ class TestServiceIntegration:
         )
         service.request_verification(actor_id)
 
-        for i in range(5):
+        for i in range(2):
             self._setup_active_verifier(
                 service, event_log, f"VOTER-{i:03d}",
                 score=0.80, org=f"Org{i}",
@@ -773,20 +763,20 @@ class TestServiceIntegration:
         req_result = service.request_quorum_verification(actor_id)
         assert req_result.success
         request_id = req_result.data["request_id"]
-        verifier_ids = req_result.data["verifier_ids"]
+        facilitator_ids = req_result.data["facilitator_ids"]
 
-        # Cast one vote
+        # Facilitator attests
         vote_result = service.submit_quorum_vote(
-            request_id, verifier_ids[0], approved=True,
-            attestation="Confirmed identity via video",
+            request_id, facilitator_ids[0], approved=True,
+            attestation="Confirmed identity via live session",
         )
         assert vote_result.success
 
         vote_events = event_log.events(EventKind.QUORUM_VOTE_CAST)
         assert len(vote_events) >= 1
 
-    def test_quorum_emits_completion_event(self) -> None:
-        """Unanimous approval should emit QUORUM_VERIFICATION_COMPLETED."""
+    def test_facilitated_emits_completion_event(self) -> None:
+        """Facilitator approval should emit QUORUM_VERIFICATION_COMPLETED."""
         event_log = EventLog()
         service = self._make_service(event_log)
         service.open_epoch("test-epoch")
@@ -797,7 +787,7 @@ class TestServiceIntegration:
         )
         service.request_verification(actor_id)
 
-        for i in range(5):
+        for i in range(2):
             self._setup_active_verifier(
                 service, event_log, f"COMPLETE-{i:03d}",
                 score=0.80, org=f"Org{i}",
@@ -806,21 +796,20 @@ class TestServiceIntegration:
         req_result = service.request_quorum_verification(actor_id)
         assert req_result.success
         request_id = req_result.data["request_id"]
-        verifier_ids = req_result.data["verifier_ids"]
+        facilitator_ids = req_result.data["facilitator_ids"]
 
-        # All vote yes
-        for vid in verifier_ids:
-            service.submit_quorum_vote(
-                request_id, vid, approved=True,
-                attestation="Confirmed via live video",
-            )
+        # Single facilitator approves — immediate completion
+        service.submit_quorum_vote(
+            request_id, facilitator_ids[0], approved=True,
+            attestation="Confirmed via live session",
+        )
 
         completion_events = event_log.events(EventKind.QUORUM_VERIFICATION_COMPLETED)
         assert len(completion_events) >= 1
         assert completion_events[0].payload["outcome"] == "approved"
 
-    def test_minted_required_for_verifiers(self) -> None:
-        """Unminted verifiers should not be eligible for quorum panels."""
+    def test_minted_required_for_facilitators(self) -> None:
+        """Unminted humans should not be eligible as facilitators."""
         event_log = EventLog()
         service = self._make_service(event_log)
         service.open_epoch("test-epoch")
@@ -831,8 +820,8 @@ class TestServiceIntegration:
         )
         service.request_verification(actor_id)
 
-        # Register 3 verified but UN-minted humans (don't call mint_trust_profile)
-        for i in range(3):
+        # Register 2 verified but UN-minted humans
+        for i in range(2):
             vid = f"UNMINTED-{i:03d}"
             service.register_human(
                 actor_id=vid, region="EU", organization=f"Org{i}",
@@ -843,7 +832,7 @@ class TestServiceIntegration:
             # NOT minting — no mint_trust_profile() call
 
         result = service.request_quorum_verification(actor_id)
-        # Should fail because no minted verifiers available
+        # Should fail because no minted facilitators available
         assert result.success is False
         assert any("Not enough" in e for e in result.errors)
 
@@ -867,11 +856,9 @@ class TestPreSessionPreparation:
         """New request must have challenge_phrase set, but no ready timestamp."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
-            actor_id="ACTOR-001",
-            region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
-            now=NOW,
+            actor_id="ACTOR-001", region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(), now=NOW,
         )
         assert request.challenge_phrase is not None
         assert len(request.challenge_phrase.split()) == 6
@@ -881,11 +868,9 @@ class TestPreSessionPreparation:
         """signal_participant_ready sets the ready timestamp."""
         qv = QuorumVerifier(_safeguard_config())
         request = qv.request_quorum_verification(
-            actor_id="ACTOR-001",
-            region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
-            now=NOW,
+            actor_id="ACTOR-001", region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(), now=NOW,
         )
         ready_time = NOW + timedelta(minutes=15)
         qv.signal_participant_ready(request.request_id, now=ready_time)
@@ -899,10 +884,9 @@ class TestPreSessionPreparation:
         """Session expiry should count from participant_ready_utc, not created_utc."""
         qv = QuorumVerifier(_safeguard_config(session_max_seconds=120))
         request = qv.request_quorum_verification(
-            actor_id="ACTOR-001",
-            region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            actor_id="ACTOR-001", region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         # 10 minutes of prep time — should NOT affect session timer
@@ -946,8 +930,8 @@ class TestNukeAppeal:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=now,
         )
         qv.file_abuse_complaint(request.request_id, "ACTOR-001", "bad behavior")
@@ -1065,8 +1049,8 @@ class TestNukeAppeal:
         request = qv.request_quorum_verification(
             actor_id="ACTOR-001",
             region="EU",
-            available_verifiers=_diverse_verifiers(),
-            verifier_orgs=_diverse_orgs(),
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
             now=NOW,
         )
         qv.file_abuse_complaint(request.request_id, "ACTOR-001", "abuse")
@@ -1130,10 +1114,10 @@ class TestNukeAppealServiceIntegration:
         assert mint_result.success, f"Minting failed for {actor_id}: {mint_result.errors}"
 
     def _setup_abuse_scenario(self, service, event_log):
-        """Set up: 5 verifiers, quorum request, confirmed abuse on first verifier.
+        """Set up: facilitator pool, request, confirmed abuse on facilitator.
 
-        IMPORTANT: Abuse reviewers use AREV- prefix, separate from both quorum
-        verifiers (VER-) and appeal panelists (registered later).
+        IMPORTANT: Abuse reviewers use AREV- prefix, separate from both
+        facilitators (VER-) and appeal panelists (registered later).
         """
         service.open_epoch("test-epoch")
 
@@ -1143,8 +1127,8 @@ class TestNukeAppealServiceIntegration:
         )
         service.request_verification("APPLICANT")
 
-        # Register 5 verifiers with distinct orgs (quorum panel pool)
-        for i in range(5):
+        # Register 2 facilitator candidates with distinct orgs
+        for i in range(2):
             self._setup_active_verifier(
                 service, event_log, f"VER-{i:03d}", score=0.80, org=f"Org{i}",
             )
@@ -1155,18 +1139,18 @@ class TestNukeAppealServiceIntegration:
                 service, event_log, f"AREV-{i:03d}", score=0.80, org=f"ARevOrg{i}",
             )
 
-        # Request quorum verification
+        # Request facilitated verification (single facilitator)
         req_result = service.request_quorum_verification("APPLICANT")
-        assert req_result.success, f"Quorum request failed: {req_result.errors}"
+        assert req_result.success, f"Facilitated request failed: {req_result.errors}"
         request_id = req_result.data["request_id"]
-        verifier_ids = req_result.data["verifier_ids"]
+        facilitator_ids = req_result.data["facilitator_ids"]
 
         # File abuse complaint and confirm
         service.file_quorum_abuse_complaint(
-            request_id, "APPLICANT", "verifier was abusive",
+            request_id, "APPLICANT", "facilitator was abusive",
         )
-        # Use first verifier as offender
-        offender = verifier_ids[0]
+        # Use facilitator as offender
+        offender = facilitator_ids[0]
         # Abuse reviewers — distinct from both quorum panel and future appeal panel
         abuse_result = service.review_quorum_abuse(
             request_id,
@@ -1246,12 +1230,12 @@ class TestNukeAppealServiceIntegration:
         )
         complainant_trust_before = service._trust_records["COMPLAINANT"].score
 
-        # Register applicant and 5 verifiers
+        # Register applicant and 2 facilitator candidates
         service.register_human(
             actor_id="VICTIM", region="EU", organization="OrgV",
         )
         service.request_verification("VICTIM")
-        for i in range(5):
+        for i in range(2):
             self._setup_active_verifier(
                 service, event_log, f"CVER-{i:03d}", score=0.80, org=f"COrg{i}",
             )
@@ -1259,7 +1243,7 @@ class TestNukeAppealServiceIntegration:
         req_result = service.request_quorum_verification("VICTIM")
         assert req_result.success
         request_id = req_result.data["request_id"]
-        offender = req_result.data["verifier_ids"][0]
+        offender = req_result.data["facilitator_ids"][0]
 
         # Complainant files abuse complaint
         service.file_quorum_abuse_complaint(
@@ -1291,3 +1275,88 @@ class TestNukeAppealServiceIntegration:
         # Complainant trust should be unchanged
         complainant_trust_after = service._trust_records["COMPLAINANT"].score
         assert complainant_trust_after == complainant_trust_before
+
+
+# ===========================================================================
+# Equivalent Standard Tests — Design Test #86 (Phase D-5c)
+# ===========================================================================
+
+class TestEquivalentStandard:
+    """Design test #86: accommodation path must NOT be harder than voice path.
+
+    Voice liveness path: 1 actor reads 6 words → 1 automated check → result.
+    Accommodation path: 1 actor + 1 facilitator → 1 attestation → result.
+
+    If the accommodation path requires MORE humans, MORE votes, or a
+    HARDER standard (e.g. unanimity among multiple), it is discriminatory.
+    """
+
+    def test_accommodation_requires_single_facilitator(self) -> None:
+        """Accommodation must require exactly 1 human facilitator."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            now=NOW,
+        )
+        assert request.quorum_size == 1, (
+            f"Accommodation requires {request.quorum_size} humans — "
+            f"voice path requires 0 (automated). Must be 1 for equivalence."
+        )
+        assert len(request.verifier_ids) == 1
+
+    def test_single_approval_completes_verification(self) -> None:
+        """A single facilitator's approval must immediately complete verification."""
+        qv = QuorumVerifier(_safeguard_config())
+        request = qv.request_quorum_verification(
+            actor_id="ACTOR-001",
+            region="EU",
+            available_verifiers=_eligible_facilitators(),
+            verifier_orgs=_facilitator_orgs(),
+            now=NOW,
+        )
+        vid = request.verifier_ids[0]
+        qv.submit_vote(
+            request.request_id, vid, approved=True,
+            attestation="Identity confirmed",
+        )
+        result = qv.check_result(request.request_id, now=NOW)
+        assert result is True, (
+            "Single facilitator approval did not immediately complete "
+            "verification — accommodation path is harder than voice path"
+        )
+
+    def test_config_facilitator_count_is_one(self) -> None:
+        """Runtime config must specify facilitator_count=1."""
+        import json
+        config_path = CONFIG_DIR / "runtime_policy.json"
+        policy = json.loads(config_path.read_text())
+        qv_config = policy["quorum_verification"]
+        assert qv_config["facilitator_count"] == 1, (
+            f"facilitator_count is {qv_config['facilitator_count']}, not 1 — "
+            f"accommodation would require multiple humans"
+        )
+
+    def test_no_unanimity_requirement_in_config(self) -> None:
+        """Config must NOT contain 'unanimous_required' (single facilitator, irrelevant)."""
+        import json
+        config_path = CONFIG_DIR / "runtime_policy.json"
+        policy = json.loads(config_path.read_text())
+        qv_config = policy["quorum_verification"]
+        assert "unanimous_required" not in qv_config, (
+            "Config still contains 'unanimous_required' — confabulated panel model"
+        )
+
+    def test_no_panel_diversity_in_config(self) -> None:
+        """Config must NOT contain panel diversity params (single facilitator)."""
+        import json
+        config_path = CONFIG_DIR / "runtime_policy.json"
+        policy = json.loads(config_path.read_text())
+        qv_config = policy["quorum_verification"]
+        for key in ("panel_diversity_min_organizations", "panel_diversity_min_regions",
+                     "min_quorum_size", "max_quorum_size"):
+            assert key not in qv_config, (
+                f"Config still contains '{key}' — confabulated panel model"
+            )

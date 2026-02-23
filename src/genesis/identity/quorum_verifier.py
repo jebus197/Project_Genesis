@@ -1,15 +1,25 @@
-"""Human-to-human quorum verification for disability accommodation (Phase D-3/D-5).
+"""Facilitated identity verification for disability accommodation (Phase D-3/D-5/D-5c).
 
 When an actor cannot complete the voice liveness challenge (e.g. speech
-disability, deafness), they may request quorum verification instead.
+disability, deafness), they may request facilitated verification instead.
 
-A panel of randomly selected verified humans in the same geographic region
-must unanimously confirm the actor's identity. This is the constitutional
-fallback — no one is excluded from participation.
+A single randomly-assigned high-trust facilitator (preferably a domain
+expert, falling back to any high-trust human in the same geographic region)
+helps the participant complete an equivalent verification. This is the
+constitutional fallback — no one is excluded from participation, and no
+disabled person faces a harder standard than the voice path.
 
-Phase D-5 adds: panel diversity enforcement, verifier cooldown/workload,
-blind adjudication, vote attestation, recusal, session evidence, abuse
-complaint/review, appeal mechanism, and a scripted interaction protocol.
+The facilitator model ensures equivalence: voice liveness is a single
+automated check; facilitated verification is a single human attestation.
+
+Phase D-5 safeguards: facilitator cooldown/workload, blind adjudication,
+attestation, session evidence, abuse complaint/review (3-member panel),
+nuke appeal (5-member panel), and a scripted interaction protocol.
+
+Phase D-5c correction: replaced the confabulated 3-5 member panel
+(which imposed a harder standard on disabled participants) with a single
+facilitator model. The 3-member panel is correctly used only for abuse
+review, not for accommodation verification.
 """
 
 from __future__ import annotations
@@ -74,14 +84,19 @@ PRE_SESSION_BRIEFING_VERSIONS: dict[str, str] = {"v1": PRE_SESSION_BRIEFING_V1}
 
 @dataclass
 class QuorumVerificationRequest:
-    """A quorum-based identity verification request."""
+    """A facilitated identity verification request (single facilitator).
+
+    For disability accommodation: quorum_size=1, verifier_ids has one entry.
+    The 'quorum' naming is retained for backward compatibility with the
+    abuse review and nuke appeal paths which use the same data structure.
+    """
 
     request_id: str
     actor_id: str               # actor being verified
-    quorum_size: int            # e.g. 3
-    verifier_ids: list[str]     # randomly selected verified humans
+    quorum_size: int            # 1 for accommodation, 3 for abuse, 5 for nuke
+    verifier_ids: list[str]     # single facilitator for accommodation
     region_constraint: str      # geographic bound
-    votes: dict[str, bool]      # verifier_id -> approved
+    votes: dict[str, bool]      # facilitator_id -> approved (attestation)
     created_utc: datetime
     expires_utc: datetime
 
@@ -144,19 +159,22 @@ class AbuseReviewResult:
 # ---------------------------------------------------------------------------
 
 class QuorumVerifier:
-    """Manages quorum-based identity verification panels.
+    """Manages facilitated identity verification for disability accommodation.
+
+    For accommodation: a SINGLE facilitator is randomly assigned (not a panel).
+    For abuse review: a 3-member panel (majority vote) investigates complaints.
+    For nuke appeal: a 5-member panel (4/5 supermajority) reviews trust nukes.
 
     Parameters (via *config* dict):
-        min_quorum_size                   : int   — minimum panel size (default 3)
-        max_quorum_size                   : int   — maximum panel size (default 5)
+        facilitator_count                 : int   — facilitators for accommodation (default 1)
+        prefer_domain_expert              : bool  — prefer domain expert as facilitator (default True)
+        domain_expert_timeout_hours       : int   — hours to wait for domain expert (default 24)
         verification_timeout_hours        : int   — hours until request expires (default 48)
-        min_verifier_trust                : float — minimum trust score for verifiers (default 0.70)
-        geographic_region_required        : bool  — require same-region verifiers (default True)
-        panel_diversity_min_organizations : int   — min distinct orgs in panel (default 2)
-        panel_diversity_min_regions       : int   — min distinct regions in panel (default 1)
-        verifier_cooldown_hours           : int   — hours between panel assignments (default 168)
+        min_verifier_trust                : float — minimum trust score for facilitators (default 0.70)
+        geographic_region_required        : bool  — require same-region facilitator (default True)
+        verifier_cooldown_hours           : int   — hours between assignments (default 168)
         max_panels_per_verifier_per_month : int   — rate limit (default 10)
-        max_concurrent_panels_per_verifier: int   — concurrent panel limit (default 3)
+        max_concurrent_panels_per_verifier: int   — concurrent assignment limit (default 3)
         blind_adjudication                : bool  — use pseudonyms (default True)
         appeal_window_hours               : int   — hours to file appeal (default 72)
         require_vote_attestation          : bool  — written attestation required (default True)
@@ -168,16 +186,15 @@ class QuorumVerifier:
     """
 
     def __init__(self, config: dict) -> None:
-        # Core settings (Phase D-3)
-        self._min_quorum: int = config.get("min_quorum_size", 3)
-        self._max_quorum: int = config.get("max_quorum_size", 5)
+        # Core settings — single facilitator for accommodation (Phase D-5c)
+        self._facilitator_count: int = config.get("facilitator_count", 1)
+        self._prefer_domain_expert: bool = config.get("prefer_domain_expert", True)
+        self._domain_expert_timeout_hours: int = config.get("domain_expert_timeout_hours", 24)
         self._timeout_hours: int = config.get("verification_timeout_hours", 48)
         self._min_trust: float = config.get("min_verifier_trust", 0.70)
         self._require_region: bool = config.get("geographic_region_required", True)
 
-        # Phase D-5 safeguard settings
-        self._panel_min_orgs: int = config.get("panel_diversity_min_organizations", 2)
-        self._panel_min_regions: int = config.get("panel_diversity_min_regions", 1)
+        # Phase D-5 safeguard settings (facilitator limits)
         self._verifier_cooldown_hours: int = config.get("verifier_cooldown_hours", 168)
         self._max_panels_per_month: int = config.get("max_panels_per_verifier_per_month", 10)
         self._max_concurrent_panels: int = config.get("max_concurrent_panels_per_verifier", 3)
@@ -203,7 +220,7 @@ class QuorumVerifier:
         self._verifier_history: dict[str, list[datetime]] = {}
 
     # ------------------------------------------------------------------
-    # Public API — Panel formation
+    # Public API — Facilitator assignment (single facilitator, not panel)
     # ------------------------------------------------------------------
 
     def request_quorum_verification(
@@ -213,65 +230,62 @@ class QuorumVerifier:
         available_verifiers: list[tuple[str, float, str]],
         *,
         verifier_orgs: Optional[dict[str, str]] = None,
-        quorum_size: Optional[int] = None,
+        domain_expert_ids: Optional[set[str]] = None,
         now: Optional[datetime] = None,
         exclude_verifiers: Optional[set[str]] = None,
         appeal_of: Optional[str] = None,
     ) -> QuorumVerificationRequest:
-        """Create a new quorum verification request.
+        """Create a new facilitated verification request.
+
+        Assigns a SINGLE facilitator (not a panel) to help the participant
+        complete an equivalent identity verification. Prefers a domain expert
+        if available, falls back to any high-trust human in the same region.
+
+        The disability accommodation path must be equivalent to (not harder
+        than) the standard voice liveness path. Design test #86.
 
         Args:
             actor_id: The actor requesting identity verification.
             region: The actor's geographic region.
             available_verifiers: List of (verifier_id, trust_score, region) tuples.
             verifier_orgs: Mapping verifier_id -> organization name.
-            quorum_size: Override quorum size (must be within min/max bounds).
+            domain_expert_ids: Set of verifier IDs who are domain experts.
             now: Override current time (for testing).
             exclude_verifiers: Verifier IDs to exclude (e.g. for appeals).
             appeal_of: If this is an appeal, the original request_id.
 
         Returns:
-            A new QuorumVerificationRequest.
+            A new QuorumVerificationRequest with quorum_size=1.
 
         Raises:
-            ValueError: If not enough eligible verifiers are available.
+            ValueError: If no eligible facilitator is available.
         """
-        size = quorum_size or self._min_quorum
-
-        if size < self._min_quorum:
-            raise ValueError(
-                f"Quorum size {size} is below minimum ({self._min_quorum})"
-            )
-        if size > self._max_quorum:
-            raise ValueError(
-                f"Quorum size {size} exceeds maximum ({self._max_quorum})"
-            )
-
         now_utc = now or datetime.now(timezone.utc)
         verifier_orgs = verifier_orgs or {}
+        domain_experts = domain_expert_ids or set()
         exclude = exclude_verifiers or set()
 
-        # Filter eligible verifiers (trust, region, cooldown, workload, exclusions)
+        # Filter eligible facilitators (trust, region, cooldown, workload, exclusions)
         eligible = self._filter_eligible(available_verifiers, region, now_utc, exclude)
 
-        if len(eligible) < size:
+        if len(eligible) < self._facilitator_count:
             raise ValueError(
-                f"Not enough eligible verifiers: need {size}, "
+                f"Not enough eligible facilitators: need {self._facilitator_count}, "
                 f"found {len(eligible)} (after trust, region, cooldown, and workload filtering)"
             )
 
-        # Cryptographically random selection with diversity check
-        selected = self._select_diverse_panel(eligible, size, verifier_orgs)
+        # Prefer domain expert, fall back to high-trust human
+        selected = self._select_facilitator(eligible, domain_experts)
         selected_ids = [vid for vid, _, _ in selected]
 
-        # Build org/region maps for the panel
-        panel_orgs: dict[str, str] = {}
-        panel_regions: dict[str, str] = {}
+        # Build org/region maps
+        fac_orgs: dict[str, str] = {}
+        fac_regions: dict[str, str] = {}
         for vid, _, vreg in selected:
-            panel_orgs[vid] = verifier_orgs.get(vid, "unknown")
-            panel_regions[vid] = vreg
+            fac_orgs[vid] = verifier_orgs.get(vid, "unknown")
+            fac_regions[vid] = vreg
 
-        # Generate blind adjudication pseudonym
+        # Generate blind identity pseudonym
         pseudonym = (
             f"participant-{uuid.uuid4().hex[:8]}"
             if self._blind_adjudication
@@ -281,14 +295,14 @@ class QuorumVerifier:
         request = QuorumVerificationRequest(
             request_id=str(uuid.uuid4()),
             actor_id=actor_id,
-            quorum_size=size,
+            quorum_size=self._facilitator_count,
             verifier_ids=selected_ids,
             region_constraint=region,
             votes={},
             created_utc=now_utc,
             expires_utc=now_utc + timedelta(hours=self._timeout_hours),
-            verifier_organizations=panel_orgs,
-            verifier_regions=panel_regions,
+            verifier_organizations=fac_orgs,
+            verifier_regions=fac_regions,
             applicant_pseudonym=pseudonym,
             session_max_seconds=self._session_max_seconds,
             recording_retention_hours=self._recording_retention_hours,
@@ -299,7 +313,7 @@ class QuorumVerifier:
 
         self._requests[request.request_id] = request
 
-        # Record verifier assignments in history
+        # Record facilitator assignment in history
         for vid in selected_ids:
             self._verifier_history.setdefault(vid, []).append(now_utc)
 
@@ -317,11 +331,15 @@ class QuorumVerifier:
         *,
         attestation: Optional[str] = None,
     ) -> QuorumVerificationRequest:
-        """Record a verifier's vote.
+        """Record a facilitator's attestation (single attestation = immediate result).
+
+        For single-facilitator accommodation requests, this is the only
+        attestation needed — one person, one attestation, immediate outcome.
+        Equivalent standard to the voice liveness path. Design test #86.
 
         Args:
-            request_id: The quorum verification request ID.
-            verifier_id: The voting verifier's ID.
+            request_id: The facilitated verification request ID.
+            verifier_id: The facilitator's ID.
             approved: True to approve, False to reject.
             attestation: Written attestation (required if config says so).
 
@@ -330,7 +348,7 @@ class QuorumVerifier:
 
         Raises:
             KeyError: Unknown request_id.
-            ValueError: Verifier not on panel, already voted, or missing attestation.
+            ValueError: Facilitator not assigned, already attested, or missing attestation.
         """
         request = self._requests.get(request_id)
         if request is None:
@@ -338,12 +356,12 @@ class QuorumVerifier:
 
         if verifier_id not in request.verifier_ids:
             raise ValueError(
-                f"Verifier {verifier_id} is not on the panel for request {request_id}"
+                f"Verifier {verifier_id} is not assigned to request {request_id}"
             )
 
         if verifier_id in request.votes:
             raise ValueError(
-                f"Verifier {verifier_id} has already voted on request {request_id}"
+                f"Verifier {verifier_id} has already attested on request {request_id}"
             )
 
         # Check attestation requirement
@@ -367,12 +385,16 @@ class QuorumVerifier:
         *,
         now: Optional[datetime] = None,
     ) -> Optional[bool]:
-        """Check the outcome of a quorum verification request.
+        """Check the outcome of a facilitated verification request.
+
+        For single-facilitator requests (accommodation), one attestation
+        determines the outcome immediately. This ensures the accommodation
+        path is equivalent to (not harder than) the voice liveness path.
 
         Returns:
-            None — still pending (not all votes in, not expired).
-            True — all votes in and unanimously approved.
-            False — any rejection, or expired without unanimous approval.
+            None — still pending (facilitator hasn't attested yet, not expired).
+            True — facilitator approved (attestation received).
+            False — facilitator rejected, or expired without attestation.
 
         Raises:
             KeyError: Unknown request_id.
@@ -408,14 +430,15 @@ class QuorumVerifier:
         verifier_id: str,
         reason: str,
     ) -> QuorumVerificationRequest:
-        """Declare a verifier's recusal from a panel.
+        """Declare a facilitator's recusal (decline) from an assignment.
 
-        The verifier is removed from the active panel. If the remaining
-        panel is below min_quorum_size, raises ValueError.
+        The facilitator is removed from the active assignment. For single-
+        facilitator accommodation requests, this leaves the request with no
+        active facilitator — the service layer must assign a replacement.
 
         Raises:
             KeyError: Unknown request_id.
-            ValueError: Verifier not on panel, or panel would be too small.
+            ValueError: Facilitator not assigned to this request.
         """
         request = self._requests.get(request_id)
         if request is None:
@@ -423,14 +446,7 @@ class QuorumVerifier:
 
         if verifier_id not in request.verifier_ids:
             raise ValueError(
-                f"Verifier {verifier_id} is not on the panel for request {request_id}"
-            )
-
-        remaining = len(request.verifier_ids) - 1
-        if remaining < self._min_quorum:
-            raise ValueError(
-                f"Recusal would reduce panel below minimum quorum size "
-                f"({remaining} < {self._min_quorum}). Request needs re-paneling."
+                f"Verifier {verifier_id} is not assigned to request {request_id}"
             )
 
         request.recusals[verifier_id] = reason
@@ -541,11 +557,12 @@ class QuorumVerifier:
         available_verifiers: list[tuple[str, float, str]],
         *,
         verifier_orgs: Optional[dict[str, str]] = None,
+        domain_expert_ids: Optional[set[str]] = None,
         now: Optional[datetime] = None,
     ) -> QuorumVerificationRequest:
-        """Appeal a rejected quorum verification.
+        """Appeal a rejected facilitated verification.
 
-        Creates a new request with a completely different panel.
+        Creates a new request with a DIFFERENT single facilitator.
         Can only appeal rejected requests within the appeal window.
 
         Raises:
@@ -584,51 +601,14 @@ class QuorumVerifier:
             region=original.region_constraint,
             available_verifiers=available_verifiers,
             verifier_orgs=verifier_orgs,
+            domain_expert_ids=domain_expert_ids,
             now=now_utc,
             exclude_verifiers=original_panel,
             appeal_of=original_request_id,
         )
 
     # ------------------------------------------------------------------
-    # Public API — Panel diversity check
-    # ------------------------------------------------------------------
-
-    def check_panel_diversity(
-        self,
-        panel: list[tuple[str, str, str]],
-    ) -> PanelDiversityResult:
-        """Check if a panel meets diversity requirements.
-
-        Args:
-            panel: List of (verifier_id, organization, region) tuples.
-
-        Returns:
-            PanelDiversityResult with violations if any.
-        """
-        orgs = {org for _, org, _ in panel}
-        regions = {reg for _, _, reg in panel}
-        violations: list[str] = []
-
-        if len(orgs) < self._panel_min_orgs:
-            violations.append(
-                f"Need {self._panel_min_orgs} distinct organizations, "
-                f"got {len(orgs)}: {sorted(orgs)}"
-            )
-        if len(regions) < self._panel_min_regions:
-            violations.append(
-                f"Need {self._panel_min_regions} distinct regions, "
-                f"got {len(regions)}: {sorted(regions)}"
-            )
-
-        return PanelDiversityResult(
-            meets_requirements=len(violations) == 0,
-            distinct_organizations=len(orgs),
-            distinct_regions=len(regions),
-            violations=tuple(violations),
-        )
-
-    # ------------------------------------------------------------------
-    # Public API — Verifier cooldown + workload
+    # Public API — Facilitator cooldown + workload
     # ------------------------------------------------------------------
 
     def check_verifier_cooldown(
@@ -881,29 +861,32 @@ class QuorumVerifier:
             eligible.append((verifier_id, trust, verifier_region))
         return eligible
 
-    def _select_diverse_panel(
+    def _select_facilitator(
         self,
         eligible: list[tuple[str, float, str]],
-        size: int,
-        verifier_orgs: dict[str, str],
+        domain_experts: set[str],
     ) -> list[tuple[str, float, str]]:
-        """Select a panel that meets diversity requirements.
+        """Select a single facilitator, preferring domain experts.
 
-        Retries up to 3 times. If diversity cannot be met, returns
-        the last selection (caller can check diversity themselves).
+        Selection priority (George confirmed 2026-02-23):
+        1. Domain expert in same region (if available)
+        2. High-trust human in same region (fallback)
+
+        Geographic region constraint is always enforced upstream by
+        _filter_eligible(). This method handles expert preference.
+
+        Returns:
+            A list with one (verifier_id, trust, region) tuple.
         """
-        selected = _secure_sample(eligible, size)
-        for _attempt in range(3):
-            panel_tuples = [
-                (vid, verifier_orgs.get(vid, "unknown"), vreg)
-                for vid, _, vreg in selected
+        if self._prefer_domain_expert and domain_experts:
+            experts_in_pool = [
+                v for v in eligible if v[0] in domain_experts
             ]
-            diversity = self.check_panel_diversity(panel_tuples)
-            if diversity.meets_requirements:
-                return selected
-            selected = _secure_sample(eligible, size)
+            if experts_in_pool:
+                return _secure_sample(experts_in_pool, self._facilitator_count)
 
-        return selected
+        # Fallback: any eligible high-trust human in same region
+        return _secure_sample(eligible, self._facilitator_count)
 
 
 # ---------------------------------------------------------------------------

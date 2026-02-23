@@ -246,11 +246,13 @@ What this proves: the participant exists, is present in real time, and can inter
 
 Not everyone can read words aloud on video. Speech impediments, deafness, motor disabilities, and other conditions can make the standard challenge impossible. Genesis does not treat this as an edge case — it treats it as a constitutional design requirement.
 
-When a participant cannot complete the voice challenge, a quorum of 3 to 5 verified humans from the same geographic region conducts a live verification session instead. The panel is blind — verifiers see only a pseudonym, never the participant's real identity. Panel diversity is enforced: at least 2 different organisations must be represented. A scripted introduction protocol ensures consistency across sessions.
+When a participant cannot complete the voice challenge, a single randomly-assigned facilitator from the same geographic region conducts a live verification session instead. The system prefers a domain expert (accessibility, healthcare, or culturally relevant expertise); if no appropriate specialist is available in the region, any high-trust verified human serves as facilitator. The facilitator sees only a pseudonym, never the participant's real identity. A scripted introduction protocol ensures consistency across sessions.
 
-The participant receives a briefing with unlimited preparation time. The session timer starts only when they signal they are ready. A caregiver may assist. The verification can be completed by speaking, writing, or through a caregiver — whatever the participant's circumstances require. The vote must be unanimous.
+The participant receives a briefing with unlimited preparation time. The session timer starts only when they signal they are ready. A caregiver may assist. The verification can be completed by speaking, writing, or through a caregiver — whatever the participant's circumstances require.
 
-Every session is recorded and retained for 72 hours, then automatically deleted unless a complaint is filed. Verifiers are subject to a 168-hour cooldown between panels, a maximum of 10 panels per month, and no more than 3 concurrent assignments. Any party can file an abuse complaint against a verifier — confirmed abuse results in the verifier's trust being reduced to 1/1000th of its value. The verifier may appeal once, to an entirely different 5-member panel, requiring a 4/5 supermajority to overturn.
+The accommodation standard is structurally equivalent to the voice path: one person, one attestation, immediate result. A disabled person never faces a harder verification standard than an able-bodied person. This is a constitutional design constraint (design test #86).
+
+Every session is recorded and retained for 72 hours, then automatically deleted unless a complaint is filed. Facilitators are subject to a 168-hour cooldown between assignments, a maximum of 10 assignments per month, and no more than 3 concurrent assignments. Any party can file an abuse complaint against a facilitator — confirmed abuse is reviewed by a 3-member panel (majority vote), and if confirmed results in the facilitator's trust being reduced to 1/1000th of its value. The facilitator may appeal once, to an entirely different 5-member panel, requiring a 4/5 supermajority to overturn.
 
 ## Harmful Work Prevention
 

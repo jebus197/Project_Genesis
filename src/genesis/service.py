@@ -1243,17 +1243,19 @@ class GenesisService:
         self,
         actor_id: str,
         *,
-        quorum_size: Optional[int] = None,
+        domain_expert_ids: Optional[set[str]] = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
-        """Request quorum-based identity verification (disability accommodation).
+        """Request facilitated identity verification (disability accommodation).
 
-        An alternative to voice liveness. A panel of randomly selected
-        verified humans in the same geographic region must unanimously
-        confirm the actor's identity via live video.
+        An alternative to voice liveness. A SINGLE randomly-assigned facilitator
+        (preferably a domain expert, falling back to any high-trust human in the
+        same geographic region) helps the participant complete an equivalent
+        identity verification. The accommodation path must not be harder than
+        the voice path. Design test #86.
 
         The actor must be in PENDING verification status.
-        Verifiers must be ACTIVE, HUMAN, VERIFIED, trust-minted, and high-trust (>=0.70).
+        Facilitators must be ACTIVE, HUMAN, VERIFIED, trust-minted, and high-trust (>=0.70).
         """
         entry = self._roster.get(actor_id)
         if entry is None:
@@ -1295,20 +1297,20 @@ class GenesisService:
                 region=entry.region,
                 available_verifiers=available_verifiers,
                 verifier_orgs=verifier_orgs,
-                quorum_size=quorum_size,
+                domain_expert_ids=domain_expert_ids,
                 now=now,
             )
         except ValueError as exc:
             return ServiceResult(success=False, errors=[str(exc)])
 
-        # Emit QUORUM_PANEL_FORMED event
+        # Emit QUORUM_PANEL_FORMED event (facilitator assigned)
         self._record_actor_lifecycle_event(
             actor_id=actor_id,
             event_kind=EventKind.QUORUM_PANEL_FORMED,
             payload={
                 "request_id": request.request_id,
-                "quorum_size": request.quorum_size,
-                "verifier_ids": request.verifier_ids,
+                "facilitator_count": request.quorum_size,
+                "facilitator_ids": request.verifier_ids,
                 "applicant_pseudonym": request.applicant_pseudonym,
                 "session_max_seconds": request.session_max_seconds,
                 "scripted_intro_version": request.scripted_intro_version,
@@ -1322,8 +1324,8 @@ class GenesisService:
             data={
                 "request_id": request.request_id,
                 "actor_id": actor_id,
-                "quorum_size": request.quorum_size,
-                "verifier_ids": request.verifier_ids,
+                "facilitator_count": request.quorum_size,
+                "facilitator_ids": request.verifier_ids,
                 "region_constraint": request.region_constraint,
                 "expires_utc": request.expires_utc.isoformat(),
                 "applicant_pseudonym": request.applicant_pseudonym,
@@ -1347,10 +1349,11 @@ class GenesisService:
         attestation: Optional[str] = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
-        """Submit a verifier's vote on a quorum verification request.
+        """Submit a facilitator's attestation on a verification request.
 
-        If all votes are in and unanimously approved, the actor's identity
-        verification is automatically completed.
+        For single-facilitator accommodation requests, one attestation
+        immediately determines the outcome. The accommodation path must
+        not impose a harder standard than voice liveness. Design test #86.
         """
         try:
             request = self._quorum_verifier.submit_vote(
@@ -1386,10 +1389,10 @@ class GenesisService:
         }
 
         if result is True:
-            # Unanimous approval — complete verification
+            # Facilitator approved — complete verification
             verification_result = self.complete_verification(
                 actor_id=request.actor_id,
-                method="quorum_verification",
+                method="facilitated_verification",
                 now=now,
             )
             result_data["verification_completed"] = verification_result.success
@@ -1417,7 +1420,12 @@ class GenesisService:
         verifier_id: str,
         reason: str,
     ) -> ServiceResult:
-        """Declare a verifier's recusal from a quorum panel."""
+        """Declare a facilitator's decline from an accommodation assignment.
+
+        For single-facilitator requests, this leaves the request with no
+        active facilitator. The caller should create a new request to
+        reassign a different facilitator.
+        """
         try:
             request = self._quorum_verifier.declare_recusal(
                 request_id=request_id,
@@ -1560,10 +1568,11 @@ class GenesisService:
         actor_id: str,
         original_request_id: str,
         *,
+        domain_expert_ids: Optional[set[str]] = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
-        """Appeal a rejected quorum verification. Creates a new panel."""
-        # Gather eligible verifiers (same logic as request_quorum_verification)
+        """Appeal a rejected facilitated verification. Assigns a DIFFERENT facilitator."""
+        # Gather eligible facilitators (same logic as request_quorum_verification)
         available_verifiers: list[tuple[str, float, str]] = []
         verifier_orgs: dict[str, str] = {}
         for roster_entry in self._roster.all_actors():
@@ -1589,6 +1598,7 @@ class GenesisService:
                 original_request_id=original_request_id,
                 available_verifiers=available_verifiers,
                 verifier_orgs=verifier_orgs,
+                domain_expert_ids=domain_expert_ids,
                 now=now,
             )
         except (KeyError, ValueError) as exc:
@@ -1600,7 +1610,7 @@ class GenesisService:
             payload={
                 "appeal_request_id": request.request_id,
                 "original_request_id": original_request_id,
-                "new_panel": request.verifier_ids,
+                "new_facilitator": request.verifier_ids,
             },
         )
 
@@ -1609,7 +1619,7 @@ class GenesisService:
             data={
                 "appeal_request_id": request.request_id,
                 "original_request_id": original_request_id,
-                "verifier_ids": request.verifier_ids,
+                "facilitator_ids": request.verifier_ids,
                 "applicant_pseudonym": request.applicant_pseudonym,
             },
         )

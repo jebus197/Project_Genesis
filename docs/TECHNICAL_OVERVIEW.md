@@ -1111,21 +1111,20 @@ UNVERIFIED → PENDING → VERIFIED → LAPSED (after 365 days)
 
 Constitutional actions — voting, proposing amendments, high-risk adjudication — require VERIFIED status with a non-expired verification. This is a structural gate enforced by the service layer (`check_identity_for_high_stakes`), not a policy recommendation.
 
-### Disability accommodation: the quorum verification path
+### Disability accommodation: the facilitated verification path
 
 Not everyone can read words aloud on video. Speech impediments, deafness, motor disabilities, cognitive conditions, and other circumstances can make the standard liveness challenge impossible. Genesis does not treat this as an edge case to be handled later — it treats it as a constitutional design requirement that must be solved before the system can claim to serve all humans.
 
 This decision reflects a deeper principle: a system that claims to be intelligence-agnostic and universally accessible cannot exclude people based on physical ability. The disability accommodation protocol exists because Genesis takes its own stated values seriously.
 
-When a participant cannot complete the voice challenge, a quorum of verified humans conducts a live verification session. The implementation is in `QuorumVerifier` (`src/genesis/identity/quorum_verifier.py`).
+When a participant cannot complete the voice challenge, a single randomly-assigned facilitator conducts a live verification session. The implementation is in `QuorumVerifier` (`src/genesis/identity/quorum_verifier.py`).
 
-**Panel formation:**
+**Facilitator assignment:**
 
-- Panel size: 3 to 5 members (configurable via `min_quorum_size` / `max_quorum_size`).
-- All panelists must have trust ≥ 0.70, be ACTIVE, HUMAN, with a minted trust profile.
-- Same geographic region as the applicant (`geographic_region_required = true`).
-- **Diversity enforcement**: at least 2 different organisations and at least 1 distinct region must be represented. The `_select_diverse_panel()` method uses greedy diversity-first selection from the eligible pool.
-- **Blind adjudication**: the applicant is identified only by a pseudonym (`participant-{UUID[:8]}`). Panelists never see the real `actor_id`.
+- **Single facilitator** — one person, one attestation, immediate result. The accommodation path must be structurally equivalent to (not harder than) the voice path. Design test #86.
+- **Selection priority**: (1) domain expert in the participant's geographic region (accessibility, healthcare, or culturally relevant expertise), (2) any high-trust (≥ 0.70) verified human in the same region as fallback. Geographic region constraint is always enforced — culture plays a role.
+- Facilitator must be ACTIVE, HUMAN, with a minted trust profile.
+- **Blind adjudication**: the applicant is identified only by a pseudonym (`participant-{UUID[:8]}`). The facilitator never sees the real `actor_id`.
 
 **Pre-session preparation (Phase D-5b):**
 
@@ -1135,41 +1134,41 @@ The participant has **unlimited preparation time**. The session timer does not s
 
 **The live session:**
 
-A versioned scripted introduction (`SCRIPTED_INTRO_V1`) is read by the verifier to ensure consistency across all sessions. The participant completes the same word challenge that the voice system uses — but they may do so by speaking, writing, or through a caregiver. The method of interaction is adapted to the participant's circumstances.
+A versioned scripted introduction (`SCRIPTED_INTRO_V1`) is read by the facilitator to ensure consistency across all sessions. The participant completes the same word challenge that the voice system uses — but they may do so by speaking, writing, or through a caregiver. The method of interaction is adapted to the participant's circumstances.
 
 - **Session maximum**: 4 minutes (from ready signal, not from session creation). Configurable via `session_max_seconds = 240`.
 - **Recording**: every session is recorded. Recordings are retained for **72 hours** (`recording_retention_hours = 72`), then automatically deleted unless a complaint has been filed.
-- **Vote**: each panelist submits a vote (approve/reject) with a mandatory written attestation (`require_vote_attestation = true`). The result must be **unanimous** — any single rejection means the verification fails.
+- **Attestation**: the facilitator submits a single attestation (approve/reject) with a mandatory written statement (`require_vote_attestation = true`). One attestation = immediate result.
 
-**Verifier safeguards:**
+**Facilitator safeguards:**
 
-The system prevents panelist fatigue, burnout, and abuse of the verification role:
+The system prevents facilitator fatigue, burnout, and abuse of the verification role:
 
 | Control | Value | Purpose |
 |---|---|---|
-| `verifier_cooldown_hours` | 168 (7 days) | Minimum gap between panel assignments |
+| `verifier_cooldown_hours` | 168 (7 days) | Minimum gap between assignments |
 | `max_panels_per_verifier_per_month` | 10 | Monthly workload cap |
 | `max_concurrent_panels_per_verifier` | 3 | Prevents overcommitment |
 | `appeal_window_hours` | 72 | Window for rejected applicants to appeal |
 
-**Recusal**: any panelist can withdraw for any reason via `declare_recusal()`, provided the remaining panel still meets the minimum quorum size.
+**Decline**: a facilitator can decline an assignment for any reason via `declare_recusal()`. The service layer then assigns a different facilitator.
 
 **Abuse handling:**
 
-If a participant believes a verifier acted improperly during a session, they can file an abuse complaint (`file_abuse_complaint()`). The complaint preserves the session recording past the normal 72-hour auto-delete window.
+If a participant believes a facilitator acted improperly during a session, they can file an abuse complaint (`file_abuse_complaint()`). The complaint preserves the session recording past the normal 72-hour auto-delete window.
 
 A review panel of 3 high-trust (≥ 0.70) reviewers examines the complaint. If a majority confirms abuse:
 
-- The offending verifier's trust is reduced to **0.001** (1/1000th of its maximum value). This is not a slap on the wrist — it effectively removes the verifier from all meaningful participation.
+- The offending facilitator's trust is reduced to **0.001** (1/1000th of its maximum value). This is not a slap on the wrist — it effectively removes the facilitator from all meaningful participation.
 - The pre-nuke trust score is stored for potential restoration.
 
-The nuked verifier may appeal once (`appeal_trust_nuke()`). The appeal goes to a 5-member panel requiring a **4/5 supermajority** to overturn. The appeal panel must have **no overlap** with the original abuse review panel. This is a one-shot mechanism — there is no second appeal.
+The nuked facilitator may appeal once (`appeal_trust_nuke()`). The appeal goes to a 5-member panel requiring a **4/5 supermajority** to overturn. The appeal panel must have **no overlap** with the original abuse review panel. This is a one-shot mechanism — there is no second appeal.
 
-If the appeal succeeds, the verifier's trust is restored to its pre-nuke value. The complainant's trust is never affected regardless of outcome.
+If the appeal succeeds, the facilitator's trust is restored to its pre-nuke value. The complainant's trust is never affected regardless of outcome.
 
 **Appeal for rejected applicants:**
 
-A rejected applicant can appeal within 72 hours via `request_appeal()`. The appeal creates an entirely new verification request with a completely different panel — no overlap with the original panelists. The same diversity and trust requirements apply.
+A rejected applicant can appeal within 72 hours via `request_appeal()`. The appeal assigns an entirely different single facilitator — no overlap with the original. The same trust and geographic requirements apply.
 
 ### Event trail
 

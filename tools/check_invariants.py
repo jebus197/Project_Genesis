@@ -390,30 +390,27 @@ def check() -> int:
         if not (0.0 < nt <= 1.0):
             errors.append("voice_liveness.naturalness_threshold must be in (0, 1]")
 
-    # --- Quorum verification invariants ---
+    # --- Facilitated verification invariants (disability accommodation) ---
     quorum = policy.get("quorum_verification", {})
     if quorum:
-        min_q = quorum.get("min_quorum_size", 0)
-        max_q = quorum.get("max_quorum_size", 0)
-        if min_q < 3:
-            errors.append("quorum_verification.min_quorum_size must be >= 3")
-        if max_q < min_q:
-            errors.append("quorum_verification.max_quorum_size must be >= min_quorum_size")
+        # D-5c: Single facilitator model (not panel)
+        fc = quorum.get("facilitator_count", 0)
+        if fc != 1:
+            errors.append(
+                f"quorum_verification.facilitator_count must be 1 "
+                f"(single facilitator, not panel), got {fc}"
+            )
         if quorum.get("verification_timeout_hours", 0) <= 0:
             errors.append("quorum_verification.verification_timeout_hours must be > 0")
         mvt = quorum.get("min_verifier_trust", 0)
         if not (0.0 < mvt <= 1.0):
             errors.append("quorum_verification.min_verifier_trust must be in (0, 1]")
-        # D-5: High-trust gate — verifiers must be >= 0.70
+        # D-5: High-trust gate — facilitator must be >= 0.70
         if mvt < 0.70:
             errors.append(
                 f"quorum_verification.min_verifier_trust must be >= 0.70 "
                 f"(high-trust gate), got {mvt}"
             )
-        # D-5: Panel diversity
-        pdmo = quorum.get("panel_diversity_min_organizations", 0)
-        if pdmo < 2:
-            errors.append("quorum_verification.panel_diversity_min_organizations must be >= 2")
         # D-5: Verifier cooldown
         vch = quorum.get("verifier_cooldown_hours", 0)
         if vch <= 0:
