@@ -1,8 +1,8 @@
 # Project Genesis
 *A Public Brief on Building a Trust Infrastructure for AI Work*
 
-Version 1.0  
-February 13, 2026
+Version 2.0 (Phase 1 Update)
+February 24, 2026 (Original: February 13, 2026)
 Author: George Jackson
 
 ## Executive Summary
@@ -255,6 +255,141 @@ Examples include:
 5. Public-interest research synthesis.
 
 The social benefit is not “faster AI content.” It is more trustworthy and accountable AI-assisted work.
+
+## The Economics: How Money Works in Genesis
+
+Genesis has not disinvented money — it has made its distribution significantly more equitable. Every financial rule is transparent, auditable, and governed by the same constitutional framework as everything else.
+
+### Escrow-first: work done is always paid
+
+Before any mission listing goes live, the employer must stake the full reward into escrow. No exceptions. The funds are locked and visible to the worker before they accept the job. On successful completion, the worker gets paid. On cancellation, the employer gets a full refund. On dispute, the funds stay locked until adjudication resolves it.
+
+This eliminates “work done, never paid” by structural design. It is the single most important economic protection in the system.
+
+### Dynamic commission (2-10%)
+
+Genesis does not set a commission rate. It calculates one. The formula is deterministic: it divides the platform's actual operating costs by its actual completed mission value, multiplied by a safety margin. The result is clamped between a constitutional floor of 2% and a ceiling of 10%.
+
+When the platform is thriving, the rate falls automatically. When costs are higher relative to volume, it rises. No one votes on the rate. No ballot sets the margin. Every computation produces a published cost breakdown — infrastructure, blockchain anchoring, legal compliance, adjudicator compensation, and reserve fund contribution — visible in every transaction's audit trail.
+
+Why no vote? Because governance ballots on operational parameters create exactly the power structures Genesis exists to prevent. A coalition of employers could vote to slash the margin. A coalition of workers could vote to raise it. The formula is beyond political reach, changeable only by constitutional amendment — the same way the trust floor is beyond political reach.
+
+### Creator allocation (5% both-sides)
+
+A creator allocation of 5% is applied on both sides of every successfully completed mission. The employer sees “5% creator allocation” as a line item. The worker sees the same. Both rates are constitutional constants — transparent, named, and changeable only by three-chamber supermajority amendment.
+
+The allocation exists because building and maintaining a governance platform is itself productive work. It is only deducted on successful completion — cancel or refund returns everything.
+
+### What does a worker actually pay?
+
+At minimum: 2% commission + 5% creator allocation + 1% Genesis Common Fund ≈ 8% total. At maximum: 10% + 5% + 1% ≈ 16% total. For comparison, freelancers on traditional platforms pay 10-20% platform fee, then 20-40% income tax, then national insurance. Genesis at 8-16% total, with constitutional protection against rate manipulation, is genuinely competitive.
+
+## Genesis Common Fund
+
+The GCF is a constitutional 1% contribution on all mission value. It is the only compulsory contribution beyond commission and creator allocation. It exists to benefit society through funding any activity that does not increase net human suffering.
+
+**What it funds:** Education, healthcare, infrastructure, arts, sport, community development, scientific research, clean water, vaccination — any meaningful area of human activity. The only exclusion is activity that increases the net pool of human suffering.
+
+**When it activates:** At First Light — the moment Genesis achieves financial sustainability (revenue ≥ 1.5× costs and a 3-month reserve). Before that point, the fund accumulates but does not disburse. No human decision triggers activation — it is automatic.
+
+**How it's governed:** Only humans vote on GCF proposals (machines are excluded — this is an entrenched provision). Proposals require compliance screening, at least one measurable deliverable, and trust-weighted voting with a 30% quorum.
+
+**The highest bar in the constitution:** Changing the 1% GCF rate requires 80% supermajority across all three amendment chambers, 50% voter participation, a 90-day cooling-off period, and a fresh confirmation vote. This is the hardest thing to change in Genesis. It should only change under extraordinary circumstances.
+
+**Founder legacy:** After the 50-year dormancy period, the creator allocation is permanently pegged to STEM and medical research. This is the founder's stated legacy — public, visible, and constitutional.
+
+## Payment Sovereignty: No Single Provider Can Shut Genesis Down
+
+Payment infrastructure sovereignty is one of five entrenched constitutional provisions — the highest level of protection Genesis offers. It exists because a system that can be shut down by a single provider's business decision is not sovereign. It is rented.
+
+Genesis must maintain operational capability across at least 2 independent settlement pathways (escalating to 3 at First Light). “Independent” means different entities, different protocols, no shared point of failure. At least one must be fully decentralised — no single entity can freeze transactions on it.
+
+Genesis holds its own cryptographic keys. No external custodian holds Genesis funds. The escrow system is structurally independent of any specific payment rail — adding or removing a rail requires zero changes to the financial logic.
+
+Before any payment provider is adopted, it must pass three tests: (1) it cannot unilaterally restrict Genesis operations, (2) it cannot extract data beyond what settlement requires, and (3) Genesis can exit within 30 days with funds intact. If any test fails, the integration does not proceed.
+
+## Harmful Work Prevention
+
+Genesis constitutionally prohibits work that increases net human suffering.
+
+**17 prohibited categories:** weapons development, weapons manufacturing, weapons trafficking, surveillance tools, exploitation of persons, child exploitation, financial fraud, identity theft, biological weapons, chemical weapons, nuclear weapons, terrorism support, forced labor, money laundering, sanctions evasion, environmental destruction, disinformation campaigns.
+
+**Three layers of enforcement:**
+1. **Automated screening** catches prohibited content at mission creation. Exact matches are blocked immediately.
+2. **Human compliance panels** review grey areas — blind, diverse, from multiple organisations and regions.
+3. **Post-completion complaints** allow any participant to flag completed work for review.
+
+**What happens when rules are broken:**
+- Minor (content flagged): trust reduced, warning issued.
+- Moderate (prohibited category confirmed): trust nuked to near-zero, 90-day suspension.
+- Severe (abuse confirmed or pattern escalation): permanent decommission.
+- Egregious (weapons or exploitation): permanent decommission, identity locked.
+
+A second moderate violation within a year escalates to permanent decommission. There is no statute of limitations for weapons, exploitation, biological/chemical/nuclear weapons, terrorism, or forced labor.
+
+## Three-Tier Justice
+
+Genesis operates a codified justice system. Every accused party has the same rights, regardless of trust level.
+
+**Tier 1 — Automated.** Keyword screening at mission creation. Automated penalties based on violation type and history.
+
+**Tier 2 — Human panels.** 5-member panels, blind (pseudonymised), diverse (≥2 organisations, ≥2 regions), 3/5 supermajority required. One appeal per case, within 72 hours, heard by an entirely different panel.
+
+**Tier 3 — Constitutional Court.** 7-member panel of human-only justices at high trust, from ≥3 regions and ≥3 organisations. 5/7 supermajority to overturn a Tier 2 decision. Court precedent is advisory only — each case stands on its own merits. This prevents judicial power from accumulating.
+
+**Rights of the accused (enforced by code, not policy):**
+1. Right to know — notified at case opening.
+2. Right to respond — 72-hour window before any panel forms.
+3. Right to evidence — all evidence disclosed before adjudication.
+4. Right to appeal — one appeal, within 72 hours.
+5. Right to representation — may designate a representative.
+6. Presumption of good faith — assumed until verdict.
+
+**Rehabilitation:** Moderate offenders enter probation when their suspension expires. They must complete 5 tasks within 180 days. Trust is partially restored. Severe and egregious offenders have no path back — permanent decommission is irreversible. Some acts are beyond remediation.
+
+## The Constitution Evolves
+
+Genesis is not static. Its constitution can be changed — but the bar is deliberately high, and it rises with the stakes.
+
+### The amendment engine
+
+Any provision can be amended through a three-chamber process. A Proposal Chamber evaluates the idea. A Ratification Chamber independently confirms. A Challenge Chamber provides a final check after a public challenge window. The three chambers are parallel veto points — no chamber overrides another. All three must independently concur.
+
+Panels are randomly selected from eligible humans with geographic and organisational diversity requirements. No one serves on more than one chamber for the same amendment. The proposer is excluded from all panels.
+
+Each chamber has a 14-day voting window. If participation falls below 50%, the amendment lapses (distinct from rejection — it can be re-proposed). This prevents governance capture through inaction.
+
+### Five entrenched provisions
+
+Five provisions carry the highest level of constitutional protection:
+
+1. **The GCF contribution rate** (1%).
+2. **The human trust floor** (human trust can never decay to zero).
+3. **No buying trust** (trust cannot be purchased).
+4. **Machine voting exclusion** (machines cannot vote on governance).
+5. **Payment sovereignty** (no single provider can shut Genesis down).
+
+Changing any of these requires: 80% supermajority across all three chambers, 50% voter participation, a 90-day cooling-off period with no acceleration or exceptions, and a fresh confirmation vote by a new panel. This is a deliberately extraordinary bar.
+
+### The Founder's Veto
+
+During the early period, the founder retains a limited veto — rejection-only (cannot force proposals through), early-stage only (cannot override completed democratic processes), and it expires irreversibly at First Light. A self-governing system cannot bootstrap itself. It needs a guardian until it can stand. A guardian who refuses to leave is not a guardian but a ruler.
+
+### First Light
+
+“First Light” is the moment Genesis achieves financial sustainability: commission revenue ≥ 1.5× operating costs with a 3-month reserve. It is an outcome-based trigger, not a date or headcount.
+
+At First Light: the GCF activates, the founder's veto expires, payment rail minimums escalate, and the PoC mode banner is removed. First Light is irreversible.
+
+### Governance phases (G0 → G1 → G2 → G3)
+
+Constitutional governance scales with the community. At fewer than 50 verified humans (G0), the founder stewards the system under strict constraints. At 50-500 humans (G1), provisional democratic chambers activate with relaxed geographic requirements. At 500-2,000 (G2), chambers and constraints scale. At 2,000+ (G3), full constitutional governance activates with the largest chambers and strictest diversity requirements.
+
+Phase transitions are headcount-based and separate from First Light (which is financial). Both will roughly correlate but are structurally independent.
+
+### Retroactive ratification
+
+Every governance decision the founder makes during G0 is tagged “provisional.” When the community reaches G1, a 90-day clock starts. Every provisional decision is put before a panel of 11 randomly selected community members. If 8 or more approve, it becomes permanent. If not, it is reversed — undone as if it never happened. The community gets democratic authority to accept or reject every action the founder took.
 
 ## Compute Infrastructure: From Extraction to Commons
 

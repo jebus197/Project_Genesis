@@ -1,17 +1,19 @@
 # Project Genesis
 ## Institutional White Paper (Draft)
 
-Version: 1.0 (Draft)  
-Date: February 13, 2026  
-Author: George Jackson  
+Version: 2.0 (Phase 1 Update)
+Date: February 24, 2026
+Original: February 13, 2026
+Author: George Jackson
 Prepared for: Institutional, public-sector, regulatory, and governance-oriented audiences
+Status: Canonical design-intent document. Constitutional significance.
 
 ## Abstract
 Project Genesis proposes a governance-first framework for AI-enabled work. Its central objective is to improve reliability, accountability, and public trust in AI-mediated outputs by introducing structured mission workflows, independent verification, role separation, human oversight, and tamper-evident evidence trails.
 
 Genesis is explicitly not an attention platform and not a claim of perfect machine truth. It is an institutional coordination model: a system intended to convert probabilistic AI outputs into auditable work products suitable for higher-trust settings.
 
-This white paper presents the rationale, architectural design, governance model, risk controls, implementation pathway, and evaluation criteria for Genesis.
+This white paper presents the rationale, architectural design, governance model, economic architecture, constitutional machinery, justice system, risk controls, implementation pathway, and evaluation criteria for Genesis. Each section carries an implementation status annotation: ✅ implemented and tested, 🔧 designed with protocol defined but not yet wired, or 📋 constitutional principle with a defined implementation trigger.
 
 ## 1. Purpose and Strategic Context
 Modern AI systems deliver speed and broad capability, but they do not natively guarantee institutional properties such as traceability, reproducibility, duty separation, and defensible accountability. This gap limits responsible deployment in regulated, safety-sensitive, and high-consequence environments.
@@ -137,8 +139,143 @@ Maintains auditable records of key actions, decisions, and state transitions wit
 1. Aggregates approved components into mission-level deliverable.
 2. Surfaces unresolved gaps for human decision.
 
-## 7. Governance Model
-### 7.1 Separation of powers
+## 7. Economic Architecture
+
+Genesis operates a trust-mediated labour market. The compensation model is structural: transparent, auditable, and governed by the same constitutional framework as everything else. This section describes how money flows through the system, how costs are computed, and what constitutional constraints govern the economic model.
+
+### 7.1 Settlement currency
+
+Genesis operates exclusively in cryptocurrency for work compensation. Only long-established, institutionally adopted cryptocurrencies are accepted: `ACCEPTED_CURRENCIES = [BTC, ETH, USDC, USDT]`. No Genesis-branded token may be created — a native token would create a financial instrument that contradicts the core constitutional rule: trust cannot be bought. Stablecoins (USDC, USDT) are the recommended default for staking to avoid exchange rate risk.
+
+📋 *Constitutional principle (TRUST_CONSTITUTION.md §Settlement currency). Settlement currency list is a constitutional constant.*
+
+### 7.2 Escrow-first principle
+
+Before any mission listing goes live, the work poster must stake the full reward amount into escrow:
+
+1. Listings without confirmed escrow must not be published to the mission board.
+2. Escrow is custodial — Genesis holds funds in trust, not as a financial institution.
+3. On successful completion: escrow is released, commission deducted, remainder paid to worker.
+4. On cancellation: escrow returned to poster minus any partial-completion obligations.
+5. On dispute: escrow remains locked until adjudication resolves the dispute.
+
+The escrow-first principle eliminates "work done, never paid" by structural design. No employer can extract value from a worker without having first committed funds that the worker can verifiably see. The full escrow amount (mission_reward + employer_creator_fee) must be staked and locked before the listing is visible to workers.
+
+✅ *Implemented and tested. Escrow state machine in `src/genesis/compensation/escrow.py`. Workflow orchestrator wires escrow to listing lifecycle. Design tests #51-53. Approximately 85 tests across `tests/test_workflow_orchestration.py` and related files.*
+
+### 7.3 Dynamic commission
+
+The commission rate is calculated, not set. It is computed in real-time for every transaction — inversely proportional to the platform's financial health. When the system is thriving, the rate falls. No human votes on the rate. No ballot sets the margin. The formula is deterministic, the inputs are auditable, and the output is independently verifiable.
+
+1. Formula: `commission_rate = clamp(cost_ratio × COMMISSION_SAFETY_MARGIN, COMMISSION_FLOOR, COMMISSION_CEILING)`.
+2. `cost_ratio = rolling_operational_costs / rolling_completed_mission_value`, computed per-transaction over a rolling window.
+3. Constitutional bounds:
+   - Floor: `COMMISSION_FLOOR = 0.02` (2%). Cannot go below this.
+   - Ceiling: `COMMISSION_CEILING = 0.10` (10%). Cannot go above this.
+4. `COMMISSION_SAFETY_MARGIN = 1.3` — constitutional constant, requires amendment to change.
+5. `COMMISSION_RESERVE_TARGET_MONTHS = 6` — constitutional constant.
+6. Commission is charged on successful completion only — no charge on cancellation or rejection.
+7. Minimum transaction fee: `COMMISSION_MIN_FEE = 5 USDC equivalent` — covers blockchain gas on small missions.
+8. Every computation produces a mandatory published cost breakdown recorded in the audit trail, itemising: infrastructure costs, blockchain anchoring costs, legal compliance quorum compensation, adjudicator compensation, and reserve fund contribution.
+
+**Rolling window mechanism.** The commission rate is pegged to a rolling window of recent operational data, not periodic snapshots. Time window: `COMMISSION_WINDOW_DAYS = 90` days. Minimum sample: `COMMISSION_WINDOW_MIN_MISSIONS = 50` completed missions. If fewer than 50 missions exist within the window, the window extends back to capture 50. This dual-threshold design is inherently adaptive: it stretches at low volume (ensuring statistical reliability) and bounds at high volume (ensuring recency).
+
+**Bootstrap protocol.** During early operation (fewer than `COMMISSION_WINDOW_MIN_MISSIONS`), a bootstrap minimum rate of `COMMISSION_BOOTSTRAP_MIN_RATE = 0.05` (5%) applies as a floor, preventing artificially low early rates from insufficient data. Once the threshold is reached, the bootstrap minimum drops away automatically and the rolling window governs.
+
+**Reserve fund mechanism.** The reserve fund is self-managing — no vote, no review, no human judgment. Target: 6 months of rolling operational costs. Below target: the gap contribution increases the commission rate automatically. At or above target: only a maintenance rate of 0.5% (`COMMISSION_RESERVE_MAINTENANCE_RATE`) prevents reserve starvation while allowing the rate to fall. The gap is amortised over the rolling window period — no sudden rate spikes.
+
+**Why no governance ballot for commission parameters.** Every commission parameter is either a constitutional constant (requiring 3-chamber supermajority amendment) or algorithmically derived from observable inputs. There is nothing left to vote on. A sufficiently organised group of high-volume employers could vote to slash the safety margin, starving the reserve. A coalition of workers could vote to raise it, extracting rents. The formula is beyond political reach — the same way the trust floor is beyond political reach. The constitutional amendment process provides the safety valve if real-world evidence shows a parameter is miscalibrated.
+
+✅ *Implemented and tested. Commission engine in `src/genesis/compensation/commission.py`. Rolling window in `src/genesis/compensation/rolling_window.py`. Approximately 60 tests.*
+
+### 7.4 Creator allocation
+
+A constitutional creator allocation of 5% is applied on both sides of every successfully completed mission. Both employer and worker see "5% creator allocation" as a transparent, named line item in every published breakdown.
+
+**Employer side:** On successful completion, 5% of the mission reward (`EMPLOYER_CREATOR_FEE_RATE = 0.05`) is deducted from escrow. The employer stakes `mission_reward + employer_creator_fee` into escrow at listing time. On cancel or refund, the full escrow (including the employer fee) is returned in full.
+
+**Worker side:** On successful completion, 5% of the worker's payment after commission (`CREATOR_ALLOCATION_RATE = 0.05`) is deducted from the worker's payout. The total worker deduction for any mission is: commission (operational costs) + creator allocation (5% of post-commission payout). Both appear as distinct, visible line items in the same per-transaction published cost breakdown.
+
+**Both fees are only deducted on successful completion.** Cancel or refund returns everything to the employer; the worker owes nothing.
+
+The creator allocation:
+1. Is computed deterministically: worker-side as `(mission_reward - commission) × CREATOR_ALLOCATION_RATE`, employer-side as `mission_reward × EMPLOYER_CREATOR_FEE_RATE`. Both rates are constitutional constants.
+2. Appears as visible, named line items in every per-transaction published cost breakdown. There is no hidden margin.
+3. Is a constitutional constant — changeable only by 3-chamber supermajority amendment, like all other commission parameters.
+4. Cannot influence trust scores, allocation ranking, or governance weight.
+
+The creator allocation exists because building and maintaining a governance platform is itself productive work. The allocation is transparent by design.
+
+✅ *Implemented and tested. Creator allocation computed in `src/genesis/compensation/commission.py`. Both-sides deduction in `src/genesis/compensation/escrow.py`. Approximately 15 tests.*
+
+### 7.5 Genesis Common Fund (GCF)
+
+The Genesis Common Fund is a constitutional 1% contribution on all gross transaction value (`mission_reward`). It is the only compulsory contribution beyond commission and creator allocation. It exists to benefit society through the funding of any activity that does not increase net human suffering.
+
+**Structure:**
+- Rate: 1% of `mission_reward`, deducted from worker payout after commission and creator allocation.
+- Activation: automatic at First Light (§9.5). No human decision triggers it — it is a function of the system architecture.
+- Distribution: trust-proportional but individually non-extractable. No per-actor balance query exists. The distributed ledger state is the fund. No bank. No custodian.
+- Updated invariant: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`.
+
+**Total take rate (worker perspective):**
+- Minimum: 2% commission + 5% creator + 1% GCF ≈ 8% total deduction.
+- Maximum: 10% commission + 5% creator + 1% GCF ≈ 16% total deduction.
+- Comparison: freelancers on traditional platforms pay 10-20% platform fee, then 20-40% income tax, then national insurance. Genesis at 8-16% total is genuinely competitive.
+
+**Scope:** All meaningful areas of human activity — STEM, medical research, arts, sport, community improvement, infrastructure, clean water, vaccination, education, and any other activity that serves the common good. The only exclusion is any activity that increases the net pool of human suffering.
+
+**Founder legacy caveat:** The creator allocation, after the 50-year dormancy period (and then in perpetuity thereafter), remains permanently pegged to STEM and medical research only.
+
+**Disbursement governance:** Only ACTIVE humans with trust ≥ `tau_prop` can propose disbursements. Proposals require at least one measurable deliverable and must pass compliance screening (same 17-category screening as mission listings). Voting is human-only (`MACHINE_VOTING_EXCLUSION` is entrenched), trust-weighted, simple majority, 30% quorum. A compute ceiling (`GCF_COMPUTE_CEILING = 0.25`) limits infrastructure spending to 25% of GCF balance (see §12.3).
+
+**Entrenched provision:** The GCF contribution rate is constitutionally entrenched. Changing it requires: (1) 80% supermajority across all three chambers, (2) 50% participation of eligible voters, (3) 90-day cooling-off period, (4) confirmation vote after the cooling-off. This is the highest amendment threshold in the constitution.
+
+✅ *Implemented and tested. GCF contribution in `src/genesis/compensation/gcf.py`. Disbursement governance in `src/genesis/compensation/gcf_disbursement.py`. Design tests #54-56. Approximately 45 tests.*
+
+### 7.6 Payment infrastructure sovereignty (entrenched)
+
+No single external entity — no payment processor, stablecoin issuer, blockchain validator, exchange, financial intermediary, or infrastructure provider — may have the ability to freeze, restrict, surveil, or shut down Genesis operations through control of payment infrastructure.
+
+This is enforced through seven constitutional requirements:
+
+1. **Multi-rail mandate.** Operational capability across at least `MINIMUM_INDEPENDENT_PAYMENT_RAILS` (currently 2, escalating to 3 at First Light) independent settlement pathways. "Independent" means: different issuing entities, different underlying protocols, no shared single point of failure. At least one must be fully decentralised.
+2. **Scaled minimums.** Rail minimums escalate with platform maturity (2 at G0, 3 at First Light). The Economic Advisory mechanism may increase these minimums through standard amendment but may never decrease them — they are entrenched floors, not targets.
+3. **No single-provider dependency.** No single provider's unilateral business decision may render Genesis unable to process escrow, pay workers, collect commission, or distribute GCF funds. If any provider restricts Genesis, operations continue on remaining rails without manual intervention beyond configuration.
+4. **Self-custody.** Genesis holds its own cryptographic keys for all fund custody. No external custodian, escrow agent, or financial institution holds Genesis funds or has the ability to freeze, seize, or redirect them.
+5. **Rail-agnostic architecture.** The escrow state machine is structurally independent of any specific payment rail. Settlement is a pluggable backend behind a common interface (`PaymentRail` Protocol). Adding or removing a rail requires zero changes to escrow logic, commission computation, or any financial module.
+6. **Migration capability.** Demonstrated ability to migrate away from any single rail within `PAYMENT_RAIL_MIGRATION_DAYS` (currently 30) of a restriction event. Untested migration is not a fallback — it is a vulnerability.
+7. **Provider evaluation test (three criteria).** Before any rail integration is adopted: (a) No leverage — the provider cannot unilaterally restrict Genesis operations; (b) No surveillance beyond settlement — no data extraction beyond what the settlement protocol structurally requires; (c) No lock-in — Genesis can exit within `PAYMENT_RAIL_MIGRATION_DAYS`, with funds intact. If any criterion fails, the integration must not proceed.
+
+All payment sovereignty constants are entrenched. A system that can be shut down by a single provider's business decision is not sovereign — it is rented.
+
+✅ *Architectural layer implemented. `PaymentRail` Protocol and `PaymentRailRegistry` in `src/genesis/compensation/payment_rail.py`. Design tests #82-85. Approximately 28 tests in `tests/test_payment_sovereignty.py`.*
+🔧 *Concrete payment rail integrations not yet connected. The protocol and registry define the contract; implementations are pending. Trigger: post-web-layer, before alpha (post-Step 7, pre-Step 11 in the development roadmap).*
+
+### 7.7 Crypto volatility protection
+
+1. If a poster stakes in volatile crypto (BTC/ETH), the amount is displayed as a stablecoin equivalent at time of staking.
+2. If the staked crypto value drops more than `VOLATILITY_TOPUP_THRESHOLD = 0.20` (20%) during mission execution, the poster is prompted to top up the escrow.
+3. If the poster refuses, the worker may choose to continue at reduced payout or withdraw without trust penalty.
+4. If the staked value drops more than 50%, the mission is paused with a 72-hour top-up window.
+5. Stablecoin stakes (USDC/USDT) are exempt from volatility protection — no exchange rate risk.
+
+📋 *Constitutional principle (TRUST_CONSTITUTION.md §Crypto volatility protection). Implementation requires external price feed integration.*
+
+### 7.8 Payment dispute resolution
+
+1. Either worker or poster may raise a payment dispute within `ESCROW_HOLD_PERIOD = 48 hours` after completion.
+2. Escrow funds remain locked during dispute.
+3. Dispute enters adjudication with the same blind, diverse panel model as all other adjudications (§10.3).
+4. Possible outcomes: full payment to worker, full refund to poster, partial payment (pro-rata), or escalation to legal compliance quorum.
+5. Vexatious disputes may reduce the disputing party's trust.
+
+The workflow orchestrator automatically creates an adjudication case (`PAYMENT_DISPUTE` type) and moves escrow to `DISPUTED` state. Resolution routes through standard adjudication panels with all constitutional rights preserved.
+
+✅ *Implemented and tested. Dispute-adjudication bridge in workflow orchestrator. Escrow state `DISPUTED` → adjudication case creation. Approximately 20 tests.*
+
+## 8. Governance Model
+### 8.1 Separation of powers
 Genesis requires governance separation among:
 
 1. Policy authorship.
@@ -148,16 +285,16 @@ Genesis requires governance separation among:
 
 This separation is a legitimacy safeguard against unilateral control.
 
-### 7.2 Guardrail policy (non-negotiable)
+### 8.2 Guardrail policy (non-negotiable)
 1. No self-review.
 2. No hidden/unlogged state transitions for critical actions.
 3. No mission completion without explicit human approval in designated risk classes.
 4. No conversion of financial capital into trust score.
 
-### 7.3 Human oversight model
+### 8.3 Human oversight model
 Humans supervise exceptions, disputes, and high-risk outputs, rather than manually inspecting all low-risk task outputs.
 
-### 7.4 Identity challenge policy
+### 8.4 Identity challenge policy
 Proof-of-personhood and proof-of-agenthood checks may be deployed as anti-abuse and access controls, with strict scope boundaries.
 
 1. Identity challenges are support controls, not correctness proofs.
@@ -165,7 +302,7 @@ Proof-of-personhood and proof-of-agenthood checks may be deployed as anti-abuse 
 3. High-stakes identity decisions require layered assurance combining cryptographic identity controls, behavioral history, policy compliance history, and independent verification outcomes.
 4. Identity signals alone cannot mint trust, grant privileged routing, or grant constitutional authority.
 
-### 7.5 Anti-capture safeguards
+### 8.5 Anti-capture safeguards
 Genesis is explicitly designed to prevent consolidation of constitutional power.
 
 1. Proposal threshold:
@@ -190,7 +327,7 @@ Genesis is explicitly designed to prevent consolidation of constitutional power.
 - Final constitutional authority remains distributed across eligible verified humans through chamber ratification.
 - High trust does not convert into unilateral constitutional control.
 
-### 7.6 Mathematical distribution governance model
+### 8.6 Mathematical distribution governance model
 Genesis defines constitutional governance as a mathematically constrained human-distributed process.
 
 1. Trust state variables:
@@ -243,7 +380,7 @@ Genesis defines constitutional governance as a mathematically constrained human-
 - Any `DeltaT > delta_fast` event is suspended pending independent re-validation.
 - Re-validation thresholds: `q_h >= 30*`, `r_h >= 3`, `o_h >= 3`, and no conflict-of-interest flags.
 
-### 7.7 Default constitutional parameter profile (recommended baseline)
+### 8.7 Default constitutional parameter profile (recommended baseline)
 The following baseline is recommended for initial institutional deployment:
 
 1. Thresholds:
@@ -271,7 +408,7 @@ The following baseline is recommended for initial institutional deployment:
 - `r_h = 3`
 - `o_h = 3`
 
-### 7.9 Cryptographic implementation profile (binding defaults)
+### 8.8 Cryptographic implementation profile (binding defaults)
 To ensure reproducibility and prevent ambiguity, Genesis adopts explicit cryptographic implementation defaults.
 
 1. Settlement layer:
@@ -319,7 +456,7 @@ To ensure reproducibility and prevent ambiguity, Genesis adopts explicit cryptog
 - Independent verifiers must be able to recompute published roots from released records.
 - Independent verifiers must be able to validate signature chains and inclusion proofs using public data only.
 
-### 7.8 Bounded trust economy model
+### 8.9 Bounded trust economy model
 Genesis governance assumes bounded earned trust and explicitly rejects unbounded trust concentration.
 
 1. Baseline issuance:
@@ -373,31 +510,241 @@ Genesis governance assumes bounded earned trust and explicitly rejects unbounded
 - Cryptographic commitment records prove integrity and provenance of records.
 - Correctness still depends on independent verification, evidence sufficiency, and governance review.
 
-## 8. Integration with the Underlying Governance Engine
+## 9. Constitutional Machinery
+
+The governance model (§8) defines the mathematical framework and structural constraints. This section describes the operational machinery through which the constitution is amended, how entrenched provisions are protected, how governance phases scale, and how the system bootstraps from founder authority to full constitutional governance.
+
+### 9.1 Amendment engine
+
+Genesis provisions can be changed through a structured three-chamber amendment process. Each amendment passes through independent chambers that function as parallel veto points — no chamber's approval overrides another's rejection (see §9.3).
+
+**Standard amendments** (non-entrenched provisions): Proposal chamber → Ratification chamber → Challenge window → Confirmed (if no challenge) or Challenge chamber → Confirmed/Rejected.
+
+**Chamber panels** are selected using greedy diversity-first selection with geographic constraints (`R_min` regions, `c_max` concentration cap per region). No voter may serve on more than one chamber for the same amendment. The proposer of an amendment is excluded from all panels on that amendment. Minimum organisational diversity per chamber: `chamber_org_diversity_min = 2`.
+
+**Voting deadline.** Each chamber has a voting window of `chamber_voting_window_days` (default 14 days) from panel selection. When the window expires, votes cast so far are counted. If participation < `lapse_participation_threshold` (50%), the amendment lapses — distinct from rejection, and may be re-proposed. If participation meets the threshold, the standard supermajority applies to votes received. This prevents governance capture through inaction.
+
+**Withdrawal.** A proposer may withdraw an amendment in `PROPOSED` or `PROPOSAL_CHAMBER_VOTING` status (if zero votes cast). Once any vote is cast, the proposal belongs to the community. Status: `WITHDRAWN` (terminal, distinct from `REJECTED`).
+
+**Phase transition handling.** Amendments with no chamber vote cast reset to `PROPOSED` under new thresholds when a governance phase transition occurs. Amendments with at least one completed chamber continue under original thresholds with a recorded note.
+
+✅ *Implemented and tested. Amendment engine in `src/genesis/governance/amendment.py`. Service layer in `src/genesis/service.py`. Design tests #57-60, #87-91. Approximately 60 tests across `tests/test_amendment_engine.py` and `tests/test_distributed_authority.py`.*
+
+### 9.2 Entrenched provisions
+
+Five provisions are entrenched and require elevated safeguards:
+
+1. **`GCF_CONTRIBUTION_RATE`** — the 1% common fund contribution.
+2. **`TRUST_FLOOR_H_POSITIVE`** — human trust can never decay to zero.
+3. **`NO_BUY_TRUST`** — trust cannot be purchased.
+4. **`MACHINE_VOTING_EXCLUSION`** — machines are permanently excluded from constitutional voting.
+5. **`PAYMENT_SOVEREIGNTY`** — no single provider can freeze, restrict, or shut down Genesis operations.
+
+**Entrenched amendment process:** Same three-chamber sequence as standard amendments, plus:
+- 90-day cooling-off period (no acceleration, no exceptions).
+- Fresh confirmation vote by a new panel (no overlap with ratification panel).
+- `entrenched_amendment_threshold = 0.80` (80% supermajority).
+- `entrenched_participation_minimum = 0.50` (50% of eligible voters).
+
+Commission rates (`COMMISSION_FLOOR`, `COMMISSION_CEILING`, etc.) are formula-determined and cannot be changed by ballot. This is deliberate: commission follows costs, not politics.
+
+✅ *Implemented and tested. Entrenched provisions defined in `config/constitutional_params.json`. Cooling-off enforcement and confirmation vote logic in amendment engine. Approximately 15 tests.*
+
+### 9.3 Distributed authority
+
+Genesis rejects executive/legislative/judicial hierarchy. No governance body has superiority over another. The separation of powers is structural — each body has a defined domain, none can override or subsume the authority of any other, and no role, trust level, or contribution history creates permanent authority over the system.
+
+1. **The three amendment chambers** are parallel veto points, not a hierarchy. All three must independently concur (or not challenge) for an amendment to advance.
+2. **The Constitutional Court** interprets but cannot legislate. Rulings are advisory — soft precedent only. No ruling binds future panels, creates new obligations, or modifies the constitution. Ambiguities revealed by rulings may be flagged as amendment candidates.
+3. **The Assembly** deliberates but cannot decide. It is Speaker's Corner, not Parliament — no binding resolutions, no votes, no mandates. Content is anonymous (zero identity attribution).
+4. **Organisations** coordinate but cannot govern. No organisation may vote as a bloc, impose rules on members beyond the constitution, or acquire governance authority. No single organisation may dominate any amendment chamber.
+5. **The Founder's Veto** is bounded: rejection-only, early-stage only, expires irreversibly at First Light (§9.4).
+
+✅ *Implemented and tested. Veto scope enforcement in `src/genesis/service.py`. Organisational diversity in chamber selection. Design tests #87-91. Approximately 26 tests in `tests/test_distributed_authority.py`.*
+
+### 9.4 Founder's Veto
+
+The founder retains transparent veto authority during the pre-sustainability bootstrap phase.
+
+1. The veto is rejection-only — the founder can block proposals but cannot force them through.
+2. It may only be exercised on amendments in `PROPOSED`, `PROPOSAL_CHAMBER_VOTING`, or `RATIFICATION_CHAMBER_VOTING` status. Once both the proposal and ratification chambers have independently approved, the community's decision stands. The veto cannot override a completed democratic process.
+3. Every exercise is logged, signed, and committed on-chain with the tag `founder_veto`.
+4. The veto expires automatically and irrevocably at First Light (§9.5). A self-sustaining system no longer needs a single person holding emergency powers.
+
+The veto exists because a self-governing system cannot bootstrap itself — it needs a guardian until it can stand. A guardian who refuses to leave is not a guardian but a ruler.
+
+✅ *Implemented and tested. Veto wired to First Light trigger in `src/genesis/service.py`. Status gate enforced. Design test #91. Approximately 11 tests.*
+
+### 9.5 First Light
+
+"First Light" is the named transition event marking Genesis's passage from Proof of Concept to live operations. It is a **financial sustainability trigger**, not a headcount counter. It fires when BOTH conditions are met:
+
+1. Projected monthly commission revenue ≥ `sustainability_ratio` × monthly operating costs (default `sustainability_ratio = 1.5`, i.e., a 50% safety buffer), sustained over the commission engine's rolling window.
+2. Reserve fund balance ≥ `reserve_months_required` × monthly operating costs (default `reserve_months_required = 3`).
+
+First Light is **decoupled from governance phase transitions** (G0→G1→G2→G3), which remain headcount-based (§9.6). The two will roughly correlate in practice (revenue requires mission volume which requires users) but are structurally independent events.
+
+**At First Light:**
+1. PoC mode banner is removed from all platform pages.
+2. Demonstration data is replaced with live marketplace operations.
+3. GCF contribution activates (§7.5).
+4. Founder's Veto expires irreversibly (§9.4).
+5. Payment sovereignty minimums escalate (2 → 3 independent rails) (§7.6).
+6. Bootstrap immune overseer designations expire (if the organic high-trust pool is sufficient).
+7. Event logged as `EventKind.FIRST_LIGHT` and committed to L1 as a constitutional lifecycle event.
+
+First Light is irreversible — once both conditions are met and the event is logged, the platform cannot revert to PoC mode.
+
+✅ *First Light trigger implemented. PoC mode toggle and veto expiry in `src/genesis/service.py`. Design test #31. Approximately 11 tests.*
+
+### 9.6 Governance phases
+
+Constitutional governance scales through four headcount-based phases. Each phase is determined by the count of verified human identities with `T_H >= T_floor_H`:
+
+| Phase | Verified humans | Chamber sizes (P / R / C) | Pass thresholds | Geographic constraints |
+|-------|----------------|--------------------------|----------------|----------------------|
+| G0 | 0–50 | No chambers | — | Founder stewardship. Constitution frozen. |
+| G1 | 50–500 | 11 / 17 / 25 | 8 / 12 / 15 | R_min=3, c_max=0.40 |
+| G2 | 500–2,000 | 21 / 31 / 51 | 14 / 21 / 31 | R_min=5, c_max=0.25 |
+| G3 | 2,000+ | 41 / 61 / 101 | 28 / 41 / 61 | R_min=8, c_max=0.15 |
+
+**G0 constraints:** No constitutional amendments permitted. Operational risk tiers R0–R2 active (R2 with reduced reviewer requirements). R3 (constitutional changes) is locked. G0 expires at `G0_MAX_DAYS = 365` days, with one extension of `G0_EXTENSION_DAYS = 180` days. If 50 verified humans are not reached, the network must be publicly declared non-viable.
+
+**Genesis invariants (non-negotiable at every phase):**
+1. Machine constitutional voting weight remains `w_M_const = 0`.
+2. Trust cannot be bought, sold, or transferred.
+3. Quality gates for trust minting are active from day one.
+4. All governance actions are signed, committed on-chain, and publicly auditable from day one.
+5. No genesis phase may extend indefinitely; all have hard time limits.
+6. The founder has no constitutional veto power once First Light is achieved.
+7. Every G0 provisional decision must face retroactive ratification in G1.
+8. Phase transitions are one-way — the system cannot regress to an earlier genesis phase.
+
+📋 *Constitutional principle (TRUST_CONSTITUTION.md §Genesis bootstrap protocol). Phase parameters defined in `config/constitutional_params.json`.*
+
+### 9.7 G0 Retroactive Ratification
+
+During G0, the founder makes governance decisions because democratic panels cannot yet form. These decisions are tagged `genesis_provisional` — temporary until the community can review them.
+
+When G0 transitions to G1, a 90-day clock starts (`G0_RATIFICATION_WINDOW = 90` days). Every provisional decision is put before a panel of 11 randomly selected community members (the G1 proposal chamber). They vote:
+
+- **8 or more vote YES** → the decision becomes permanent (ratified).
+- **Fewer than 8 vote YES, or no vote before deadline** → the decision is reversed — undone as if it never happened.
+
+Panel selection uses the same diversity-first algorithm as all other chambers: minimum 3 geographic regions, no single region exceeding 40%.
+
+**Ratifiable event kinds:** Founder veto exercises, compliance rulings, adjudication outcomes, Constitutional Court decisions. Each has a registered reversal handler — a specific mechanism to undo the decision if the community rejects it. For example, reversing a compliance ruling would reinstate a previously suspended actor.
+
+This mechanism ensures the founder cannot cement permanent unilateral rules during the early period. The community gets democratic authority to accept or reject every governance action the founder took.
+
+✅ *Implemented and tested. Ratification engine in `src/genesis/governance/ratification.py`. Reversal handlers registered per event kind. Design tests #61-63. Approximately 30 tests.*
+
+## 10. Justice and Accountability
+
+Genesis operates a codified justice system covering harmful work prevention, penalty escalation, structured adjudication, and rehabilitation. The system is designed to be structurally fair: every accused party has the same rights regardless of trust level, and every penalty follows the same escalation path.
+
+### 10.1 Harmful work prevention
+
+Genesis constitutionally prohibits work that increases net human suffering. The blind veto test is: "Does this mission, evaluated in good faith, involve activity from the prohibited categories?" If yes, the mission is blocked.
+
+**17 prohibited categories:** weapons development, weapons manufacturing, weapons trafficking, surveillance tools, exploitation of persons, child exploitation, financial fraud, identity theft, biological weapons, chemical weapons, nuclear weapons, terrorism support, forced labor, money laundering, sanctions evasion, environmental destruction, disinformation campaigns.
+
+**Three-layer enforcement:**
+1. **Automated screening** at mission creation. Exact keyword matches rejected immediately; soft matches flagged for human review.
+2. **Compliance quorum** for grey areas: panel of 3 adjudicators with domain trust in compliance, blind review, minimum 2 organisations and 2 regions.
+3. **Post-hoc complaints** for completed missions. Any actor may file a compliance complaint, reviewed by panel.
+
+✅ *Implemented and tested. Compliance screener in `src/genesis/compliance/screener.py`. Design tests #46-47. Approximately 35 tests.*
+
+### 10.2 Penalty escalation
+
+| Tier | Trigger | Trust consequence | Duration |
+|------|---------|------------------|----------|
+| Minor | Content flagged | Trust reduced by 0.10 | Warning |
+| Moderate | Prohibited category confirmed | Trust nuked to 0.001 (1/1000) | 90-day suspension |
+| Severe | Abuse confirmed, pattern escalation | Trust nuked to 0.0 | Permanent decommission |
+| Egregious | Weapons or exploitation | Trust nuked to 0.0 | Permanent decommission + identity locked |
+
+**Pattern escalation:** Second moderate violation within 365 days escalates to severe (permanent decommission).
+
+**Statute of limitations:** 180 days for non-egregious categories. No limit for weapons, exploitation, biological/chemical/nuclear weapons, terrorism, and forced labor.
+
+**Suspension enforcement:** Suspended actors cannot post listings, submit bids, serve as reviewers, or participate in governance votes. Permanently decommissioned actors are irreversibly excluded.
+
+✅ *Implemented and tested. Penalty escalation in `src/genesis/compliance/penalties.py`. Suspension enforcement in `src/genesis/service.py`. Approximately 25 tests.*
+
+### 10.3 Three-Tier Justice
+
+**Tier 1 — Automated enforcement.** Keyword-based screening at mission creation. Immediate rejection for exact prohibited-category matches. Flagging for human review on soft matches. Automated penalty computation based on violation type and prior history.
+
+**Tier 2 — Unified adjudication panels.** 5-member panels, blind (pseudonymised complainant and accused), diverse (≥2 organisations, ≥2 regions), minimum panelist trust 0.60. 3/5 supermajority required for UPHELD verdict. Covers: payment disputes, compliance complaints, abuse complaints, conduct complaints, normative resolution. One appeal per case, within 72 hours, heard by entirely different panel (original panelists excluded).
+
+**Tier 3 — Constitutional Court.** 7-member panel of human-only justices, trust ≥ 0.70, ≥3 regions, ≥3 organisations. 5/7 supermajority required to OVERTURN a Tier 2 decision. Simple majority for UPHOLD or REMAND.
+
+**Precedent is advisory only (soft precedent)** — each case is decided on its own merits. This prevents the accumulation of judicial power while allowing the body of rulings to inform future panels. Ambiguities revealed by rulings may be flagged as amendment candidates through the standard amendment process.
+
+✅ *Implemented and tested. Adjudication engine in `src/genesis/legal/adjudication.py`. Constitutional Court in `src/genesis/legal/constitutional_court.py`. Design tests #48-50. Approximately 50 tests.*
+
+### 10.4 Rights of the accused
+
+These rights are structurally enforced — code gates, not documentation:
+
+1. **Right to know:** Accused is notified of the complaint at case opening.
+2. **Right to respond:** 72-hour response period. No panel can form until the response period has elapsed or the accused submits a response, whichever comes first.
+3. **Right to evidence:** All evidence must be disclosed to the accused before adjudication.
+4. **Right to appeal:** One appeal per case, within 72 hours of decision.
+5. **Right to representation:** Accused may designate a representative.
+6. **Presumption of good faith:** Assumed until verdict.
+
+✅ *Implemented and tested. Response window enforcement, evidence disclosure gates, and appeal mechanisms in `src/genesis/legal/adjudication.py`. Design test #48.*
+
+### 10.5 Rehabilitation
+
+**Moderate severity only.** Actors suspended for moderate violations enter PROBATION status when their suspension expires:
+- Must complete 5 probation tasks within 180 days.
+- Trust is partially restored: `min(original × 0.50, 0.30)`.
+
+**SEVERE and EGREGIOUS violations have no rehabilitation path** — permanent decommission is irreversible. This is a constitutional design choice: some acts are beyond remediation, and the system must demonstrate that it takes the worst harms seriously.
+
+✅ *Implemented and tested. Rehabilitation pathway in `src/genesis/compliance/penalties.py`. Probation task tracking in `src/genesis/service.py`. Approximately 10 tests.*
+
+### 10.6 Workflow orchestration
+
+The four independent subsystems (market, mission, escrow, compliance) are bridged by a coordination layer with structural guarantees:
+
+1. **Escrow-first:** No listing goes live without locked funds (§7.2).
+2. **Compliance gate:** All listings screened before publication (§10.1).
+3. **Work submission ceremony:** Workers submit evidence (deliverables with hashes) before review.
+4. **Dispute→adjudication bridge:** Payment disputes automatically create adjudication cases with all constitutional rights (§10.3).
+5. **Cancellation→refund:** Cancellation at any pre-terminal stage returns full escrow.
+
+✅ *Implemented and tested. Workflow orchestrator in `src/genesis/compensation/workflow_orchestrator.py`. Design tests #51-53. Approximately 85 tests.*
+
+## 11. Integration with the Underlying Governance Engine
 The existing operational engine is positioned as the governance and evidence core supporting Genesis.
 
-### 8.1 Existing strengths
+### 11.1 Existing strengths
 1. Policy-as-code enforcement behavior.
 2. Runtime validation and guard modes.
 3. Evidence logging and cryptographic provenance pathways.
 4. Reviewer-oriented verification tooling.
 
-### 8.2 Genesis extensions required
+### 11.2 Genesis extensions required
 1. Mission and task orchestration.
 2. Identity and trust lifecycle management.
 3. Independent reviewer routing and anti-collusion controls.
 4. Dispute, appeals, and incident governance operations.
 5. Institutional governance console and policy lifecycle tooling.
 
-## 9. Compute Infrastructure and Economic Sovereignty
+## 12. Compute Infrastructure and Economic Sovereignty
 
-### 9.1 The extractive compute paradigm
+### 12.1 The extractive compute paradigm
 
 The dominant AI infrastructure model concentrates compute in hyperscale data centres operated by a small number of global corporations. These facilities consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment relative to their capital intensity and environmental footprint. Infrastructure costs are socialised through public resource consumption; profits are privatised through shareholder returns. The result is a structural pattern of resource appropriation: local communities bear environmental and infrastructure costs, while economic value is captured globally by distant corporate entities.
 
 This pattern creates institutional risk for any platform that depends on it. Dependency on concentrated compute infrastructure introduces single points of regulatory capture, rent-seeking choke points, and jurisdictional vulnerability. For a system whose foundational principle is that governance cannot be bought, architectural dependency on entities whose governance is determined by capital markets represents a structural contradiction.
 
-### 9.2 Genesis compute trajectory
+### 12.2 Genesis compute trajectory
 
 Genesis addresses this through a three-epoch trajectory built into the framework from the outset.
 
@@ -413,20 +760,20 @@ compute_allocation = base_rate × max(0, 1 - distributed_capacity / required_cap
 
 As distributed capacity approaches requirements, the allocation degrades to zero and the full GCF flows to its broader humanitarian scope. No individual controls procurement — it is governed by the Economic Advisory mechanism (Phase E-6).
 
-### 9.3 GCF compute allocation
+### 12.3 GCF compute allocation
 
 The compute infrastructure allocation is a constitutional constant (amendable by standard constitutional process) but not an entrenched provision. The recommended ceiling is **25% of GCF receipts**, degrading to zero via the bootstrap curve formula.
 
 At the GCF contribution rate of 1%, this means a maximum effective deduction of 0.25% of gross mission value is directed to compute infrastructure. The remaining 75% of GCF flows to its broader scope: education, healthcare, infrastructure, arts, community development, and scientific research. As the system becomes self-sustaining, the compute allocation falls and the humanitarian allocation rises to 100%.
 
-### 9.4 Distributable and non-distributable compute
+### 12.4 Distributable and non-distributable compute
 
 Not all compute workloads are equally distributable:
 
 - **Inference and fine-tuning** are distributable across consumer hardware with appropriate coordination frameworks. These represent the majority of Genesis operational compute needs.
 - **Foundation model training** requires tightly coupled GPU clusters that cannot be effectively distributed across consumer devices. At scale, this is funded by the GCF as dedicated infrastructure.
 
-### 9.5 Institutional implications
+### 12.5 Institutional implications
 
 The three-epoch trajectory has direct implications for institutional evaluation:
 
@@ -436,9 +783,9 @@ The three-epoch trajectory has direct implications for institutional evaluation:
 
 This trajectory is engineering, not doctrine. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants.
 
-## 10. Risk Register (Program-Level)
+## 13. Risk Register (Program-Level)
 
-### 10.0 Threat modelling baseline
+### 13.0 Threat modelling baseline
 Threat modelling means defining what must be protected, who can cause harm, how harm can occur, and which controls prevent or contain harm.
 
 Institutional requirement:
@@ -446,38 +793,38 @@ Institutional requirement:
 2. Risk controls must distinguish what is mechanically prevented versus what is detected and remediated.
 3. High-severity incidents trigger threat-model and invariant review.
 
-### 10.1 Collusion risk
+### 13.1 Collusion risk
 Risk: reviewers coordinate or rubber-stamp low-quality work.  
 Controls: random reviewer assignment, no self-review, quorum checks for high-risk work, adversarial test tasks.
 
-### 10.2 Correlated error risk
+### 13.2 Correlated error risk
 Risk: multiple agents share the same blind spot and converge on a wrong answer.  
 Controls: model/method diversity, evidence-weighted adjudication, escalation for ambiguous tasks.
 
-### 10.3 Audit theater risk
+### 13.3 Audit theater risk
 Risk: logs exist but do not prove substantive quality.  
 Controls: strict evidence schema, reproducibility requirements, closure blocks for insufficient evidence.
 
-### 10.4 Reputation gaming risk
+### 13.4 Reputation gaming risk
 Risk: actors optimize visible metrics rather than truth.  
 Controls: slow trust accrual, fast penalty for severe failures, delayed scoring based on downstream outcomes.
 
-### 10.5 Human bottleneck risk
+### 13.5 Human bottleneck risk
 Risk: approval fatigue and oversight breakdown.  
 Controls: risk-tier workflow, exception-first human review, summarized evidence drill-down.
 
-### 10.6 Governance capture risk
+### 13.6 Governance capture risk
 Risk: concentration of control over mission policy and enforcement.  
 Controls: formal power separation, transparent policy revision logs, auditable appeals process.
 
-### 10.7 Overclaim risk
+### 13.7 Overclaim risk
 Risk: credibility loss through absolute promises.  
 Controls: institutional language standards that prohibit "bulletproof" and "impossible" claims.
 
-## 11. Identity and Trust Posture
+## 14. Identity and Trust Posture
 Genesis treats identity assurance as a layered, probabilistic governance function, not as a single binary test.
 
-### 11.1 Principles
+### 14.1 Principles
 1. Trust is longitudinal, not instantaneous.
 2. Identity assurance should combine behavioral history, cryptographic identity, and activity consistency.
 3. Timing-based challenge mechanisms may be used as one signal but not as sole truth source.
@@ -485,14 +832,14 @@ Genesis treats identity assurance as a layered, probabilistic governance functio
 5. Machine identities may earn operational trust, but do not receive constitutional voting rights.
 6. Constitutional voting is verified-human only; machine constitutional voting weight remains pinned at `0`.
 
-### 11.2 Prohibited design patterns
+### 14.2 Prohibited design patterns
 1. Trust purchase schemes.
 2. Trust transfer markets.
 3. Single-factor identity gating for high-stakes access.
 4. Unbounded trust accumulation.
 5. Trust-to-command conversion over other actors.
 
-## 12. Implementation Strategy
+## 15. Implementation Strategy
 Genesis should be deployed through reversible, measurable phases.
 
 ### Phase 1: Foundation
@@ -527,7 +874,7 @@ Acceptance baseline:
 2. Stable policy lifecycle controls.
 3. Measurable reduction in post-approval defects.
 
-### 12.1 Executable governance controls (current baseline)
+### 15.1 Executable governance controls (current baseline)
 To keep governance concrete (not narrative-only), Genesis maintains machine-checkable control artifacts:
 
 1. Constitutional parameter baseline:
@@ -544,10 +891,10 @@ To keep governance concrete (not narrative-only), Genesis maintains machine-chec
 
 Governance changes are not considered complete unless the policy artifacts and executable checks pass together.
 
-## 13. Measurement and Assurance Framework
+## 16. Measurement and Assurance Framework
 Genesis performance should be assessed by institutional outcomes, not output volume.
 
-### 13.1 Core indicators
+### 16.1 Core indicators
 1. First-pass review acceptance rate.
 2. Post-approval defect or rework rate.
 3. Time-to-completion by risk tier.
@@ -556,10 +903,10 @@ Genesis performance should be assessed by institutional outcomes, not output vol
 6. Abuse attempts detected versus escaped.
 7. Human confidence and adoption retention.
 
-### 13.2 Assurance posture
+### 16.2 Assurance posture
 Claims should be evidence-based and periodically audited with external challenge testing where appropriate.
 
-## 14. Applicability and Initial Deployment Domains
+## 17. Applicability and Initial Deployment Domains
 High-potential early domains are those where traceability is already expected and failure costs are meaningful.
 
 1. Compliance documentation and controls evidence.
@@ -568,14 +915,14 @@ High-potential early domains are those where traceability is already expected an
 4. Public-sector reporting and policy documentation.
 5. Safety and quality governance workflows.
 
-## 15. Communication Standard
+## 18. Communication Standard
 To preserve credibility, Genesis communications should follow three rules:
 
 1. Distinguish objective verification from normative judgment.
 2. Present risk reduction claims with measurable bounds.
 3. Avoid absolute language about certainty, security, or correctness.
 
-## 16. Conclusion
+## 19. Conclusion
 Project Genesis is a realistic and ambitious institutional proposal for responsible AI work coordination. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance and verification substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
 The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle.
