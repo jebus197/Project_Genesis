@@ -387,6 +387,23 @@ class TestThreatRegistryEnforcement:
         assert registry.signal_count == 1
         assert registry.get_signal("threat-001") is signal
 
+    def test_rejects_duplicate_signal_id(self):
+        """Duplicate signal_id must be rejected — tamper-evident guarantee.
+
+        Regression test: CX P1 finding (2026-02-24). Silent overwrite by
+        duplicate signal_id allowed retroactive replacement of threat history,
+        undermining incident forensics.
+        """
+        registry = _make_registry()
+        signal_1 = _make_threat(signal_id="threat-dup", source_detection="original_detection")
+        signal_2 = _make_threat(signal_id="threat-dup", source_detection="replacement_attempt")
+        registry.register_threat(signal_1)
+        with pytest.raises(ValueError, match="(?i)duplicate signal_id"):
+            registry.register_threat(signal_2)
+        # Original signal must be preserved, not overwritten
+        assert registry.get_signal("threat-dup").source_detection == "original_detection"
+        assert registry.signal_count == 1
+
     def test_constitutional_compliance_valid_state(self):
         """A valid registry must pass constitutional compliance check."""
         registry = _make_registry()

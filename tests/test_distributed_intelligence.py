@@ -248,6 +248,23 @@ class TestInsightRegistryEnforcement:
         assert reg.signal_count == 1
         assert reg.get_signal("sig-001") is signal
 
+    def test_rejects_duplicate_signal_id(self):
+        """Duplicate signal_id must be rejected — tamper-evident guarantee.
+
+        Regression test: CX P1 finding (2026-02-24). Silent overwrite by
+        duplicate signal_id allowed retroactive replacement of work-derived
+        intelligence, breaking tamper-evident expectations.
+        """
+        reg = _registry_with_actor("actor-alice")
+        signal_1 = _make_signal(signal_id="sig-dup", payload="original insight")
+        signal_2 = _make_signal(signal_id="sig-dup", payload="replacement attempt")
+        reg.register_insight(signal_1)
+        with pytest.raises(ValueError, match="(?i)duplicate signal_id"):
+            reg.register_insight(signal_2)
+        # Original signal must be preserved, not overwritten
+        assert reg.get_signal("sig-dup").payload == "original insight"
+        assert reg.signal_count == 1
+
     def test_roster_override_at_registration(self):
         """External roster can override internal roster."""
         reg = InsightRegistry()  # no internal actors

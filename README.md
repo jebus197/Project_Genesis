@@ -140,7 +140,7 @@ You don't need to trust this project to verify the anchor. You only need a termi
 
 **Step 1 — Check the current anchor against the blockchain:**
 
-Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `29abc8a6...`. The git history preserves the exact file state that produced this hash.
+Open the [current transaction on Etherscan](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99), click **"Click to see More"**, and inspect the **Input Data** field. It contains the hash `dde36f8d...`. The git history preserves the exact file state that produced this hash.
 
 **Step 2 — Verify earlier anchors:**
 

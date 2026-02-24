@@ -1265,7 +1265,7 @@ Key design principles:
 5. **Engine purity**: computation engines (trust, quality, matching, decay, endorsement, allocation) are pure functions with no side effects. The service layer handles all persistence and event recording.
 6. **Transactional safety**: every mutating service operation either fully succeeds or fully rolls back. Post-audit operations degrade rather than roll back to prevent audit/state mismatch.
 
-All constitutional invariants are tested automatically. The test suite (1244 tests) covers every critical rule described in this document — including identity verification, compliance screening, three-tier justice, the genesis common fund, workflow orchestration, the labour market, skill lifecycle, domain trust, and persistence safety.
+All constitutional invariants are tested automatically. The test suite (1739 tests) covers every critical rule described in this document — including identity verification, compliance screening, three-tier justice, the genesis common fund, workflow orchestration, the labour market, skill lifecycle, domain trust, and persistence safety.
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

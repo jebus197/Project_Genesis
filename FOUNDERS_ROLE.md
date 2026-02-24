@@ -25,7 +25,7 @@ The founder's role is designed to become unnecessary. Every power the founder ho
 
 **What the founder cannot do:**
 - Grant themselves special trust scores or permanent privileges
-- Modify the entrenched provisions (GCF contribution rate, human trust floor, no-buy-trust rule, machine voting exclusion) without following the full constitutional amendment process
+- Modify the entrenched provisions (GCF contribution rate, human trust floor, no-buy-trust rule, machine voting exclusion, payment infrastructure sovereignty) without following the full constitutional amendment process
 - Register machines without being a verified human first
 - Override the commission formula (commission rates are deterministic from costs, never from ballots or founder decisions)
 - Extend G0 more than once

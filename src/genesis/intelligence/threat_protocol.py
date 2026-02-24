@@ -210,6 +210,13 @@ class ThreatRegistry:
                 f"Constitutional violations: {'; '.join(violations)}"
             )
 
+        if signal.signal_id in self._signals:
+            raise ValueError(
+                f"Duplicate signal_id '{signal.signal_id}': threat signals are "
+                f"tamper-evident and cannot be overwritten. Each signal_id must "
+                f"be unique."
+            )
+
         self._signals[signal.signal_id] = signal
 
     def get_response_tier(self, severity: ThreatSeverity) -> AutomatedResponseTier:
