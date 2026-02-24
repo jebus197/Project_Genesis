@@ -572,11 +572,11 @@ The Genesis Common Fund accumulates 1% of all mission rewards. Disbursement gove
 
 ### Constitutional Amendment Process
 
-Genesis provisions can be changed through a structured three-chamber amendment process. Four provisions are **entrenched** and require elevated safeguards: GCF_CONTRIBUTION_RATE, TRUST_FLOOR_H_POSITIVE, NO_BUY_TRUST, and MACHINE_VOTING_EXCLUSION.
+Genesis provisions can be changed through a structured three-chamber amendment process. Five provisions are **entrenched** and require elevated safeguards: GCF_CONTRIBUTION_RATE, TRUST_FLOOR_H_POSITIVE, NO_BUY_TRUST, MACHINE_VOTING_EXCLUSION, and PAYMENT_SOVEREIGNTY.
 
 **Standard amendments** (non-entrenched provisions): Proposal chamber → Ratification chamber → Challenge window → Confirmed (if no challenge) or Challenge chamber → Confirmed/Rejected.
 
-**Entrenched amendments** (the four provisions above): Same chamber sequence, plus 90-day cooling-off period (no acceleration, no exceptions) → Fresh confirmation vote by a new panel (no overlap with ratification panel) requiring 80% supermajority and 50% participation.
+**Entrenched amendments** (the five provisions above): Same chamber sequence, plus 90-day cooling-off period (no acceleration, no exceptions) → Fresh confirmation vote by a new panel (no overlap with ratification panel) requiring 80% supermajority and 50% participation.
 
 Commission rates (commission_floor, commission_ceiling, etc.) are **formula-determined** and cannot be changed by ballot. This is by design: commission follows costs, not politics.
 

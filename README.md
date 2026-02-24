@@ -130,7 +130,7 @@ The first document anchored in Genesis is its own constitution — the foundatio
 | Transaction | [`4f2863f9...`](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99) |
 | Anchored | 2026-02-20T15:35:24Z |
 
-This anchor captures: all prior constitutional substance (Genesis Blocks 1-7) plus G0 Retroactive Ratification, The Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #81 (evolutionary safety). 1615 tests. Independently reviewed.
+This anchor captures: all prior constitutional substance (Genesis Blocks 1-7) plus G0 Retroactive Ratification, The Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #81 (evolutionary safety). 1739 tests. Independently reviewed.
 
 The complete anchoring history — all eight Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
 
@@ -315,7 +315,7 @@ This is not a tax. It is not a fee. It is a structural commitment: before any pa
 
 The fund activates at First Light. No human votes on contributions. No individual can extract their share — the fund is trust-proportional but individually non-extractable. There is no bank, no custodian, no external account. The distributed ledger state is the fund.
 
-Changing the 1% rate requires the highest amendment threshold in the constitution: 80% supermajority across three independent chambers, 50% participation, a 90-day cooling-off period, and a confirmation vote. This is deliberately harder to change than any other parameter in the system. The fund is one of four entrenched provisions — alongside the rule that trust cannot be bought, the rule that human trust can never decay to zero, and the rule that machines are permanently excluded from constitutional voting.
+Changing the 1% rate requires the highest amendment threshold in the constitution: 80% supermajority across three independent chambers, 50% participation, a 90-day cooling-off period, and a confirmation vote. This is deliberately harder to change than any other parameter in the system. The fund is one of five entrenched provisions — alongside the rule that trust cannot be bought, the rule that human trust can never decay to zero, the rule that machines are permanently excluded from constitutional voting, and payment infrastructure sovereignty (no single provider can freeze, restrict, or shut down Genesis operations).
 
 After the 50-year dormancy clause, the founder's creator allocation redirects to STEM and medical charitable recipients selected by supermajority.
 
@@ -456,7 +456,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (1615 tests):**
+**Validation (1739 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

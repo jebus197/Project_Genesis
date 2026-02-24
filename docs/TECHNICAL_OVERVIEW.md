@@ -734,12 +734,13 @@ The `GCFTracker` (`src/genesis/compensation/gcf.py`) manages the fund state:
 
 ### Entrenched provision
 
-The GCF contribution rate is one of four **entrenched provisions** — constitutional parameters protected by the highest amendment threshold in the system:
+The GCF contribution rate is one of five **entrenched provisions** — constitutional parameters protected by the highest amendment threshold in the system:
 
 1. `GCF_CONTRIBUTION_RATE` — the 1% commons contribution.
 2. `TRUST_FLOOR_H_POSITIVE` — human trust can never decay to zero.
 3. `NO_BUY_TRUST` — financial capital cannot purchase trust.
 4. `MACHINE_VOTING_EXCLUSION` — machines permanently excluded from constitutional voting.
+5. `PAYMENT_SOVEREIGNTY` — no single payment provider can freeze, restrict, or shut down Genesis operations.
 
 Changing any entrenched provision requires: **80% supermajority** across three independent chambers, **50% participation**, a **90-day cooling-off period**, and a **confirmation vote**. This is deliberately harder to change than any other parameter in the system.
 
