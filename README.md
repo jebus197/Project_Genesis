@@ -9,7 +9,7 @@ Project Genesis is building the rules, tools, and enforcement systems needed to 
 
 This is not a chatbot. It is not a social platform. It is not a token or a blockchain product.
 
-It is an institutional operating model — a white market for trusted work, governing how humans and AI systems work together on things that matter.
+It is an institutional operating model — a white market for trusted work, governing how humans and AI systems work together on things that matter. The network becomes collectively more capable through the work it coordinates: every completed mission, every quality review, every trust assessment contributes to a shared intelligence that no single participant possesses. The labour market is the mechanism. Distributed intelligence is the outcome.
 
 Owner and project lead: George Jackson
 

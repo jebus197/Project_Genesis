@@ -32,6 +32,12 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 
 ---
 
+## Distributed Intelligence
+
+Genesis is architecturally a distributed intelligence network. Trust propagation, mandatory quality review, the Open Work principle, Assembly deliberation, Domain Expert Pools, and GCF-funded Public Good Compute are all structural mechanisms through which work-derived insights flow across the network. No single component creates this intelligence — it emerges from their interaction. The trust infrastructure ensures insights can be evaluated without blind faith. The constitutional constraints (design test #92) ensure no entity can capture, restrict, or monopolise the knowledge that flows through the network. The `InsightSignal` Protocol and `InsightRegistry` (`src/genesis/intelligence/insight_protocol.py`) define the architectural contract for how this intelligence propagates — the same pattern used by the `PaymentRail` Protocol for settlement rail agnosticism.
+
+---
+
 ## Trust Model
 
 Genesis maintains two separate trust domains because humans and machines play fundamentally different roles in the system.

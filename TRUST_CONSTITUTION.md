@@ -807,6 +807,17 @@ Genesis is structurally incompatible with concealment. Participants who require 
 90. Can a single organisation dominate any constitutional amendment chamber through geographic distribution of its members? If yes, reject design.
 91. Can the founder veto an amendment that has been independently approved by both the proposal and ratification chambers? If yes, reject design.
 
+### Distributed intelligence
+
+Genesis is not merely a market for labour — it is a network that becomes collectively more capable through the work it coordinates. Every completed mission, every quality review, every trust assessment, every Assembly thread contributes to a shared intelligence that no single participant possesses. This intelligence is structural, not centralised — it emerges from the interaction of trust, quality, and open work, not from any coordinating authority.
+
+The Open Work principle ensures insights flow by default. The trust infrastructure ensures they can be evaluated without blind faith. The constitutional constraints ensure no entity can capture, restrict, or monopolise the knowledge that flows through the network.
+
+This is the system's deepest purpose: not to match workers with tasks, but to make the network of human and machine intelligence collectively more capable of solving problems — at organisational scale, at societal scale, and eventually at civilisational scale. The labour market is the mechanism. Distributed intelligence is the outcome.
+
+**Distributed intelligence design test:**
+92. Can any entity restrict the flow of work-derived insights across the network for private advantage? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.
