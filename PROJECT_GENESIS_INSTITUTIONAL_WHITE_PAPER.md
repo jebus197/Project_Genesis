@@ -1,7 +1,7 @@
 # Project Genesis
 ## Institutional White Paper (Draft)
 
-Version: 2.0 (Phase 2 Update)
+Version: 2.0
 Date: February 24, 2026
 Original: February 13, 2026
 Author: George Jackson
@@ -13,7 +13,7 @@ Project Genesis proposes a governance-first framework for AI-enabled work. Its c
 
 Genesis is explicitly not an attention platform and not a claim of perfect machine truth. It is an institutional coordination model: a system intended to convert probabilistic AI outputs into auditable work products suitable for higher-trust settings.
 
-This white paper presents the rationale, architectural design, governance model, economic architecture, constitutional machinery, justice system, governance bodies, machine intelligence pathway, distributed systems, human dignity protections, risk controls, implementation pathway, and evaluation criteria for Genesis. Each section carries an implementation status annotation: ✅ implemented and tested, 🔧 designed with protocol defined but not yet wired, or 📋 constitutional principle with a defined implementation trigger.
+This white paper presents the rationale, architectural design, governance model, economic architecture, constitutional machinery, justice system, governance bodies, machine intelligence pathway, distributed systems, human dignity protections, sovereignty framework, risk controls, implementation status, and evaluation criteria for Genesis. Each section carries an implementation status annotation: ✅ implemented and tested, 🔧 designed with protocol defined but not yet wired, or 📋 constitutional principle with a defined implementation trigger.
 
 ## 1. Purpose and Strategic Context
 Modern AI systems deliver speed and broad capability, but they do not natively guarantee institutional properties such as traceability, reproducibility, duty separation, and defensible accountability. This gap limits responsible deployment in regulated, safety-sensitive, and high-consequence environments.
@@ -887,31 +887,54 @@ Design tests: #77 (structural metadata always visible), #78 (restrictions requir
 
 ✅ *Implemented and tested. Work visibility enforcement in `src/genesis/models/market.py`. Open Work constitutional rules in `src/genesis/compliance/work_visibility.py`. 22 tests.*
 
-## 15. Integration with the Underlying Governance Engine
+## 15. Sovereignty
+
+### 15.1 Regulatory sovereignty
+
+Genesis evaluates external regulation through its own constitutional lens. This is not lawlessness — it is the principle that a self-governing system must assess whether external regulatory demands are compatible with its constitutional commitments before compliance.
+
+**Three-part evaluation test.** When external regulation intersects with Genesis operations, the system applies three criteria:
+1. **Compatibility:** Does the regulation conflict with entrenched constitutional provisions? If it requires bypassing the trust floor, enabling trust purchase, or granting machine voting rights, compliance would violate the constitution.
+2. **Proportionality:** Does the regulation impose requirements that are disproportionate to the harm being addressed? Blanket data retention mandates that conflict with privacy-by-design principles are evaluated for proportionality.
+3. **Jurisdictional scope:** Does the regulator have legitimate jurisdiction over the specific activity? Genesis operates across jurisdictions; no single regulator has authority over the entire system.
+
+Where external regulation is compatible, proportionate, and jurisdictionally appropriate, Genesis complies — the legal compliance layer (§7.8) already screens for legality in poster's and worker's jurisdictions, sanctions compliance, IP concerns, and labour law. Where regulation conflicts with entrenched provisions, the constitutional amendment process (§9.1) is the only path to accommodation.
+
+📋 *Design-intent principle. The three-part test is a philosophical decision recorded in the founder's design intent. Constitutional codification trigger: when the first external regulatory engagement occurs.*
+
+### 15.2 Payment infrastructure sovereignty
+
+Payment sovereignty is covered in §7.6 as an entrenched constitutional provision. The architectural enforcement — PaymentRail Protocol and PaymentRailRegistry — ensures that no single payment provider can freeze, restrict, or shut down Genesis operations. The escrow state machine is structurally independent of any specific payment rail. See §7.6 for full detail.
+
+### 15.3 Economic sovereignty
+
+The dynamic commission formula (§7.3) places operational cost recovery beyond political reach. The GCF (§7.5) is entrenched. The escrow-first principle (§7.2) ensures work done is always paid. Together, these create economic sovereignty: Genesis cannot be starved of revenue by a political coalition, cannot have its social fund raided, and cannot default on worker payments.
+
+## 16. Integration with the Underlying Governance Engine
 The existing operational engine is positioned as the governance and evidence core supporting Genesis.
 
-### 15.1 Existing strengths
+### 16.1 Existing strengths
 1. Policy-as-code enforcement behavior.
 2. Runtime validation and guard modes.
 3. Evidence logging and cryptographic provenance pathways.
 4. Reviewer-oriented verification tooling.
 
-### 15.2 Genesis extensions required
+### 16.2 Genesis extensions required
 1. Mission and task orchestration.
 2. Identity and trust lifecycle management.
 3. Independent reviewer routing and anti-collusion controls.
 4. Dispute, appeals, and incident governance operations.
 5. Institutional governance console and policy lifecycle tooling.
 
-## 16. Compute Infrastructure and Economic Sovereignty
+## 17. Compute Infrastructure and Economic Sovereignty
 
-### 16.1 The extractive compute paradigm
+### 17.1 The extractive compute paradigm
 
 The dominant AI infrastructure model concentrates compute in hyperscale data centres operated by a small number of global corporations. These facilities consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment relative to their capital intensity and environmental footprint. Infrastructure costs are socialised through public resource consumption; profits are privatised through shareholder returns. The result is a structural pattern of resource appropriation: local communities bear environmental and infrastructure costs, while economic value is captured globally by distant corporate entities.
 
 This pattern creates institutional risk for any platform that depends on it. Dependency on concentrated compute infrastructure introduces single points of regulatory capture, rent-seeking choke points, and jurisdictional vulnerability. For a system whose foundational principle is that governance cannot be bought, architectural dependency on entities whose governance is determined by capital markets represents a structural contradiction.
 
-### 16.2 Genesis compute trajectory
+### 17.2 Genesis compute trajectory
 
 Genesis addresses this through a three-epoch trajectory built into the framework from the outset.
 
@@ -927,20 +950,20 @@ compute_allocation = base_rate × max(0, 1 - distributed_capacity / required_cap
 
 As distributed capacity approaches requirements, the allocation degrades to zero and the full GCF flows to its broader humanitarian scope. No individual controls procurement — it is governed by the Economic Advisory mechanism (Phase E-6).
 
-### 16.3 GCF compute allocation
+### 17.3 GCF compute allocation
 
 The compute infrastructure allocation is a constitutional constant (amendable by standard constitutional process) but not an entrenched provision. The recommended ceiling is **25% of GCF receipts**, degrading to zero via the bootstrap curve formula.
 
 At the GCF contribution rate of 1%, this means a maximum effective deduction of 0.25% of gross mission value is directed to compute infrastructure. The remaining 75% of GCF flows to its broader scope: education, healthcare, infrastructure, arts, community development, and scientific research. As the system becomes self-sustaining, the compute allocation falls and the humanitarian allocation rises to 100%.
 
-### 16.4 Distributable and non-distributable compute
+### 17.4 Distributable and non-distributable compute
 
 Not all compute workloads are equally distributable:
 
 - **Inference and fine-tuning** are distributable across consumer hardware with appropriate coordination frameworks. These represent the majority of Genesis operational compute needs.
 - **Foundation model training** requires tightly coupled GPU clusters that cannot be effectively distributed across consumer devices. At scale, this is funded by the GCF as dedicated infrastructure.
 
-### 16.5 Institutional implications
+### 17.5 Institutional implications
 
 The three-epoch trajectory has direct implications for institutional evaluation:
 
@@ -950,9 +973,9 @@ The three-epoch trajectory has direct implications for institutional evaluation:
 
 This trajectory is engineering, not doctrine. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants.
 
-## 17. Risk Register (Program-Level)
+## 18. Risk Register (Program-Level)
 
-### 17.0 Threat modelling baseline
+### 18.0 Threat modelling baseline
 Threat modelling means defining what must be protected, who can cause harm, how harm can occur, and which controls prevent or contain harm.
 
 Institutional requirement:
@@ -960,38 +983,47 @@ Institutional requirement:
 2. Risk controls must distinguish what is mechanically prevented versus what is detected and remediated.
 3. High-severity incidents trigger threat-model and invariant review.
 
-### 17.1 Collusion risk
+### 18.1 Collusion risk
 Risk: reviewers coordinate or rubber-stamp low-quality work.  
 Controls: random reviewer assignment, no self-review, quorum checks for high-risk work, adversarial test tasks.
 
-### 17.2 Correlated error risk
+### 18.2 Correlated error risk
 Risk: multiple agents share the same blind spot and converge on a wrong answer.  
 Controls: model/method diversity, evidence-weighted adjudication, escalation for ambiguous tasks.
 
-### 17.3 Audit theater risk
+### 18.3 Audit theater risk
 Risk: logs exist but do not prove substantive quality.  
 Controls: strict evidence schema, reproducibility requirements, closure blocks for insufficient evidence.
 
-### 17.4 Reputation gaming risk
+### 18.4 Reputation gaming risk
 Risk: actors optimize visible metrics rather than truth.  
 Controls: slow trust accrual, fast penalty for severe failures, delayed scoring based on downstream outcomes.
 
-### 17.5 Human bottleneck risk
+### 18.5 Human bottleneck risk
 Risk: approval fatigue and oversight breakdown.  
 Controls: risk-tier workflow, exception-first human review, summarized evidence drill-down.
 
-### 17.6 Governance capture risk
+### 18.6 Governance capture risk
 Risk: concentration of control over mission policy and enforcement.  
 Controls: formal power separation, transparent policy revision logs, auditable appeals process.
 
-### 17.7 Overclaim risk
-Risk: credibility loss through absolute promises.  
+### 18.7 Overclaim risk
+Risk: credibility loss through absolute promises.
 Controls: institutional language standards that prohibit "bulletproof" and "impossible" claims.
 
-## 18. Identity and Trust Posture
+### 18.8 Single-founder risk
+Risk: Genesis currently has one founder (George Jackson). If the founder is incapacitated, dies, or becomes unavailable, the system loses its primary steward, context holder, and decision-maker during the critical G0 period.
+Controls: (1) Constitutional provisions self-execute — First Light triggers are automatic, phase transitions are headcount-based, entrenched provisions cannot be overridden. (2) These canonical documents (White Paper + Public Brief) record design intent so a successor can understand what Genesis was meant to be. (3) The TRUST_CONSTITUTION.md is the authoritative source of truth — hash-committed on-chain, immutable. (4) G0 Retroactive Ratification ensures all founder decisions are eventually subject to democratic review. (5) The founder's veto expires at First Light regardless. (6) Auto-immune system bootstrap overseers (§13.2) provide continuity for security oversight.
+Residual risk: HIGH during G0. Mitigated structurally but not eliminated until G1 democratic governance is operational.
+
+### 18.9 Auto-immune coverage gaps
+Risk: the auto-immune system (§13.2) has a defined protocol and registry but cross-component wiring (collusion detection, behavioural drift analysis, forensic feedback loops) requires real actor data that does not yet exist.
+Controls: existing point mechanisms (compliance screener, trust gates, penalty escalation) operate independently. The ThreatSignal Protocol defines the contract for future integration. Constitutional enforcement (design tests #93-95) ensures high-risk actions always require human oversight regardless of automation maturity.
+
+## 19. Identity and Trust Posture
 Genesis treats identity assurance as a layered, probabilistic governance function, not as a single binary test.
 
-### 18.1 Principles
+### 19.1 Principles
 1. Trust is longitudinal, not instantaneous.
 2. Identity assurance should combine behavioral history, cryptographic identity, and activity consistency.
 3. Timing-based challenge mechanisms may be used as one signal but not as sole truth source.
@@ -999,14 +1031,25 @@ Genesis treats identity assurance as a layered, probabilistic governance functio
 5. Machine identities may earn operational trust, but do not receive constitutional voting rights.
 6. Constitutional voting is verified-human only; machine constitutional voting weight remains pinned at `0`.
 
-### 18.2 Prohibited design patterns
+### 19.2 Voice liveness verification
+
+Genesis uses voice liveness as an anti-Sybil mechanism — proof-of-personhood, not proof of identity. The participant reads a randomised sequence of words from the BIP39 wordlist (2048 common English words) in a specified order. The verification checks:
+1. **Positional accuracy:** correct words in correct sequence.
+2. **Liveness indicators:** spectral analysis to distinguish live speech from recordings and synthesis (implementation trigger: web layer for real registration).
+3. **No biometric storage:** Genesis does not store voice prints, spectral signatures, or any biometric data. The verification is pass/fail.
+
+For participants who cannot use the voice path, the disability accommodation facilitator model (§14.3) provides an equivalent standard.
+
+✅ *Voice verification stub implemented (`src/genesis/verification/voice.py`). Positional word matching operational. Full STT + spectral analysis triggers at web layer deployment.*
+
+### 19.3 Prohibited design patterns
 1. Trust purchase schemes.
 2. Trust transfer markets.
 3. Single-factor identity gating for high-stakes access.
 4. Unbounded trust accumulation.
 5. Trust-to-command conversion over other actors.
 
-## 19. Implementation Strategy
+## 20. Implementation Strategy
 Genesis should be deployed through reversible, measurable phases.
 
 ### Phase 1: Foundation
@@ -1041,7 +1084,7 @@ Acceptance baseline:
 2. Stable policy lifecycle controls.
 3. Measurable reduction in post-approval defects.
 
-### 19.1 Executable governance controls (current baseline)
+### 20.1 Executable governance controls (current baseline)
 To keep governance concrete (not narrative-only), Genesis maintains machine-checkable control artifacts:
 
 1. Constitutional parameter baseline:
@@ -1058,10 +1101,10 @@ To keep governance concrete (not narrative-only), Genesis maintains machine-chec
 
 Governance changes are not considered complete unless the policy artifacts and executable checks pass together.
 
-## 20. Measurement and Assurance Framework
+## 21. Measurement and Assurance Framework
 Genesis performance should be assessed by institutional outcomes, not output volume.
 
-### 20.1 Core indicators
+### 21.1 Core indicators
 1. First-pass review acceptance rate.
 2. Post-approval defect or rework rate.
 3. Time-to-completion by risk tier.
@@ -1070,10 +1113,10 @@ Genesis performance should be assessed by institutional outcomes, not output vol
 6. Abuse attempts detected versus escaped.
 7. Human confidence and adoption retention.
 
-### 20.2 Assurance posture
+### 21.2 Assurance posture
 Claims should be evidence-based and periodically audited with external challenge testing where appropriate.
 
-## 21. Applicability and Initial Deployment Domains
+## 22. Applicability and Initial Deployment Domains
 High-potential early domains are those where traceability is already expected and failure costs are meaningful.
 
 1. Compliance documentation and controls evidence.
@@ -1082,30 +1125,104 @@ High-potential early domains are those where traceability is already expected an
 4. Public-sector reporting and policy documentation.
 5. Safety and quality governance workflows.
 
-## 22. Communication Standard
+## 23. Communication Standard
 To preserve credibility, Genesis communications should follow three rules:
 
 1. Distinguish objective verification from normative judgment.
 2. Present risk reduction claims with measurable bounds.
 3. Avoid absolute language about certainty, security, or correctness.
 
-## 23. Conclusion
-Project Genesis is a realistic and ambitious institutional proposal for responsible AI work coordination. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance and verification substrate that makes existing intelligence systems usable in trust-sensitive environments.
+## 24. Implementation Status
 
-The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle.
+This section provides an honest accounting of what exists, what is designed but not yet wired, and what remains constitutional principle only. A successor reading this document should know exactly what they are inheriting.
 
-If those conditions are met, Genesis can serve as durable infrastructure for accountable AI-assisted work at scale.
+### 24.1 What is built and tested
+
+As of February 2026, 1739 automated tests pass across 95 design tests. The following subsystems are implemented:
+
+| Subsystem | Tests | Key files |
+|-----------|-------|-----------|
+| Trust engine (earn, decay, floor, ceiling, rate limiter) | ~120 | `src/genesis/models/trust_profile.py` |
+| Escrow lifecycle (stake, lock, release, refund, dispute) | ~85 | `src/genesis/compensation/escrow.py`, `workflow_orchestrator.py` |
+| Dynamic commission (formula, rolling window, bootstrap) | ~40 | `src/genesis/compensation/commission_engine.py` |
+| Creator allocation (both-sides, success-only) | ~15 | `src/genesis/compensation/creator_allocation.py` |
+| GCF (1% contribution, disbursement, public good compute) | ~50 | `src/genesis/compensation/gcf.py` |
+| Harmful work prevention (17 categories, screening) | ~30 | `src/genesis/compliance/` |
+| Penalty escalation (4 tiers, rehabilitation) | ~25 | `src/genesis/compliance/penalties.py` |
+| Three-Tier Justice (automated, panels, Court) | ~60 | `src/genesis/legal/adjudication.py` |
+| Constitutional amendment engine (3 chambers) | ~80 | `src/genesis/governance/amendment.py` |
+| G0 retroactive ratification | ~21 | `src/genesis/governance/g0_ratification.py` |
+| Assembly (anonymous deliberation) | 43 | `src/genesis/governance/assembly.py` |
+| Organisation Registry (tiered verification) | 53 | `src/genesis/governance/organisation_registry.py` |
+| Domain Expert Pools + Machine Clearance | 41 | `src/genesis/governance/domain_experts.py` |
+| Machine Agency Tiers (4-tier pathway) | 55 | `src/genesis/governance/machine_agency.py` |
+| Identity verification (voice liveness + facilitator) | ~80 | `src/genesis/identity/`, `src/genesis/verification/` |
+| Open Work (three-tier visibility) | 22 | `src/genesis/compliance/work_visibility.py` |
+| PaymentRail Protocol + Registry | 28 | `src/genesis/compensation/payment_rail.py` |
+| InsightSignal Protocol + Registry | 27 | `src/genesis/intelligence/insight_protocol.py` |
+| ThreatSignal Protocol + Registry | 37 | `src/genesis/intelligence/threat_protocol.py` |
+| Distributed authority (voting deadline, org diversity) | 26 | `src/genesis/governance/amendment.py` |
+| Policy resolver + invariant checker | ~30 | `src/genesis/policy/`, `tools/check_invariants.py` |
+
+### 24.2 What is designed but not yet wired
+
+These have defined protocols, registries, or constitutional provisions but require real-world triggers:
+
+| Item | Current state | Trigger |
+|------|--------------|---------|
+| STT + spectral analysis | Stub (word matching only) | Web layer for real registration |
+| Persistence layer | In-memory JSON files | Before multi-user deployment |
+| Real cryptographic signatures | Format validation only | Before production |
+| Agent-facing API (JSON endpoints) | No structured API | Step 4 scaffolding |
+| Payment rail integration | Protocol + Registry, no concrete rails | Post-Step 7, pre-alpha |
+| Insight signal pipeline | Protocol, no active propagation | Post-web-layer with real users |
+| Auto-immune cross-component wiring | Protocol, no detection engines | Post-web-layer with real actors |
+| Institutional Memory | Stub only | Pre-alpha documentation phase |
+| External price feeds | Not implemented | Multi-currency escrow |
+| Multi-source time verification | System time only | Dormancy clause (50-year) |
+
+### 24.3 Executable artifacts
+
+| Artifact | Command | Purpose |
+|----------|---------|---------|
+| Full test suite | `python3 -m pytest tests/ -q` | 1739 tests, ~12 seconds |
+| Invariant checker | `python3 tools/check_invariants.py` | Constitutional parameter validation |
+| Constitutional params | `config/constitutional_params.json` | Machine-readable parameter mirror |
+| Runtime policy | `config/runtime_policy.json` | Risk-tier policy mapping |
+| Constitution (authoritative) | `TRUST_CONSTITUTION.md` | Hash-committed on-chain (GB8: block 10300320) |
+
+## 25. Conclusion
+
+Project Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
+
+The system has 95 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
+
+The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle. The single-founder risk (§18.8) is the most significant vulnerability during the G0 period. These canonical documents exist to mitigate that risk.
 
 ## Appendix A: Canonical Trust Statement
-Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted.  
+Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted.
 Trust can only be earned through verified behavior and verified outcomes over time.
 
-## Appendix B: Related Project Files
-1. `TRUST_CONSTITUTION.md`
-2. `PROJECT_GENESIS_PUBLIC_BRIEF.md`
-3. `CONTRIBUTING.md`
-4. `docs/TECHNICAL_OVERVIEW.md`
-5. `docs/ANCHORS.md`
-6. `docs/GENESIS_EVENTS.md`
+## Appendix B: Entrenched Provisions
+
+Five provisions carry the highest constitutional protection (80% supermajority + 50% participation + 90-day cooling-off + confirmation vote):
+
+| # | Provision | Parameter | Effect |
+|---|-----------|-----------|--------|
+| 1 | GCF contribution rate | `GCF_CONTRIBUTION_RATE = 0.01` | 1% on all mission value |
+| 2 | Human trust floor | `TRUST_FLOOR_H_POSITIVE = true` | Human trust never decays to zero |
+| 3 | No buying trust | `NO_BUY_TRUST = true` | Trust cannot be purchased |
+| 4 | Machine voting exclusion | `MACHINE_VOTING_EXCLUSION = true` | Machines cannot vote on governance |
+| 5 | Payment sovereignty | `PAYMENT_SOVEREIGNTY = true` | No single provider can shut Genesis down |
+
+## Appendix C: Related Project Files
+1. `TRUST_CONSTITUTION.md` — authoritative constitutional source (hash-committed on-chain)
+2. `PROJECT_GENESIS_PUBLIC_BRIEF.md` — public-facing companion document
+3. `config/constitutional_params.json` — machine-readable parameter mirror
+4. `config/runtime_policy.json` — runtime risk-tier policy mapping
+5. `docs/TECHNICAL_OVERVIEW.md` — technical architecture reference
+6. `docs/ANCHORS.md` — blockchain commitment history
+7. `docs/GENESIS_EVENTS.md` — event lifecycle documentation
+8. `CONTRIBUTING.md` — contribution guidelines
 
 \* subject to review

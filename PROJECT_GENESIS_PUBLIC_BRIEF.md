@@ -1,7 +1,7 @@
 # Project Genesis
 *A Public Brief on Building a Trust Infrastructure for AI Work*
 
-Version 2.0 (Phase 2 Update)
+Version 2.0
 February 24, 2026 (Original: February 13, 2026)
 Author: George Jackson
 
@@ -493,29 +493,48 @@ Genesis then extends above this core with mission orchestration, identity and tr
 
 In short: the governance engine underpins constitutional enforcement, and Genesis is the institutional layer built around it.
 
+## Regulatory Sovereignty
+
+Genesis evaluates external regulation through its own constitutional lens. This is not lawlessness — it is the principle that a self-governing system must assess whether external demands are compatible with its constitutional commitments.
+
+When regulation intersects with Genesis: (1) Is it compatible with entrenched provisions? (2) Is it proportionate to the harm addressed? (3) Does the regulator have jurisdiction over the specific activity? Where regulation passes all three, Genesis complies — the legal compliance layer already screens for legality, sanctions, IP, and labour law. Where regulation conflicts with entrenched provisions, the constitutional amendment process is the only path.
+
+## What Is Built, What Is Planned
+
+Honesty requires distinguishing what exists from what is designed.
+
+**What exists today:** 1739 automated tests across 95 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
+
+**What is designed but not yet connected:** Real speech-to-text for voice verification (currently a stub). Persistence layer (currently in-memory). Real cryptographic signatures (currently format validation). Payment rail integrations (protocol exists, no concrete rails). Insight signal propagation (protocol exists, no active pipeline). Auto-immune cross-component wiring (protocol exists, no detection engines). These all have defined triggers — they activate when real users generate real data.
+
+**What is the biggest risk:** Single-founder dependency. Genesis has one person (George Jackson) who holds the full context. These documents exist to mitigate that. The constitution is hash-committed on-chain. The code is open. The tests enforce the principles. But if the founder is incapacitated before G1 democratic governance is operational, there is genuine risk. This is stated plainly, not hidden.
+
 ## Risks (Honest View) and Mitigations
 No serious project should hide its risks. Genesis has material risks, but they are addressable.
 
-1. Collusion in review  
+1. Collusion in review
 Mitigation: randomized reviewer assignment, no self-review, separation of duties, quorum review for high-risk tasks, adversarial audit tasks.
 
-2. Consensus error  
+2. Consensus error
 Mitigation: reviewer diversity across model family and method, evidence-weighted adjudication, escalation for subjective tasks.
 
-3. Audit theater  
+3. Audit theater
 Mitigation: strict evidence schema by task type, reproducibility checks, blocked closure for weak evidence.
 
-4. Reputation gaming  
+4. Reputation gaming
 Mitigation: slow trust accumulation, fast penalties for serious failures, delayed trust adjustments based on downstream quality.
 
-5. Human bottlenecks  
+5. Human bottlenecks
 Mitigation: humans review exceptions, disputes, and high-risk decisions, not every low-risk output.
 
-6. Governance capture  
-Mitigation: structural separation of policy proposal, policy approval, policy enforcement, and appeals; transparent policy-change records.
+6. Governance capture
+Mitigation: structural separation of policy proposal, policy approval, policy enforcement, and appeals; transparent policy-change records. Distributed authority principle: no governance body has superiority over another.
 
-7. Overclaim risk  
+7. Overclaim risk
 Mitigation: avoid “bulletproof” and “impossible” language; frame outcomes as measurable risk reduction.
+
+8. Single-founder risk
+Mitigation: constitutional self-execution (First Light triggers automatically, phase transitions are headcount-based), canonical design-intent documents (this brief + White Paper), on-chain constitutional hash commitment, G0 retroactive ratification ensures all founder decisions face democratic review. Residual risk: HIGH during G0.
 
 ## Threat Modelling (Why It Is Required)
 Threat modelling means defining what must be protected, who can cause harm, how harm could happen, and which controls prevent or contain that harm.
@@ -584,6 +603,7 @@ It aims to solve organized, accountable use of intelligence.
 That distinction is important. It avoids hype and keeps the project grounded in real engineering and governance outcomes.
 
 ## Conclusion
+
 Project Genesis proposes a practical and ambitious answer to a real gap in the AI era: how to scale useful AI-assisted work without sacrificing legitimacy.
 
 Its thesis is straightforward:
@@ -593,7 +613,8 @@ Its thesis is straightforward:
 3. Institutions encoded in software can outperform ad hoc coordination.
 4. Public-benefit systems require accountability by design, not by promise.
 
-Genesis is viable if it remains disciplined about this foundation.  
-Its long-term value will be determined less by how quickly it grows and more by whether it remains trustworthy as it scales.
+What makes Genesis different from other proposals: the governance is tested (95 design tests, 1739 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
+
+Genesis is not a finished product. It is a foundation — constitutional, architectural, and economic — upon which a self-governing, intelligence-agnostic work network can be built. Its long-term value will be determined not by how quickly it grows, but by whether it remains trustworthy as it scales.
 
 \* subject to review
