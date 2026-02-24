@@ -855,6 +855,34 @@ class PolicyResolver:
         config = self._params.get("machine_agency", {})
         return {**defaults, **config}
 
+    def immune_system_config(self) -> dict[str, Any]:
+        """Return auto-immune system configuration.
+
+        Keys: oversight_trust_min, auto_response_max_severity,
+              overseer_selection, resolution_feedback_window_days,
+              bootstrap_overseer_pool_max, bootstrap_sunset_organic_threshold,
+              bootstrap_hard_expiry.
+
+        Constitutional constraints (design tests #93-95):
+        - HIGH/CRITICAL responses require human oversight from randomised
+          domain experts at trust >= oversight_trust_min
+        - No permanent immune overseer — overseers are randomised, not stored
+        - Resolution records feed the learning loop (append-only)
+
+        Reads from constitutional_params.json immune_system section.
+        """
+        defaults = {
+            "oversight_trust_min": 0.85,
+            "auto_response_max_severity": "medium",
+            "overseer_selection": "randomised_domain_expert",
+            "resolution_feedback_window_days": 365,
+            "bootstrap_overseer_pool_max": 5,
+            "bootstrap_sunset_organic_threshold": 10,
+            "bootstrap_hard_expiry": "first_light",
+        }
+        config = self._params.get("immune_system", {})
+        return {**defaults, **config}
+
     def amendment_config(self) -> dict[str, Any]:
         """Return constitutional amendment configuration.
 

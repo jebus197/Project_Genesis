@@ -885,6 +885,66 @@ def check() -> int:
                     f"status '{status}' (design test #91)"
                 )
 
+    # ------------------------------------------------------------------
+    # Auto-immune system invariants (design tests #93-95)
+    # ------------------------------------------------------------------
+
+    immune = params.get("immune_system", {})
+    if not immune:
+        errors.append("immune_system section must exist in constitutional_params.json")
+    else:
+        # Oversight trust min must be >= 0.80 (exceptional trust threshold)
+        otm = immune.get("oversight_trust_min", 0)
+        if otm < 0.80:
+            errors.append(
+                f"immune_system.oversight_trust_min must be >= 0.80, got {otm}"
+            )
+
+        # Auto-response max severity must be "low" or "medium" (DT #93)
+        arms = immune.get("auto_response_max_severity", "")
+        if arms not in ("low", "medium"):
+            errors.append(
+                f"immune_system.auto_response_max_severity must be 'low' or 'medium' "
+                f"(HIGH/CRITICAL always require human oversight), got '{arms}'"
+            )
+
+        # Overseer selection must use randomised domain expert (DT #94)
+        os_sel = immune.get("overseer_selection", "")
+        if os_sel != "randomised_domain_expert":
+            errors.append(
+                f"immune_system.overseer_selection must be 'randomised_domain_expert', "
+                f"got '{os_sel}'"
+            )
+
+        # Resolution feedback window must be positive (DT #95)
+        rfw = immune.get("resolution_feedback_window_days", 0)
+        if rfw < 1:
+            errors.append(
+                f"immune_system.resolution_feedback_window_days must be >= 1, got {rfw}"
+            )
+
+        # Bootstrap pool size must be reasonable
+        bpm = immune.get("bootstrap_overseer_pool_max", 0)
+        if not (1 <= bpm <= 10):
+            errors.append(
+                f"immune_system.bootstrap_overseer_pool_max must be in [1, 10], got {bpm}"
+            )
+
+        # Bootstrap sunset threshold must be > bootstrap pool max (organic > bootstrap)
+        bst = immune.get("bootstrap_sunset_organic_threshold", 0)
+        if bst <= bpm:
+            errors.append(
+                f"immune_system.bootstrap_sunset_organic_threshold ({bst}) must be > "
+                f"bootstrap_overseer_pool_max ({bpm})"
+            )
+
+        # Bootstrap hard expiry must be "first_light"
+        bhe = immune.get("bootstrap_hard_expiry", "")
+        if bhe != "first_light":
+            errors.append(
+                f"immune_system.bootstrap_hard_expiry must be 'first_light', got '{bhe}'"
+            )
+
     if errors:
         print("Invariant check failed:")
         for err in errors:

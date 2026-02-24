@@ -36,6 +36,10 @@ The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for a
 
 Genesis is architecturally a distributed intelligence network. Trust propagation, mandatory quality review, the Open Work principle, Assembly deliberation, Domain Expert Pools, and GCF-funded Public Good Compute are all structural mechanisms through which work-derived insights flow across the network. No single component creates this intelligence — it emerges from their interaction. The trust infrastructure ensures insights can be evaluated without blind faith. The constitutional constraints (design test #92) ensure no entity can capture, restrict, or monopolise the knowledge that flows through the network. The `InsightSignal` Protocol and `InsightRegistry` (`src/genesis/intelligence/insight_protocol.py`) define the architectural contract for how this intelligence propagates — the same pattern used by the `PaymentRail` Protocol for settlement rail agnosticism.
 
+### Auto-immune system
+
+The same distributed intelligence paradigm applies to the network's self-defence. Every existing immune mechanism — compliance screening, trust gates, penalty escalation, quality review, quarantine, decommission — contributes to a collective immune response. The `ThreatSignal` Protocol and `ThreatRegistry` (`src/genesis/intelligence/threat_protocol.py`) define the contract for how threat intelligence propagates across the network, following the same Protocol + Registry + constitutional enforcement pattern as `InsightSignal` and `PaymentRail`. Threat signals are classified by type (anomalous trust, collusion, quality degradation, compliance patterns, behavioural drift, manipulation) and severity (LOW/MEDIUM auto-handled; HIGH/CRITICAL require randomised domain-expert human oversight — design test #93). No entity may become a permanent immune overseer (design test #94). Every human oversight decision is stored as a training signal — upheld detections strengthen future rules, rejected false positives refine them (design test #95). The immune system earns trust the same way any actor does: through demonstrated reliability.
+
 ---
 
 ## Trust Model

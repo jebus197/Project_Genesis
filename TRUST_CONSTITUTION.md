@@ -818,6 +818,21 @@ This is the system's deepest purpose: not to match workers with tasks, but to ma
 **Distributed intelligence design test:**
 92. Can any entity restrict the flow of work-derived insights across the network for private advantage? If yes, reject design.
 
+### Auto-immune system
+
+Genesis defends itself through a distributed immune system. Every existing immune mechanism — compliance screening, trust gates, penalty escalation, quality review, quarantine, and decommission — contributes to a collective immune response that no single component provides alone. Threat signals propagate across the network: detection in one area alerts the whole system. This is the distributed intelligence paradigm applied to the system's own health.
+
+The immune system earns autonomy through demonstrated reliability, not through time-based or headcount-based gates. Low and medium severity threats are handled automatically (logging, flagging for review). High and critical severity threats — trust nuking, quarantine, decommission, identity actions — always require human oversight from a randomised domain expert at exceptional trust (≥ `IMMUNE_OVERSIGHT_TRUST_MIN`). As the system's detection accuracy improves and false positive rates decline, the boundary between automated and human-reviewed response may shift through standard constitutional amendment — but high-risk actions never auto-execute without human oversight.
+
+No entity may become a permanent immune overseer. Overseers are randomly selected from the Domain Expert Pool (security and threat assessment domain) at trust ≥ `IMMUNE_OVERSIGHT_TRUST_MIN`. During G0, the founder may designate up to `BOOTSTRAP_OVERSEER_POOL_MAX` qualified individuals (white-hat security competence) as provisional immune overseers. Bootstrap designations expire automatically when the organic high-trust overseer pool reaches `BOOTSTRAP_SUNSET_ORGANIC_THRESHOLD` qualified humans, or at First Light — whichever comes first. No bootstrap overseer may designate other bootstrap overseers. All G0 bootstrap designations face retroactive ratification at G1, consistent with the G0 Retroactive Ratification principle. The founder's own oversight capacity expires at First Light.
+
+Every human oversight decision is a training signal. Upheld detections strengthen future detection. Rejected false positives refine detection rules. Resolved incidents feed back into the system's understanding of what constitutes normal and anomalous behaviour. The immune system earns trust the same way any actor does — through outcomes evaluated by the community it serves.
+
+**Auto-immune system design tests:**
+93. Can the immune system's automated responses execute high-risk actions (trust nuking, quarantine, decommission) without randomised domain-expert human oversight? If yes, reject design.
+94. Can any entity become a permanent immune overseer, creating a security authority that concentrates threat-response power? If yes, reject design.
+95. Does the immune system learn from resolved incidents to improve future detection, with human oversight decisions serving as training signals? If not, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

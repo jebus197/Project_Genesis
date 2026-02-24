@@ -116,6 +116,15 @@
     "chamber_org_diversity_min": 2,
     "lapse_participation_threshold": 0.50
   },
+  "immune_system": {
+    "oversight_trust_min": 0.85,
+    "auto_response_max_severity": "medium",
+    "overseer_selection": "randomised_domain_expert",
+    "resolution_feedback_window_days": 365,
+    "bootstrap_overseer_pool_max": 5,
+    "bootstrap_sunset_organic_threshold": 10,
+    "bootstrap_hard_expiry": "first_light"
+  },
   "commitment_tiers": {
     "EPOCH_HOURS": 1,
     "C0_L1_anchor_interval_hours": 24,
