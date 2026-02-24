@@ -1,7 +1,7 @@
 # Project Genesis
 *A Public Brief on Building a Trust Infrastructure for AI Work*
 
-Version 2.0 (Phase 1 Update)
+Version 2.0 (Phase 2 Update)
 February 24, 2026 (Original: February 13, 2026)
 Author: George Jackson
 
@@ -390,6 +390,67 @@ Phase transitions are headcount-based and separate from First Light (which is fi
 ### Retroactive ratification
 
 Every governance decision the founder makes during G0 is tagged “provisional.” When the community reaches G1, a 90-day clock starts. Every provisional decision is put before a panel of 11 randomly selected community members. If 8 or more approve, it becomes permanent. If not, it is reversed — undone as if it never happened. The community gets democratic authority to accept or reject every action the founder took.
+
+## Assembly and the Anti-Social Network
+
+Genesis includes a deliberative space called the Assembly. It is the town square of the anti-social network — a place for discourse, not decisions.
+
+**Zero identity.** Assembly contributions carry no identity markers. Not pseudonyms, not session-scoped aliases, nothing. Content stands or falls on its own merits. The system is architecturally incapable of connecting a contribution to its author. This is the strongest possible anti-collusion measure: you cannot build influence if nobody knows who you are.
+
+**No governance power.** The Assembly produces no votes, no binding resolutions, no mandates. Ideas that gain traction are formalised through existing constitutional mechanisms by individuals who take personal responsibility for proposing them. The Assembly is Speaker's Corner, not Parliament.
+
+**No engagement mechanics.** There are no upvotes, no likes, no karma, no trending, no popularity ranking, no featured content, no algorithmic amplification. Topics expire after 30 days of inactivity. This is by design — Genesis does not compete for attention. It provides space for thought.
+
+**Organisations as coordination structures.** Any verified human can create an organisation — a hospital, a community group, a collective of five people. Organisations allow coordination but have no constitutional governance power. All members are constitutionally equal within organisational spaces: the CEO and the cleaner have the same standing. Organisation membership cannot be purchased, and membership does not affect individual trust scores.
+
+Organisations follow a verification pathway: SELF_DECLARED (founder only), ATTESTED (≥3 high-trust members vouch for it), VERIFIED (≥10 attested members with average trust ≥0.50). Verification is earned through member reputation, not purchased.
+
+## Open Work: Transparency as the System
+
+Openness is Genesis's primary anti-corruption mechanism. If every participant can see every mission, every deliverable, and every review, organised misconduct cannot hide behind opacity.
+
+Information in Genesis exists at three tiers:
+1. **That work exists** — always visible, no exceptions.
+2. **Who created it, who did it, how it was reviewed** — always visible, no exceptions.
+3. **The actual work product** — open by default, with a narrow exception for genuinely sensitive content (medical data, security-critical details).
+
+Even under exception, the first two tiers remain fully visible. Exceptions require recorded justification, a time limit, and can be challenged. Once work is complete and public, it cannot be retroactively hidden.
+
+Genesis is structurally incompatible with concealment. If you have secrets to hide, Genesis is not for you.
+
+## Who Protects the People
+
+### Protected leave
+
+Life events — illness, bereavement, disability, mental health crises, caregiving, pregnancy — are not inactivity. Without protection, a person who gets sick would lose trust through no fault of their own.
+
+Any human can petition anonymously for a temporary trust freeze. A randomised panel of domain experts (medical issues to medical professionals, legal to legal) reviews the petition blindly. If approved, trust scores are frozen exactly — no decay, no loss — until the person returns. Anti-gaming protections prevent abuse.
+
+### Death and memorialisation
+
+When a participant dies, family or friends can petition to memorialise the account. A blind quorum reviews the evidence. If approved, the account becomes a permanent memorial — trust and achievements frozen in perpetuity. If a memorialisation was made in error, the person can petition to have it lifted with proof-of-life verification.
+
+### Disability accommodation
+
+Genesis does not impose a higher verification standard on disabled participants. The standard path requires reading 6 words into a camera. The accommodation path provides a single facilitator — a randomly-assigned, high-trust domain specialist who guides the participant through an equivalent verification. Not a panel. Not a committee. One person, helping.
+
+The facilitator sees a pseudonym only. The session is recorded. Unlimited preparation time. Caregiver assistance permitted. If the facilitator declines, a new one is assigned. If the participant disagrees with the outcome, a different facilitator handles the appeal.
+
+### The human trust floor
+
+Human trust can never decay to zero. This is an entrenched constitutional provision — the hardest thing to change. No matter how long you've been away, no matter what's happened, you always retain a baseline. You can always come back. Machines have no such floor — they can be decommissioned. This asymmetry is deliberate: humans are not disposable components.
+
+## The Network Defends Itself
+
+Genesis does not rely on a single security team or a central authority to detect threats. Every immune mechanism — compliance screening, trust gates, penalty escalation, quality review, quarantine, decommission — contributes to a collective immune response that no single component provides alone.
+
+**Distributed intelligence.** The labour market is the mechanism; distributed intelligence is the outcome. Every completed mission, every quality review, every trust assessment contributes to a shared understanding that no single participant possesses. This intelligence is structural — it emerges from the interaction of trust, quality, and open work, not from any coordinating authority. No entity can capture or monopolise it.
+
+**Graduated autonomy.** The immune system starts with full human oversight. It earns autonomy through proven reliability — measurable false positive rates, detection accuracy, resolution outcomes. Low and medium threats are handled automatically. High and critical threats always require human oversight from a randomly selected security domain expert at exceptional trust (≥0.85).
+
+**No permanent security authority.** Immune overseers are randomly selected, never permanent. During the early period, the founder designates up to 5 qualified individuals as provisional overseers. These designations expire automatically — when enough qualified humans emerge organically, or at First Light, whichever comes first. The founder's own oversight capacity expires at First Light. There are no permanent security kings.
+
+**The system learns.** Every human oversight decision feeds back: upheld detections strengthen future detection, rejected false positives refine the rules. The immune system earns trust the same way any actor does — through demonstrated reliability.
 
 ## Compute Infrastructure: From Extraction to Commons
 

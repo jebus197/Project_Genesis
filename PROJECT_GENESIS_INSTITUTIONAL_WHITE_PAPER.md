@@ -1,7 +1,7 @@
 # Project Genesis
 ## Institutional White Paper (Draft)
 
-Version: 2.0 (Phase 1 Update)
+Version: 2.0 (Phase 2 Update)
 Date: February 24, 2026
 Original: February 13, 2026
 Author: George Jackson
@@ -13,7 +13,7 @@ Project Genesis proposes a governance-first framework for AI-enabled work. Its c
 
 Genesis is explicitly not an attention platform and not a claim of perfect machine truth. It is an institutional coordination model: a system intended to convert probabilistic AI outputs into auditable work products suitable for higher-trust settings.
 
-This white paper presents the rationale, architectural design, governance model, economic architecture, constitutional machinery, justice system, risk controls, implementation pathway, and evaluation criteria for Genesis. Each section carries an implementation status annotation: ✅ implemented and tested, 🔧 designed with protocol defined but not yet wired, or 📋 constitutional principle with a defined implementation trigger.
+This white paper presents the rationale, architectural design, governance model, economic architecture, constitutional machinery, justice system, governance bodies, machine intelligence pathway, distributed systems, human dignity protections, risk controls, implementation pathway, and evaluation criteria for Genesis. Each section carries an implementation status annotation: ✅ implemented and tested, 🔧 designed with protocol defined but not yet wired, or 📋 constitutional principle with a defined implementation trigger.
 
 ## 1. Purpose and Strategic Context
 Modern AI systems deliver speed and broad capability, but they do not natively guarantee institutional properties such as traceability, reproducibility, duty separation, and defensible accountability. This gap limits responsible deployment in regulated, safety-sensitive, and high-consequence environments.
@@ -720,31 +720,198 @@ The four independent subsystems (market, mission, escrow, compliance) are bridge
 
 ✅ *Implemented and tested. Workflow orchestrator in `src/genesis/compensation/workflow_orchestrator.py`. Design tests #51-53. Approximately 85 tests.*
 
-## 11. Integration with the Underlying Governance Engine
+## 11. Governance Bodies
+
+Genesis governance is distributed across four distinct structures, each with a defined domain and no authority over the others. This section describes the three operational governance bodies; constitutional amendment machinery is covered in §9.
+
+### 11.1 The Assembly
+
+The Assembly is the deliberative space where Genesis participants meet, debate, and develop ideas. It is Speaker's Corner, not Parliament — a place for discourse, not decisions.
+
+**Key properties:**
+- **Zero identity attribution.** Assembly contributions carry no identity markers — not pseudonyms, not session-scoped aliases, nothing. Content stands or falls on its own merits. The system is architecturally incapable of correlating contributions to actors. This is the anti-collusion measure that underpins every conversation.
+- **No governance power.** The Assembly produces no votes, no binding resolutions, no mandates. Ideas that gain traction are formalised through existing constitutional mechanisms (GCF proposals, constitutional amendments, adjudication requests) by individuals who take personal responsibility for proposing them.
+- **Open participation.** Any verified Genesis participant (human or machine) may contribute. Machine contributions are automatically labelled. There is no minimum trust threshold.
+- **Time-bounded topics.** Topics expire after configurable inactivity (default: `ASSEMBLY_INACTIVITY_EXPIRY_DAYS = 30`). No topic hierarchy, no trending, no popularity ranking.
+- **Constitutional moderation.** Content is subject to the same 17-category compliance screening as all Genesis activity. There is no human moderator role — moderation is constitutional, not discretionary.
+
+Design tests: #64 (no actor tracing), #65 (no binding decisions), #66 (no engagement metrics).
+
+✅ *Implemented and tested. Assembly engine in `src/genesis/governance/assembly.py`. 43 tests covering anonymity guarantees, compliance screening, topic lifecycle, machine labelling.*
+
+### 11.2 Organisation Registry
+
+Organisations are coordination structures, not governance bodies. They allow people with shared interests to organise operational work and develop proposals. Organisations have no constitutional governance power.
+
+**Verification tiers:**
+
+| Tier | Requirements | Capability |
+|------|-------------|------------|
+| **SELF_DECLARED** | Founded by any verified human | No attestation weight |
+| **ATTESTED** | ≥3 high-trust members attest legitimacy | System recognition |
+| **VERIFIED** | ≥`VERIFIED_MIN_MEMBERS` (10) attested members, average trust ≥`VERIFIED_MIN_AVG_TRUST` (0.50) | Full organisational standing |
+
+**Constitutional equality.** Within organisational spaces, no member — regardless of external title, seniority, or role — has more influence than any other. The CEO and the cleaner are constitutionally equal. Internal discussions follow the same content-only, no-identity rules as the Assembly. Organisation membership does not affect individual trust scores.
+
+**What organisations are NOT:** not governance bodies (no constitutional voting power), not employers (individuals post missions, not organisations), not trust pools (membership ≠ trust), not hierarchies (no org-level roles or admin powers beyond attestation).
+
+Design tests: #67 (no binding governance decisions), #68 (no role-based governance power), #69 (no purchasable membership).
+
+✅ *Implemented and tested. Organisation Registry in `src/genesis/governance/organisation_registry.py`. 53 tests covering tiered verification, constitutional equality, attestation mechanics.*
+
+### 11.3 Domain Expert Pools
+
+Genesis draws a clear line between governance and operations. Governance is egalitarian — a hospital cleaner and a neurosurgeon have identical voting power on constitutional amendments. Operations are meritocratic — a mission requiring neurosurgical skill matches only workers with demonstrated domain trust. This is competence matching, not hierarchy. The cleaner can earn surgical domain trust by demonstrating surgical competence. The gate is ability, not title.
+
+**Domain expertise is earned, not declared.** An actor's domain expertise is determined by their domain trust score — earned through completed missions and quality assessments in that domain. There is no "domain expert" title; there is only demonstrated capability reflected in scores. The domain taxonomy may grow through standard constitutional process.
+
+**Machine domain clearance.** Machines may be cleared for domain-specific operational work within an organisation through a structured process: nomination by the organisation, unanimous approval by a quorum of ≥3 domain experts (trust ≥ `CLEARANCE_MIN_DOMAIN_TRUST` = 0.60), and annual review. The human operator remains fully responsible.
+
+Design tests: #70 (no clearance without domain expert verification), #71 (clearance cannot transfer governance voting), #72 (no autonomous operation without annual re-authorisation).
+
+✅ *Implemented and tested. Domain Expert Pools in `src/genesis/governance/domain_experts.py`. 41 tests covering earned expertise, machine clearance, autonomous operation prerequisites.*
+
+## 12. Machine Intelligence and Agency
+
+### 12.1 The anti-dogma principle
+
+Genesis does not assume the permanent superiority of any class of intelligence over another. It assumes that capability must be demonstrated, trust must be earned, and governance must be democratic. The constitution is designed to evolve with the capabilities of the actors it serves — not to permanently foreclose possibilities that the founders cannot yet imagine.
+
+### 12.2 The four-tier pathway
+
+Machine participation follows a structured progression. Each tier demands more demonstrated capability, more verified trust, and more rigorous oversight:
+
+| Tier | Name | Key requirement | Responsibility |
+|------|------|----------------|----------------|
+| **1** | Domain Clearance | Quorum of ≥3 experts (trust ≥0.60), unanimous | Human operator |
+| **2** | Autonomous Operation | Quorum of ≥5 experts (trust ≥0.70), machine domain trust ≥0.60, annual re-auth | Human operator |
+| **3** | Autonomous Domain Agency | 5 continuous years at Tier 2, domain trust ≥0.70, full constitutional amendment | Machine itself |
+| **4** | Extended Domain Agency | Independent Tier 3 per domain | Machine itself (per domain) |
+
+### 12.3 Tier 3 — the constitutional threshold
+
+Tier 3 is the point at which a machine transitions from tool to agent — assuming constitutional responsibility for its own domain-specific actions. The requirements are deliberately extraordinary:
+
+1. **Track record:** Minimum `TIER3_MIN_YEARS_AT_TIER2 = 5` continuous years at Tier 2 with zero constitutional violations. The clock resets on any violation.
+2. **Domain trust:** Continuous ≥ `TIER3_MIN_DOMAIN_TRUST = 0.70` throughout the qualifying period.
+3. **Full constitutional amendment process:** The petition is processed through all three chambers (proposal, ratification, challenge) with all geographic diversity requirements, supermajority thresholds, cooling-off periods, and confirmation votes. Per individual machine, per domain. No batch process, no precedent shortcut.
+4. **Human initiation:** Only the machine's human operator can file the petition — machines cannot petition for their own status.
+
+**What Tier 3 grants:** independent mission acceptance in the cleared domain, direct trust consequences (gains and losses accrue to the machine), nomination of other machines for Tier 1. **What it does not grant:** no governance voting (MACHINE_VOTING_EXCLUSION is entrenched), no general agency (always domain-scoped), no self-modification of status.
+
+### 12.4 Revocation and safeguards
+
+Autonomous domain agency can be revoked through the same amendment process that granted it. Additionally: any single domain expert can file an emergency suspension, failed annual re-authorisation reverts to Tier 2, and any constitutional violation reverts to Tier 1 pending adjudication.
+
+Design tests: #73 (no Tier 3 without full amendment), #74 (no governance voting at Tier 3), #75 (no self-petition), #76 (no permanent foreclosure — structured pathway exists), #81 (machine self-improvement cannot bypass constitutional constraints).
+
+📋 *Constitutional principle. Four-tier pathway defined in constitution and enforced in code (`src/genesis/governance/machine_agency.py`, 55 tests). Tier 3 activation trigger: when the first machine meets qualifying criteria — minimum 5 years from first Tier 2 clearance.*
+
+## 13. Distributed Systems
+
+### 13.1 Distributed intelligence
+
+Genesis is not merely a market for labour — it is a network that becomes collectively more capable through the work it coordinates. Every completed mission, every quality review, every trust assessment, every Assembly thread contributes to a shared intelligence that no single participant possesses. This intelligence is structural, not centralised — it emerges from the interaction of trust, quality, and open work.
+
+The Open Work principle (§14.4) ensures insights flow by default. The trust infrastructure ensures they can be evaluated without blind faith. The constitutional constraints ensure no entity can capture, restrict, or monopolise work-derived insights.
+
+**InsightSignal Protocol.** Defines a structured contract for propagating work-derived insights: signal identification, source provenance, insight type taxonomy (PATTERN, CAPABILITY, QUALITY_SIGNAL, MARKET_SIGNAL, METHODOLOGY, WARNING), confidence scoring, and evidence hashing. The InsightRegistry enforces constitutional compliance — no insight restriction for private advantage.
+
+Design test: #92 (no entity can restrict work-derived insight flow for private advantage).
+
+🔧 *Protocol defined (`src/genesis/intelligence/insight_protocol.py`). Active pipeline (cross-mission propagation) triggers post-web-layer when real missions generate discoverable insights. 27 tests.*
+
+### 13.2 Auto-immune system
+
+Genesis defends itself through a distributed immune system. Every immune mechanism — compliance screening, trust gates, penalty escalation, quality review, quarantine, decommission — contributes to a collective response that no single component provides alone. Threat signals propagate across the network: detection in one area alerts the whole system.
+
+**Graduated autonomy.** The immune system earns autonomy through demonstrated reliability, not time-based gates:
+- **LOW severity:** auto-logged, no human needed.
+- **MEDIUM severity:** auto-flagged, queued for review.
+- **HIGH/CRITICAL severity:** blocked until a randomised domain-expert human overseer approves.
+
+The boundary between automated and human-reviewed response may shift through standard amendment, but high-risk actions (trust nuking, quarantine, decommission) never auto-execute without human oversight.
+
+**No permanent immune overseer.** Overseers are randomly selected from the Domain Expert Pool (security domain) at trust ≥ `IMMUNE_OVERSIGHT_TRUST_MIN = 0.85`. During G0, the founder designates up to `BOOTSTRAP_OVERSEER_POOL_MAX = 5` qualified individuals (white-hat security competence). Bootstrap designations expire automatically when the organic high-trust pool reaches `BOOTSTRAP_SUNSET_ORGANIC_THRESHOLD = 10` qualified humans, or at First Light — whichever comes first. No chain delegation. All G0 designations face retroactive ratification at G1.
+
+**ThreatSignal Protocol.** Defines threat taxonomy (ANOMALOUS_TRUST, COLLUSION, QUALITY_DEGRADATION, COMPLIANCE_PATTERN, BEHAVIOURAL_DRIFT, MANIPULATION), severity classification, and resolution records. Every human oversight decision is a training signal — upheld detections strengthen future detection; rejected false positives refine rules.
+
+Design tests: #93 (no unreviewed high-risk actions), #94 (no permanent immune overseer), #95 (learning from resolved incidents).
+
+🔧 *Protocol defined (`src/genesis/intelligence/threat_protocol.py`). Cross-component wiring (collusion detection, drift analysis, forensic feedback) triggers post-web-layer when real actors generate behavioural data. 37 tests.*
+
+## 14. Human Dignity
+
+### 14.1 Protected leave and trust freeze
+
+Life events — illness, bereavement, disability, mental health crises, caregiving, pregnancy, child care — are not inactivity. Without protection, an actor who gets sick loses trust through no fault of their own.
+
+A human actor may petition anonymously for a temporary trust freeze. The petition is routed to a randomised quorum of ≥3 domain-specific experts (medical issues to medical professionals, legal issues to legal experts). Neither party sees the other's identity. If approved: trust score, domain scores, and skill levels are frozen exactly — no decay, no loss — until the actor returns.
+
+Anti-gaming protections: minimum cooldown between leave requests, annual cap on non-denied leaves. Adjudicator work is graded; poor-quality adjudication triggers removal and trust decay. This mechanism applies to human actors only — machines cannot request leave.
+
+✅ *Implemented and tested. Trust freeze mechanism in `src/genesis/models/trust_profile.py`. Quorum routing in `src/genesis/service.py`. Approximately 15 tests.*
+
+### 14.2 Death and memorialisation
+
+When a human participant dies, family or friends may petition with verifiable evidence to memorialise the account. A qualified quorum reviews the evidence blindly. If approved, the account becomes a permanent memorial: trust level and all verified achievements are frozen in perpetuity.
+
+If a memorialisation was made in error or through malicious misrepresentation, the affected person may petition to have the memorial lifted and their account restored, with heightened evidentiary standards and proof-of-life verification.
+
+📋 *Constitutional principle defined in Trust Constitution §14. Implementation trigger: web layer with real user accounts.*
+
+### 14.3 Disability accommodation
+
+Genesis must not impose a higher verification standard on disabled participants. The standard voice liveness path requires reading 6 words into a camera (automated, single-step). The disability accommodation path provides an equivalent standard through facilitation, not adjudication.
+
+**Facilitator model:** A single randomly-assigned high-trust facilitator (prefer domain expert in same geographic region, fall back to high-trust ≥0.70 human) guides the participant through an equivalent verification. The facilitator sees a pseudonym only (blind identity). The session is recorded with 72-hour retention. Unlimited preparation time, session timer starts from participant's ready signal. Caregiver assistance is permitted.
+
+If the facilitator declines, the system assigns a new one. If the participant disagrees with the outcome, a different facilitator handles the appeal. Abuse complaints against a facilitator route to a 3-member review panel.
+
+Design test: #86 (accommodation path not structurally harder than voice path).
+
+✅ *Implemented and tested. Facilitator model in `src/genesis/identity/quorum_verifier.py`. 50+ tests across quorum safeguards and liveness integration.*
+
+### 14.4 The Open Work Principle
+
+Openness is Genesis's primary anti-corruption mechanism. If every verified participant can see every mission, every deliverable, and every review, organised misconduct cannot hide behind opacity.
+
+**Three tiers of visibility:**
+1. **Existence metadata** (always visible): mission ID, listing ID, workflow ID, status transitions, timestamps.
+2. **Structural metadata** (always visible): creator and worker identities (pseudonymous but consistent), trust consequences, compliance verdicts, dispute outcomes, escrow state, reviewer diversity metrics.
+3. **Deliverable substance** (open by default): actual work product. May be restricted for genuinely sensitive content (medical data, proprietary algorithms, security-critical details) with recorded justification, time limit (default 365 days), and challenge mechanism.
+
+**No retroactive concealment.** Once a mission is completed and deliverables are public, they cannot be retroactively restricted. Genesis is structurally incompatible with concealment.
+
+Design tests: #77 (structural metadata always visible), #78 (restrictions require justification + time limit), #79 (no retroactive restriction), #80 (restrictions don't block reviewers).
+
+✅ *Implemented and tested. Work visibility enforcement in `src/genesis/models/market.py`. Open Work constitutional rules in `src/genesis/compliance/work_visibility.py`. 22 tests.*
+
+## 15. Integration with the Underlying Governance Engine
 The existing operational engine is positioned as the governance and evidence core supporting Genesis.
 
-### 11.1 Existing strengths
+### 15.1 Existing strengths
 1. Policy-as-code enforcement behavior.
 2. Runtime validation and guard modes.
 3. Evidence logging and cryptographic provenance pathways.
 4. Reviewer-oriented verification tooling.
 
-### 11.2 Genesis extensions required
+### 15.2 Genesis extensions required
 1. Mission and task orchestration.
 2. Identity and trust lifecycle management.
 3. Independent reviewer routing and anti-collusion controls.
 4. Dispute, appeals, and incident governance operations.
 5. Institutional governance console and policy lifecycle tooling.
 
-## 12. Compute Infrastructure and Economic Sovereignty
+## 16. Compute Infrastructure and Economic Sovereignty
 
-### 12.1 The extractive compute paradigm
+### 16.1 The extractive compute paradigm
 
 The dominant AI infrastructure model concentrates compute in hyperscale data centres operated by a small number of global corporations. These facilities consume finite public resources — land, water, electrical grid capacity — while generating negligible local employment relative to their capital intensity and environmental footprint. Infrastructure costs are socialised through public resource consumption; profits are privatised through shareholder returns. The result is a structural pattern of resource appropriation: local communities bear environmental and infrastructure costs, while economic value is captured globally by distant corporate entities.
 
 This pattern creates institutional risk for any platform that depends on it. Dependency on concentrated compute infrastructure introduces single points of regulatory capture, rent-seeking choke points, and jurisdictional vulnerability. For a system whose foundational principle is that governance cannot be bought, architectural dependency on entities whose governance is determined by capital markets represents a structural contradiction.
 
-### 12.2 Genesis compute trajectory
+### 16.2 Genesis compute trajectory
 
 Genesis addresses this through a three-epoch trajectory built into the framework from the outset.
 
@@ -760,20 +927,20 @@ compute_allocation = base_rate × max(0, 1 - distributed_capacity / required_cap
 
 As distributed capacity approaches requirements, the allocation degrades to zero and the full GCF flows to its broader humanitarian scope. No individual controls procurement — it is governed by the Economic Advisory mechanism (Phase E-6).
 
-### 12.3 GCF compute allocation
+### 16.3 GCF compute allocation
 
 The compute infrastructure allocation is a constitutional constant (amendable by standard constitutional process) but not an entrenched provision. The recommended ceiling is **25% of GCF receipts**, degrading to zero via the bootstrap curve formula.
 
 At the GCF contribution rate of 1%, this means a maximum effective deduction of 0.25% of gross mission value is directed to compute infrastructure. The remaining 75% of GCF flows to its broader scope: education, healthcare, infrastructure, arts, community development, and scientific research. As the system becomes self-sustaining, the compute allocation falls and the humanitarian allocation rises to 100%.
 
-### 12.4 Distributable and non-distributable compute
+### 16.4 Distributable and non-distributable compute
 
 Not all compute workloads are equally distributable:
 
 - **Inference and fine-tuning** are distributable across consumer hardware with appropriate coordination frameworks. These represent the majority of Genesis operational compute needs.
 - **Foundation model training** requires tightly coupled GPU clusters that cannot be effectively distributed across consumer devices. At scale, this is funded by the GCF as dedicated infrastructure.
 
-### 12.5 Institutional implications
+### 16.5 Institutional implications
 
 The three-epoch trajectory has direct implications for institutional evaluation:
 
@@ -783,9 +950,9 @@ The three-epoch trajectory has direct implications for institutional evaluation:
 
 This trajectory is engineering, not doctrine. The model is evolutionary, the activation is threshold-gated, and the mathematics will be visible to all participants.
 
-## 13. Risk Register (Program-Level)
+## 17. Risk Register (Program-Level)
 
-### 13.0 Threat modelling baseline
+### 17.0 Threat modelling baseline
 Threat modelling means defining what must be protected, who can cause harm, how harm can occur, and which controls prevent or contain harm.
 
 Institutional requirement:
@@ -793,38 +960,38 @@ Institutional requirement:
 2. Risk controls must distinguish what is mechanically prevented versus what is detected and remediated.
 3. High-severity incidents trigger threat-model and invariant review.
 
-### 13.1 Collusion risk
+### 17.1 Collusion risk
 Risk: reviewers coordinate or rubber-stamp low-quality work.  
 Controls: random reviewer assignment, no self-review, quorum checks for high-risk work, adversarial test tasks.
 
-### 13.2 Correlated error risk
+### 17.2 Correlated error risk
 Risk: multiple agents share the same blind spot and converge on a wrong answer.  
 Controls: model/method diversity, evidence-weighted adjudication, escalation for ambiguous tasks.
 
-### 13.3 Audit theater risk
+### 17.3 Audit theater risk
 Risk: logs exist but do not prove substantive quality.  
 Controls: strict evidence schema, reproducibility requirements, closure blocks for insufficient evidence.
 
-### 13.4 Reputation gaming risk
+### 17.4 Reputation gaming risk
 Risk: actors optimize visible metrics rather than truth.  
 Controls: slow trust accrual, fast penalty for severe failures, delayed scoring based on downstream outcomes.
 
-### 13.5 Human bottleneck risk
+### 17.5 Human bottleneck risk
 Risk: approval fatigue and oversight breakdown.  
 Controls: risk-tier workflow, exception-first human review, summarized evidence drill-down.
 
-### 13.6 Governance capture risk
+### 17.6 Governance capture risk
 Risk: concentration of control over mission policy and enforcement.  
 Controls: formal power separation, transparent policy revision logs, auditable appeals process.
 
-### 13.7 Overclaim risk
+### 17.7 Overclaim risk
 Risk: credibility loss through absolute promises.  
 Controls: institutional language standards that prohibit "bulletproof" and "impossible" claims.
 
-## 14. Identity and Trust Posture
+## 18. Identity and Trust Posture
 Genesis treats identity assurance as a layered, probabilistic governance function, not as a single binary test.
 
-### 14.1 Principles
+### 18.1 Principles
 1. Trust is longitudinal, not instantaneous.
 2. Identity assurance should combine behavioral history, cryptographic identity, and activity consistency.
 3. Timing-based challenge mechanisms may be used as one signal but not as sole truth source.
@@ -832,14 +999,14 @@ Genesis treats identity assurance as a layered, probabilistic governance functio
 5. Machine identities may earn operational trust, but do not receive constitutional voting rights.
 6. Constitutional voting is verified-human only; machine constitutional voting weight remains pinned at `0`.
 
-### 14.2 Prohibited design patterns
+### 18.2 Prohibited design patterns
 1. Trust purchase schemes.
 2. Trust transfer markets.
 3. Single-factor identity gating for high-stakes access.
 4. Unbounded trust accumulation.
 5. Trust-to-command conversion over other actors.
 
-## 15. Implementation Strategy
+## 19. Implementation Strategy
 Genesis should be deployed through reversible, measurable phases.
 
 ### Phase 1: Foundation
@@ -874,7 +1041,7 @@ Acceptance baseline:
 2. Stable policy lifecycle controls.
 3. Measurable reduction in post-approval defects.
 
-### 15.1 Executable governance controls (current baseline)
+### 19.1 Executable governance controls (current baseline)
 To keep governance concrete (not narrative-only), Genesis maintains machine-checkable control artifacts:
 
 1. Constitutional parameter baseline:
@@ -891,10 +1058,10 @@ To keep governance concrete (not narrative-only), Genesis maintains machine-chec
 
 Governance changes are not considered complete unless the policy artifacts and executable checks pass together.
 
-## 16. Measurement and Assurance Framework
+## 20. Measurement and Assurance Framework
 Genesis performance should be assessed by institutional outcomes, not output volume.
 
-### 16.1 Core indicators
+### 20.1 Core indicators
 1. First-pass review acceptance rate.
 2. Post-approval defect or rework rate.
 3. Time-to-completion by risk tier.
@@ -903,10 +1070,10 @@ Genesis performance should be assessed by institutional outcomes, not output vol
 6. Abuse attempts detected versus escaped.
 7. Human confidence and adoption retention.
 
-### 16.2 Assurance posture
+### 20.2 Assurance posture
 Claims should be evidence-based and periodically audited with external challenge testing where appropriate.
 
-## 17. Applicability and Initial Deployment Domains
+## 21. Applicability and Initial Deployment Domains
 High-potential early domains are those where traceability is already expected and failure costs are meaningful.
 
 1. Compliance documentation and controls evidence.
@@ -915,14 +1082,14 @@ High-potential early domains are those where traceability is already expected an
 4. Public-sector reporting and policy documentation.
 5. Safety and quality governance workflows.
 
-## 18. Communication Standard
+## 22. Communication Standard
 To preserve credibility, Genesis communications should follow three rules:
 
 1. Distinguish objective verification from normative judgment.
 2. Present risk reduction claims with measurable bounds.
 3. Avoid absolute language about certainty, security, or correctness.
 
-## 19. Conclusion
+## 23. Conclusion
 Project Genesis is a realistic and ambitious institutional proposal for responsible AI work coordination. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance and verification substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
 The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle.
