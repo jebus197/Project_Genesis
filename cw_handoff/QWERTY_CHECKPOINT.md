@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-06T21:30Z
+**Last updated:** 2026-03-06T23:00Z
 **Updated by:** CC (Claude)
-**Session:** Doc sweep — fix design test #77-78 numbering collision (+2 cascade #79-100), update all stale test counts (1739/1741/1762 → 1887) and design test counts (95 → 100). 11 files, 100 design tests #1-100 with no gaps or duplicates. 1887 tests (1771 core + 116 web). Git clean.
-**Head commit:** 544536a — Doc sweep: fix design test #77-78 collision (+2 cascade #79-100), update counts to 1887. COMMITTED AND PUSHED.
+**Session:** GCF custody model precision — replaced "distributed ledger" handwaving (10 instances across 8 files) with falsifiable accounting-identity language. Option C: constitutional escrow cascade. New storyboard paragraph + 2 bullets. New FAQ entry. GCFState docstring factual fix. P2P vision documented in MEMORY.md. 1887 tests (1771 core + 116 web). Git clean.
+**Head commit:** 4e512d1 — Replace 'distributed ledger' handwaving with falsifiable accounting-identity custody model. COMMITTED AND PUSHED.
 
 ---
 
@@ -39,14 +39,22 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `0a4b8c6` — qwerty checkpoint for doc sweep. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: 544536a posted with full summary + CX review advisory. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to 544536a, doc sweep line added, design test refs updated. |
-| **ty** | Tidy: docs lock-stepped | PASS | All 11 files updated: constitution, 5 test files, white paper, public brief, README, tech overview, QWERTY checkpoint. |
+| **w** | Written: committed + pushed | PASS | HEAD: `4e512d1` — GCF accounting-identity custody model. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: 4e512d1 posted with full summary. |
+| **r** | Recorded: MEMORY.md updated | PASS | Option C decision + P2P vision + network layer expansion. |
+| **ty** | Tidy: docs lock-stepped | PASS | 10 files: constitution, gcf.py, white paper, README (3), tech overview, events, landing, storyboard, FAQ. Zero "distributed ledger" refs remain. |
 
 ## Commits Pending CX Review
 
-CX review fixes + canonical doc rewrite + code commits (12 pending):
+CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+59. **`4e512d1`** — Replace 'distributed ledger' handwaving with falsifiable accounting-identity custody model
+    - 10 instances of "distributed ledger state IS the fund" across 8 files → precise accounting-identity language
+    - Option C: constitutional escrow cascade — GCF balance = contributions − disbursements (derived, not pooled)
+    - New storyboard paragraph + 2 bullets: "structurally unrobbable" explanation
+    - New FAQ: "Can anyone steal from the GCF?" with falsification test
+    - GCFState docstring factual fix: balance = contributed − disbursed (was incorrectly "sum of contributions")
+    - 10 files, 29 insertions, 15 deletions, 1887 tests passing
 
 58. **`544536a`** — Doc sweep: fix design test #77-78 collision (+2 cascade #79-100), update counts to 1887
     - Machine agency #73-78 duplicated Open Work #77-78. Renumbered all subsequent tests by +2.
