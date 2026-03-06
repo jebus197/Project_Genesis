@@ -7872,12 +7872,38 @@ class GenesisService:
 
         # Credit refund back to GCF
         try:
-            self._gcf_tracker.credit_refund(
+            refund_record = self._gcf_tracker.credit_refund(
                 proposal.requested_amount,
                 f"GCF-funded listing cancelled: {reason}",
+                now=now,
             )
         except ValueError as e:
             return ServiceResult(success=False, errors=[str(e)])
+
+        # Emit GCF_REFUND_CREDITED event — refunds are first-class audit records
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.GCF_REFUND_CREDITED,
+                    actor_id="gcf",
+                    payload={
+                        "proposal_id": proposal_id,
+                        "workflow_id": workflow_id,
+                        "refunded_amount": str(proposal.requested_amount),
+                        "reason": f"GCF-funded listing cancelled: {reason}",
+                        "gcf_balance_after": str(
+                            self._gcf_tracker.get_state().balance
+                        ),
+                    },
+                    timestamp_utc=now,
+                )
+                self._event_log.append(event)
+            except (ValueError, OSError):
+                pass  # Event emission is best-effort, refund already recorded
+
+        # Persist GCF state — refund must survive restart
+        self._safe_persist_post_audit()
 
         return ServiceResult(
             success=True,

@@ -1175,11 +1175,11 @@ class StateStore:
         return workflows
 
     # ------------------------------------------------------------------
-    # GCF Tracker persistence (accounting identity: derived balance + contribution/disbursement records)
+    # GCF Tracker persistence (accounting identity: balance = contributed - disbursed + refunded)
     # ------------------------------------------------------------------
 
     def save_gcf(self, gcf_data: dict) -> None:
-        """Serialize GCF tracker state (balance, contributions, disbursements)."""
+        """Serialize GCF tracker state (balance, contributions, disbursements, refunds)."""
         self._state["gcf_tracker"] = gcf_data
 
     def load_gcf(self) -> Optional[dict]:

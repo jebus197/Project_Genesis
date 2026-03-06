@@ -99,6 +99,7 @@ class EventKind(str, enum.Enum):
     # Genesis Common Fund (GCF) events
     GCF_ACTIVATED = "gcf_activated"
     GCF_CONTRIBUTION_RECORDED = "gcf_contribution_recorded"
+    GCF_REFUND_CREDITED = "gcf_refund_credited"
     # Compliance events (Phase E-2)
     COMPLIANCE_SCREENING_COMPLETED = "compliance_screening_completed"
     COMPLIANCE_COMPLAINT_FILED = "compliance_complaint_filed"

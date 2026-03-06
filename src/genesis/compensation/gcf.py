@@ -9,8 +9,10 @@ Key properties:
 - Activates automatically at First Light (no human decision).
 - Trust-proportional but individually non-extractable — there is NO
   per-actor balance method. The fund is a shared commons.
-- The fund is an accounting identity (total_contributed - total_disbursed),
-  derived from the event log. Not a pool, not a vault. No bank. No custodian.
+- The fund is an accounting identity:
+      balance = total_contributed - total_disbursed + total_refunded
+  Derived from three immutable record lists. Not a pool, not a vault.
+  No bank. No custodian. Every term maps to auditable records.
 - Deducted from worker_payout (after commission and creator allocation).
 - Scope: all human activity that doesn't increase net human suffering.
 
@@ -53,19 +55,38 @@ class GCFDisbursement:
     disbursed_utc: datetime
 
 
+@dataclass(frozen=True)
+class GCFRefund:
+    """A single refund credited back to the Genesis Common Fund.
+
+    Recorded when a GCF-funded listing is cancelled and escrowed funds
+    return to the commons. This is NOT a contribution (no new money in)
+    and NOT a disbursement reversal (the disbursement happened). It is a
+    separate, auditable event: funds returning from a cancelled operation.
+    """
+    amount: Decimal
+    reason: str
+    refunded_utc: datetime
+
+
 @dataclass
 class GCFState:
     """Observable state of the Genesis Common Fund.
 
-    The balance is a derived accounting identity: total_contributed minus
-    total_disbursed. Individual actor shares are architecturally unknowable
-    — no per-actor balance query exists.
+    The balance is a derived accounting identity:
+        balance = total_contributed - total_disbursed + total_refunded
+
+    Three terms, three immutable record lists, one verifiable invariant.
+    Individual actor shares are architecturally unknowable — no per-actor
+    balance query exists.
     """
     balance: Decimal = Decimal("0")
     total_contributed: Decimal = Decimal("0")
     total_disbursed: Decimal = Decimal("0")
+    total_refunded: Decimal = Decimal("0")
     contribution_count: int = 0
     disbursement_count: int = 0
+    refund_count: int = 0
     activated: bool = False
     activated_utc: Optional[datetime] = None
 
@@ -98,6 +119,7 @@ class GCFTracker:
         self._state = GCFState()
         self._contributions: list[GCFContribution] = []
         self._disbursements: list[GCFDisbursement] = []
+        self._refunds: list[GCFRefund] = []
 
     @property
     def is_active(self) -> bool:
@@ -157,10 +179,21 @@ class GCFTracker:
     def get_state(self) -> GCFState:
         """Return the current observable GCF state.
 
-        Returns a snapshot — the state object is mutable internally
-        but callers should treat the returned object as read-only.
+        Returns a COPY — mutations to the returned object cannot
+        corrupt internal state. The internal accounting identity
+        (balance = contributed - disbursed + refunded) is protected.
         """
-        return self._state
+        return GCFState(
+            balance=self._state.balance,
+            total_contributed=self._state.total_contributed,
+            total_disbursed=self._state.total_disbursed,
+            total_refunded=self._state.total_refunded,
+            contribution_count=self._state.contribution_count,
+            disbursement_count=self._state.disbursement_count,
+            refund_count=self._state.refund_count,
+            activated=self._state.activated,
+            activated_utc=self._state.activated_utc,
+        )
 
     def record_disbursement(
         self,
@@ -220,28 +253,55 @@ class GCFTracker:
         self,
         amount: Decimal,
         reason: str,
-    ) -> None:
+        now: Optional[datetime] = None,
+    ) -> GCFRefund:
         """Credit a refund back to the GCF balance.
 
         Used when a GCF-funded listing is cancelled — the escrowed funds
         return to the commons. This is NOT a contribution (does not
         increment total_contributed or contribution_count). It is a
-        reversal of a prior disbursement.
+        separate, auditable event: funds returning from a cancelled operation.
+
+        The accounting identity after a refund:
+            balance = total_contributed - total_disbursed + total_refunded
 
         Args:
             amount: The refund amount.
             reason: Human-readable reason for the refund.
+            now: Timestamp (defaults to UTC now).
+
+        Returns:
+            The recorded GCFRefund.
 
         Raises:
-            ValueError: If GCF is not activated or amount is not positive.
+            ValueError: If GCF is not activated, amount is not positive,
+                       or refund would exceed net disbursed amount.
         """
         if not self._state.activated:
             raise ValueError("GCF not yet activated — refunds require First Light")
         if amount <= Decimal("0"):
             raise ValueError(f"Refund amount must be positive, got {amount}")
+        net_disbursed = self._state.total_disbursed - self._state.total_refunded
+        if amount > net_disbursed:
+            raise ValueError(
+                f"Refund amount {amount} exceeds net disbursed {net_disbursed} "
+                f"(total_disbursed={self._state.total_disbursed}, "
+                f"total_refunded={self._state.total_refunded}). "
+                f"Cannot refund money that was never disbursed."
+            )
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        refund = GCFRefund(
+            amount=amount,
+            reason=reason,
+            refunded_utc=now,
+        )
+        self._refunds.append(refund)
         self._state.balance += amount
-        # Note: total_disbursed is NOT decremented — the disbursement happened,
-        # the refund is a separate event. Net spend = total_disbursed - refunds.
+        self._state.total_refunded += amount
+        self._state.refund_count += 1
+        return refund
 
     def get_contributions(self) -> list[GCFContribution]:
         """Return all recorded contributions (for audit)."""
@@ -250,6 +310,24 @@ class GCFTracker:
     def get_disbursements(self) -> list[GCFDisbursement]:
         """Return all recorded disbursements (for audit)."""
         return list(self._disbursements)
+
+    def get_refunds(self) -> list[GCFRefund]:
+        """Return all recorded refunds (for audit)."""
+        return list(self._refunds)
+
+    def verify_accounting_identity(self) -> bool:
+        """Verify that balance == contributed - disbursed + refunded.
+
+        Returns True if the identity holds. This is the fundamental
+        falsification target for GCF integrity: if this returns False,
+        something has corrupted the fund state.
+        """
+        expected = (
+            self._state.total_contributed
+            - self._state.total_disbursed
+            + self._state.total_refunded
+        )
+        return self._state.balance == expected
 
     # ------------------------------------------------------------------
     # Persistence helpers
@@ -261,8 +339,10 @@ class GCFTracker:
             "balance": str(self._state.balance),
             "total_contributed": str(self._state.total_contributed),
             "total_disbursed": str(self._state.total_disbursed),
+            "total_refunded": str(self._state.total_refunded),
             "contribution_count": self._state.contribution_count,
             "disbursement_count": self._state.disbursement_count,
+            "refund_count": self._state.refund_count,
             "activated": self._state.activated,
             "activated_utc": (
                 self._state.activated_utc.isoformat()
@@ -288,17 +368,36 @@ class GCFTracker:
                 }
                 for d in self._disbursements
             ],
+            "refunds": [
+                {
+                    "amount": str(r.amount),
+                    "reason": r.reason,
+                    "refunded_utc": r.refunded_utc.isoformat(),
+                }
+                for r in self._refunds
+            ],
         }
 
     @classmethod
     def from_dict(cls, data: dict) -> "GCFTracker":
-        """Reconstruct a GCFTracker from persisted data."""
+        """Reconstruct a GCFTracker from persisted data.
+
+        After loading all three record lists, re-derives the balance from
+        the records and asserts it matches the stored balance. If it
+        doesn't, the persisted data has been tampered with or corrupted.
+
+        Raises:
+            ValueError: If the stored balance doesn't match the derived
+                       balance (integrity violation).
+        """
         tracker = cls()
         tracker._state.balance = Decimal(data["balance"])
         tracker._state.total_contributed = Decimal(data["total_contributed"])
         tracker._state.total_disbursed = Decimal(data["total_disbursed"])
+        tracker._state.total_refunded = Decimal(data.get("total_refunded", "0"))
         tracker._state.contribution_count = data["contribution_count"]
         tracker._state.disbursement_count = data["disbursement_count"]
+        tracker._state.refund_count = data.get("refund_count", 0)
         tracker._state.activated = data["activated"]
         if data.get("activated_utc"):
             tracker._state.activated_utc = datetime.fromisoformat(
@@ -323,4 +422,71 @@ class GCFTracker:
             )
             for d in data.get("disbursements", [])
         ]
+        tracker._refunds = [
+            GCFRefund(
+                amount=Decimal(r["amount"]),
+                reason=r["reason"],
+                refunded_utc=datetime.fromisoformat(r["refunded_utc"]),
+            )
+            for r in data.get("refunds", [])
+        ]
+
+        # P4 integrity check: re-derive ALL fields from record lists.
+        # Catches balance tampering, total tampering, and count tampering.
+        derived_contributed = sum(
+            (c.amount for c in tracker._contributions), Decimal("0")
+        )
+        derived_disbursed = sum(
+            (d.amount for d in tracker._disbursements), Decimal("0")
+        )
+        derived_refunded = sum(
+            (r.amount for r in tracker._refunds), Decimal("0")
+        )
+        derived_balance = derived_contributed - derived_disbursed + derived_refunded
+
+        if derived_balance != tracker._state.balance:
+            raise ValueError(
+                f"GCF integrity violation on recovery: stored balance "
+                f"{tracker._state.balance} != derived balance {derived_balance} "
+                f"(contributed={derived_contributed}, disbursed={derived_disbursed}, "
+                f"refunded={derived_refunded})"
+            )
+
+        # Cross-verify totals against record sums
+        if derived_contributed != tracker._state.total_contributed:
+            raise ValueError(
+                f"GCF integrity violation: stored total_contributed "
+                f"{tracker._state.total_contributed} != derived {derived_contributed}"
+            )
+        if derived_disbursed != tracker._state.total_disbursed:
+            raise ValueError(
+                f"GCF integrity violation: stored total_disbursed "
+                f"{tracker._state.total_disbursed} != derived {derived_disbursed}"
+            )
+        if derived_refunded != tracker._state.total_refunded:
+            raise ValueError(
+                f"GCF integrity violation: stored total_refunded "
+                f"{tracker._state.total_refunded} != derived {derived_refunded}"
+            )
+
+        # Cross-verify counts against list lengths
+        if len(tracker._contributions) != tracker._state.contribution_count:
+            raise ValueError(
+                f"GCF integrity violation: stored contribution_count "
+                f"{tracker._state.contribution_count} != actual "
+                f"{len(tracker._contributions)}"
+            )
+        if len(tracker._disbursements) != tracker._state.disbursement_count:
+            raise ValueError(
+                f"GCF integrity violation: stored disbursement_count "
+                f"{tracker._state.disbursement_count} != actual "
+                f"{len(tracker._disbursements)}"
+            )
+        if len(tracker._refunds) != tracker._state.refund_count:
+            raise ValueError(
+                f"GCF integrity violation: stored refund_count "
+                f"{tracker._state.refund_count} != actual "
+                f"{len(tracker._refunds)}"
+            )
+
         return tracker
