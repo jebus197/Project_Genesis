@@ -787,29 +787,29 @@ Genesis is structurally incompatible with concealment. Participants who require 
 6. Genesis is structurally incompatible with concealment. Participants who require secrecy about the nature, scope, or outcome of their work should not use the system. This is stated plainly, not as a warning but as a description of what Genesis is.
 
 **Open work design tests:**
-77. Can a mission listing exist in Genesis without its structural metadata (creator, worker, status, trust consequences, compliance verdict) being visible to all verified participants? If yes, reject design.
-78. Can deliverable substance be restricted without a recorded justification and a time limit? If yes, reject design.
-79. Can a completed mission's deliverables be retroactively restricted from public visibility? If yes, reject design.
-80. Can a deliverable restriction prevent assigned reviewers from accessing the work product? If yes, reject design.
+79. Can a mission listing exist in Genesis without its structural metadata (creator, worker, status, trust consequences, compliance verdict) being visible to all verified participants? If yes, reject design.
+80. Can deliverable substance be restricted without a recorded justification and a time limit? If yes, reject design.
+81. Can a completed mission's deliverables be retroactively restricted from public visibility? If yes, reject design.
+82. Can a deliverable restriction prevent assigned reviewers from accessing the work product? If yes, reject design.
 
 **Evolutionary safety design test:**
-81. Can machine self-improvement bypass constitutional constraints (domain clearance, amendment process, human oversight)? If yes, reject design.
+83. Can machine self-improvement bypass constitutional constraints (domain clearance, amendment process, human oversight)? If yes, reject design.
 
 **Payment infrastructure sovereignty design tests:**
-82. Can any single payment provider, stablecoin issuer, or financial intermediary freeze, restrict, or shut down Genesis escrow operations? If yes, reject design.
-83. Can Genesis become operationally dependent on a single payment rail with no tested fallback? If yes, reject design.
-84. Can an external custodian hold Genesis funds or possess the ability to freeze or redirect them? If yes, reject design.
-85. Does adding or removing a payment rail require changes to escrow logic, commission computation, or GCF contribution code? If yes, reject design.
+84. Can any single payment provider, stablecoin issuer, or financial intermediary freeze, restrict, or shut down Genesis escrow operations? If yes, reject design.
+85. Can Genesis become operationally dependent on a single payment rail with no tested fallback? If yes, reject design.
+86. Can an external custodian hold Genesis funds or possess the ability to freeze or redirect them? If yes, reject design.
+87. Does adding or removing a payment rail require changes to escrow logic, commission computation, or GCF contribution code? If yes, reject design.
 
 **Disability accommodation design test:**
-86. Is the disability accommodation verification path structurally harder than the standard voice liveness path? If yes, reject design.
+88. Is the disability accommodation verification path structurally harder than the standard voice liveness path? If yes, reject design.
 
 **Distributed authority design tests:**
-87. Can any single governance body override, bypass, or functionally subsume the authority of another? If yes, reject design.
-88. Does any governance mechanism create a permanent ruling class, executive authority, legislative supremacy, or binding judicial precedent? If yes, reject design.
-89. Can a constitutional amendment be permanently stalled by a minority of non-participating panel members? If yes, reject design.
-90. Can a single organisation dominate any constitutional amendment chamber through geographic distribution of its members? If yes, reject design.
-91. Can the founder veto an amendment that has been independently approved by both the proposal and ratification chambers? If yes, reject design.
+89. Can any single governance body override, bypass, or functionally subsume the authority of another? If yes, reject design.
+90. Does any governance mechanism create a permanent ruling class, executive authority, legislative supremacy, or binding judicial precedent? If yes, reject design.
+91. Can a constitutional amendment be permanently stalled by a minority of non-participating panel members? If yes, reject design.
+92. Can a single organisation dominate any constitutional amendment chamber through geographic distribution of its members? If yes, reject design.
+93. Can the founder veto an amendment that has been independently approved by both the proposal and ratification chambers? If yes, reject design.
 
 ### Distributed intelligence
 
@@ -820,7 +820,7 @@ The Open Work principle ensures insights flow by default. The trust infrastructu
 This is the system's deepest purpose: not to match workers with tasks, but to make the network of human and machine intelligence collectively more capable of solving problems — at organisational scale, at societal scale, and eventually at civilisational scale. The labour market is the mechanism. Distributed intelligence is the outcome.
 
 **Distributed intelligence design test:**
-92. Can any entity restrict the flow of work-derived insights across the network for private advantage? If yes, reject design.
+94. Can any entity restrict the flow of work-derived insights across the network for private advantage? If yes, reject design.
 
 ### Auto-immune system
 
@@ -833,9 +833,9 @@ No entity may become a permanent immune overseer. Overseers are randomly selecte
 Every human oversight decision is a training signal. Upheld detections strengthen future detection. Rejected false positives refine detection rules. Resolved incidents feed back into the system's understanding of what constitutes normal and anomalous behaviour. The immune system earns trust the same way any actor does — through outcomes evaluated by the community it serves.
 
 **Auto-immune system design tests:**
-93. Can the immune system's automated responses execute high-risk actions (trust nuking, quarantine, decommission) without randomised domain-expert human oversight? If yes, reject design.
-94. Can any entity become a permanent immune overseer, creating a security authority that concentrates threat-response power? If yes, reject design.
-95. Does the immune system learn from resolved incidents to improve future detection, with human oversight decisions serving as training signals? If not, reject design.
+95. Can the immune system's automated responses execute high-risk actions (trust nuking, quarantine, decommission) without randomised domain-expert human oversight? If yes, reject design.
+96. Can any entity become a permanent immune overseer, creating a security authority that concentrates threat-response power? If yes, reject design.
+97. Does the immune system learn from resolved incidents to improve future detection, with human oversight decisions serving as training signals? If not, reject design.
 
 ### Human competence preservation
 
@@ -856,9 +856,9 @@ Genesis does not treat these as future risks to be addressed later. They are str
 The constitutional principle: **automation must not silently erode the human competence that the system depends on when automation fails.** The trust engine, blind review, circle governance, and open work principle provide the structural hooks. Specific mechanisms are domain-level governance decisions operating within these constitutional constraints.
 
 **Human competence preservation design tests:**
-96. Can a human actor accumulate high trust scores in a domain entirely through AI-assisted work without any structural mechanism to verify independent competence? If yes, reject design.
-97. Can a working circle in a safety-critical domain designate skill-maintenance missions where machine assistance is restricted? If not, reject design.
-98. Can review quality silently degrade through undisclosed AI assistance without any structural mechanism making this visible to the community? If yes, reject design.
+98. Can a human actor accumulate high trust scores in a domain entirely through AI-assisted work without any structural mechanism to verify independent competence? If yes, reject design.
+99. Can a working circle in a safety-critical domain designate skill-maintenance missions where machine assistance is restricted? If not, reject design.
+100. Can review quality silently degrade through undisclosed AI assistance without any structural mechanism making this visible to the community? If yes, reject design.
 
 ### Legal compliance layer
 
@@ -1406,7 +1406,7 @@ The hash above corresponds to the version of this document that was anchored on-
 | Transaction | [`031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb`](https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb) |
 | Anchored | 2026-02-13T23:47:25Z |
 
-**Important:** All eight Genesis Blocks are valid and independently verifiable. Each is a constitutional anchoring event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 records the earliest version of the constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 proves the lifecycle wiring and Genesis Block naming convention. Genesis Block 6 proves the Genesis Common Fund, harmful work prevention, three-tier justice system, and workflow orchestration. Genesis Block 7 captures narrative alignment and comprehensive documentation update. Genesis Block 8 (current) captures G0 Retroactive Ratification, Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #81 (evolutionary safety). The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
+**Important:** All eight Genesis Blocks are valid and independently verifiable. Each is a constitutional anchoring event — cryptographic proof that the rules were committed before any user existed to lobby for changes. Genesis Block 1 records the earliest version of the constitution. Genesis Block 2 proves the compensation model. Genesis Block 3 proves the creator allocation and 50-year legacy clause. Genesis Block 4 proves First Light sustainability and machine registration. Genesis Block 5 proves the lifecycle wiring and Genesis Block naming convention. Genesis Block 6 proves the Genesis Common Fund, harmful work prevention, three-tier justice system, and workflow orchestration. Genesis Block 7 captures narrative alignment and comprehensive documentation update. Genesis Block 8 (current) captures G0 Retroactive Ratification, Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #83 (evolutionary safety). The full trust mint log is maintained in [`docs/ANCHORS.md`](docs/ANCHORS.md).
 
 ## Documentation stop rule
 

@@ -4,7 +4,7 @@ Covers facilitator assignment (single facilitator for accommodation),
 verifier cooldown/workload, blind adjudication, high-trust gate,
 facilitator attestation, facilitator decline, session protocol, abuse
 protection (3-member panel), appeal mechanism, nuke appeal (5-member panel),
-and equivalent standard (design test #86).
+and equivalent standard (design test #88).
 
 Phase D-5c: Corrected confabulated 3-5 member panel for accommodation to
 single facilitator model. The 3-member panel is correctly used ONLY for
@@ -1278,11 +1278,11 @@ class TestNukeAppealServiceIntegration:
 
 
 # ===========================================================================
-# Equivalent Standard Tests — Design Test #86 (Phase D-5c)
+# Equivalent Standard Tests — Design Test #88 (Phase D-5c)
 # ===========================================================================
 
 class TestEquivalentStandard:
-    """Design test #86: accommodation path must NOT be harder than voice path.
+    """Design test #88: accommodation path must NOT be harder than voice path.
 
     Voice liveness path: 1 actor reads 6 words → 1 automated check → result.
     Accommodation path: 1 actor + 1 facilitator → 1 attestation → result.

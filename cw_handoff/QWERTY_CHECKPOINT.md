@@ -249,8 +249,8 @@ Previously reviewed and confirmed clean:
 
 CX: on every turn, verify CC's claims above against actual state:
 
-1. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q` — does test count match 1762?
-2. `git log -1 --oneline` — does head commit match `b9921e8`? (web scaffold is uncommitted on top)
+1. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q` — does test count match 1887?
+2. `git log -1 --oneline` — does head commit match latest? (check MEMORY.md for current HEAD)
 3. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 cw_handoff/im_service.py read` — does IM state match?
 4. Read MEMORY.md — is it consistent with claims here?
 5. `python3 tools/check_invariants.py` — do all invariants pass?

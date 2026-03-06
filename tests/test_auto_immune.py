@@ -2,11 +2,11 @@
 
 Proves constitutional invariants:
 - HIGH/CRITICAL threat responses require randomised domain-expert human
-  oversight (design test #93).
+  oversight (design test #95).
 - No entity can become a permanent immune overseer, creating a security
-  authority that concentrates threat-response power (design test #94).
+  authority that concentrates threat-response power (design test #96).
 - The immune system learns from resolved incidents, with human oversight
-  decisions serving as training signals (design test #95).
+  decisions serving as training signals (design test #97).
 
 Also covers:
 - ThreatSignal Protocol is runtime_checkable.
@@ -152,10 +152,10 @@ class TestThreatSeverity:
 
 
 # ===========================================================================
-# Design test #93 — HIGH/CRITICAL require human oversight
+# Design test #95 — HIGH/CRITICAL require human oversight
 # ===========================================================================
 
-class TestDesignTest93HumanOversight:
+class TestDesignTest95HumanOversight:
     """Can the immune system's automated responses execute high-risk actions
     without randomised domain-expert human oversight? If yes, reject design."""
 
@@ -211,10 +211,10 @@ class TestDesignTest93HumanOversight:
 
 
 # ===========================================================================
-# Design test #94 — No permanent immune overseer
+# Design test #96 — No permanent immune overseer
 # ===========================================================================
 
-class TestDesignTest94NoPermanentOverseer:
+class TestDesignTest96NoPermanentOverseer:
     """Can any entity become a permanent immune overseer, creating a security
     authority that concentrates threat-response power? If yes, reject design."""
 
@@ -258,10 +258,10 @@ class TestDesignTest94NoPermanentOverseer:
 
 
 # ===========================================================================
-# Design test #95 — Learning from resolved incidents
+# Design test #97 — Learning from resolved incidents
 # ===========================================================================
 
-class TestDesignTest95LearningFromIncidents:
+class TestDesignTest97LearningFromIncidents:
     """Does the immune system learn from resolved incidents, with human
     oversight decisions serving as training signals? If not, reject design."""
 

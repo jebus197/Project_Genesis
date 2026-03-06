@@ -503,7 +503,7 @@ When regulation intersects with Genesis: (1) Is it compatible with entrenched pr
 
 Honesty requires distinguishing what exists from what is designed.
 
-**What exists today:** 1739 automated tests across 95 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
+**What exists today:** 1887 automated tests across 100 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
 
 **What is designed but not yet connected:** Real speech-to-text for voice verification (currently a stub). Persistence layer (currently in-memory). Real cryptographic signatures (currently format validation). Payment rail integrations (protocol exists, no concrete rails). Insight signal propagation (protocol exists, no active pipeline). Auto-immune cross-component wiring (protocol exists, no detection engines). These all have defined triggers — they activate when real users generate real data.
 
@@ -613,7 +613,7 @@ Its thesis is straightforward:
 3. Institutions encoded in software can outperform ad hoc coordination.
 4. Public-benefit systems require accountability by design, not by promise.
 
-What makes Genesis different from other proposals: the governance is tested (95 design tests, 1739 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
+What makes Genesis different from other proposals: the governance is tested (100 design tests, 1887 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
 
 Genesis is not a finished product. It is a foundation — constitutional, architectural, and economic — upon which a self-governing, intelligence-agnostic work network can be built. Its long-term value will be determined not by how quickly it grows, but by whether it remains trustworthy as it scales.
 

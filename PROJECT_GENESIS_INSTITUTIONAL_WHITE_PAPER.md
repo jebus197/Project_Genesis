@@ -249,7 +249,7 @@ This is enforced through seven constitutional requirements:
 
 All payment sovereignty constants are entrenched. A system that can be shut down by a single provider's business decision is not sovereign — it is rented.
 
-✅ *Architectural layer implemented. `PaymentRail` Protocol and `PaymentRailRegistry` in `src/genesis/compensation/payment_rail.py`. Design tests #82-85. Approximately 28 tests in `tests/test_payment_sovereignty.py`.*
+✅ *Architectural layer implemented. `PaymentRail` Protocol and `PaymentRailRegistry` in `src/genesis/compensation/payment_rail.py`. Design tests #84-87. Approximately 28 tests in `tests/test_payment_sovereignty.py`.*
 🔧 *Concrete payment rail integrations not yet connected. The protocol and registry define the contract; implementations are pending. Trigger: post-web-layer, before alpha (post-Step 7, pre-Step 11 in the development roadmap).*
 
 ### 7.7 Crypto volatility protection
@@ -528,7 +528,7 @@ Genesis provisions can be changed through a structured three-chamber amendment p
 
 **Phase transition handling.** Amendments with no chamber vote cast reset to `PROPOSED` under new thresholds when a governance phase transition occurs. Amendments with at least one completed chamber continue under original thresholds with a recorded note.
 
-✅ *Implemented and tested. Amendment engine in `src/genesis/governance/amendment.py`. Service layer in `src/genesis/service.py`. Design tests #57-60, #87-91. Approximately 60 tests across `tests/test_amendment_engine.py` and `tests/test_distributed_authority.py`.*
+✅ *Implemented and tested. Amendment engine in `src/genesis/governance/amendment.py`. Service layer in `src/genesis/service.py`. Design tests #57-60, #89-93. Approximately 60 tests across `tests/test_amendment_engine.py` and `tests/test_distributed_authority.py`.*
 
 ### 9.2 Entrenched provisions
 
@@ -560,7 +560,7 @@ Genesis rejects executive/legislative/judicial hierarchy. No governance body has
 4. **Organisations** coordinate but cannot govern. No organisation may vote as a bloc, impose rules on members beyond the constitution, or acquire governance authority. No single organisation may dominate any amendment chamber.
 5. **The Founder's Veto** is bounded: rejection-only, early-stage only, expires irreversibly at First Light (§9.4).
 
-✅ *Implemented and tested. Veto scope enforcement in `src/genesis/service.py`. Organisational diversity in chamber selection. Design tests #87-91. Approximately 26 tests in `tests/test_distributed_authority.py`.*
+✅ *Implemented and tested. Veto scope enforcement in `src/genesis/service.py`. Organisational diversity in chamber selection. Design tests #89-93. Approximately 26 tests in `tests/test_distributed_authority.py`.*
 
 ### 9.4 Founder's Veto
 
@@ -573,7 +573,7 @@ The founder retains transparent veto authority during the pre-sustainability boo
 
 The veto exists because a self-governing system cannot bootstrap itself — it needs a guardian until it can stand. A guardian who refuses to leave is not a guardian but a ruler.
 
-✅ *Implemented and tested. Veto wired to First Light trigger in `src/genesis/service.py`. Status gate enforced. Design test #91. Approximately 11 tests.*
+✅ *Implemented and tested. Veto wired to First Light trigger in `src/genesis/service.py`. Status gate enforced. Design test #93. Approximately 11 tests.*
 
 ### 9.5 First Light
 
@@ -803,7 +803,7 @@ Tier 3 is the point at which a machine transitions from tool to agent — assumi
 
 Autonomous domain agency can be revoked through the same amendment process that granted it. Additionally: any single domain expert can file an emergency suspension, failed annual re-authorisation reverts to Tier 2, and any constitutional violation reverts to Tier 1 pending adjudication.
 
-Design tests: #73 (no Tier 3 without amendment or approved-class procedural pathway), #74 (no governance voting at Tier 3), #75 (no self-petition), #76 (no permanent foreclosure — structured pathway exists), #77 (approved-class machines CAN gain Tier 3 procedurally), #78 (unapproved-class machines CANNOT bypass amendment), #81 (machine self-improvement cannot bypass constitutional constraints).
+Design tests: #73 (no Tier 3 without amendment or approved-class procedural pathway), #74 (no governance voting at Tier 3), #75 (no self-petition), #76 (no permanent foreclosure — structured pathway exists), #77 (approved-class machines CAN gain Tier 3 procedurally), #78 (unapproved-class machines CANNOT bypass amendment), #83 (machine self-improvement cannot bypass constitutional constraints).
 
 📋 *Constitutional principle. Four-tier pathway defined in constitution and enforced in code (`src/genesis/governance/machine_agency.py`, 55 tests). Tier 3 activation trigger: when the first machine meets qualifying criteria — minimum 5 years from first Tier 2 clearance.*
 
@@ -817,7 +817,7 @@ The Open Work principle (§14.4) ensures insights flow by default. The trust inf
 
 **InsightSignal Protocol.** Defines a structured contract for propagating work-derived insights: signal identification, source provenance, insight type taxonomy (PATTERN, CAPABILITY, QUALITY_SIGNAL, MARKET_SIGNAL, METHODOLOGY, WARNING), confidence scoring, and evidence hashing. The InsightRegistry enforces constitutional compliance — no insight restriction for private advantage.
 
-Design test: #92 (no entity can restrict work-derived insight flow for private advantage).
+Design test: #94 (no entity can restrict work-derived insight flow for private advantage).
 
 🔧 *Protocol defined (`src/genesis/intelligence/insight_protocol.py`). Active pipeline (cross-mission propagation) triggers post-web-layer when real missions generate discoverable insights. 27 tests.*
 
@@ -836,7 +836,7 @@ The boundary between automated and human-reviewed response may shift through sta
 
 **ThreatSignal Protocol.** Defines threat taxonomy (ANOMALOUS_TRUST, COLLUSION, QUALITY_DEGRADATION, COMPLIANCE_PATTERN, BEHAVIOURAL_DRIFT, MANIPULATION), severity classification, and resolution records. Every human oversight decision is a training signal — upheld detections strengthen future detection; rejected false positives refine rules.
 
-Design tests: #93 (no unreviewed high-risk actions), #94 (no permanent immune overseer), #95 (learning from resolved incidents).
+Design tests: #95 (no unreviewed high-risk actions), #96 (no permanent immune overseer), #97 (learning from resolved incidents).
 
 🔧 *Protocol defined (`src/genesis/intelligence/threat_protocol.py`). Cross-component wiring (collusion detection, drift analysis, forensic feedback) triggers post-web-layer when real actors generate behavioural data. 37 tests.*
 
@@ -868,7 +868,7 @@ Genesis must not impose a higher verification standard on disabled participants.
 
 If the facilitator declines, the system assigns a new one. If the participant disagrees with the outcome, a different facilitator handles the appeal. Abuse complaints against a facilitator route to a 3-member review panel.
 
-Design test: #86 (accommodation path not structurally harder than voice path).
+Design test: #88 (accommodation path not structurally harder than voice path).
 
 ✅ *Implemented and tested. Facilitator model in `src/genesis/identity/quorum_verifier.py`. 50+ tests across quorum safeguards and liveness integration.*
 
@@ -883,7 +883,7 @@ Openness is Genesis's primary anti-corruption mechanism. If every verified parti
 
 **No retroactive concealment.** Once a mission is completed and deliverables are public, they cannot be retroactively restricted. Genesis is structurally incompatible with concealment.
 
-Design tests: #77 (structural metadata always visible), #78 (restrictions require justification + time limit), #79 (no retroactive restriction), #80 (restrictions don't block reviewers).
+Design tests: #79 (structural metadata always visible), #80 (restrictions require justification + time limit), #81 (no retroactive restriction), #82 (restrictions don't block reviewers).
 
 ✅ *Implemented and tested. Work visibility enforcement in `src/genesis/models/market.py`. Open Work constitutional rules in `src/genesis/compliance/work_visibility.py`. 22 tests.*
 
@@ -1018,7 +1018,7 @@ Residual risk: HIGH during G0. Mitigated structurally but not eliminated until G
 
 ### 18.9 Auto-immune coverage gaps
 Risk: the auto-immune system (§13.2) has a defined protocol and registry but cross-component wiring (collusion detection, behavioural drift analysis, forensic feedback loops) requires real actor data that does not yet exist.
-Controls: existing point mechanisms (compliance screener, trust gates, penalty escalation) operate independently. The ThreatSignal Protocol defines the contract for future integration. Constitutional enforcement (design tests #93-95) ensures high-risk actions always require human oversight regardless of automation maturity.
+Controls: existing point mechanisms (compliance screener, trust gates, penalty escalation) operate independently. The ThreatSignal Protocol defines the contract for future integration. Constitutional enforcement (design tests #95-97) ensures high-risk actions always require human oversight regardless of automation maturity.
 
 ## 19. Identity and Trust Posture
 Genesis treats identity assurance as a layered, probabilistic governance function, not as a single binary test.
@@ -1138,7 +1138,7 @@ This section provides an honest accounting of what exists, what is designed but 
 
 ### 24.1 What is built and tested
 
-As of February 2026, 1739 automated tests pass across 95 design tests. The following subsystems are implemented:
+As of March 2026, 1887 automated tests pass across 100 design tests. The following subsystems are implemented:
 
 | Subsystem | Tests | Key files |
 |-----------|-------|-----------|
@@ -1185,7 +1185,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 | Artifact | Command | Purpose |
 |----------|---------|---------|
-| Full test suite | `python3 -m pytest tests/ -q` | 1739 tests, ~12 seconds |
+| Full test suite | `python3 -m pytest tests/ -q` | 1887 tests, ~12 seconds |
 | Invariant checker | `python3 tools/check_invariants.py` | Constitutional parameter validation |
 | Constitutional params | `config/constitutional_params.json` | Machine-readable parameter mirror |
 | Runtime policy | `config/runtime_policy.json` | Risk-tier policy mapping |
@@ -1195,7 +1195,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 Project Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
-The system has 95 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
+The system has 100 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
 
 The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle. The single-founder risk (§18.8) is the most significant vulnerability during the G0 period. These canonical documents exist to mitigate that risk.
 

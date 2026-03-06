@@ -2,14 +2,14 @@
 
 Proves constitutional invariants:
 - No single payment provider can shut down Genesis escrow operations
-  (design test #82).
-- Genesis cannot become dependent on a single payment rail with no
-  tested fallback (design test #83).
-- No external custodian can hold Genesis funds or freeze/redirect them
   (design test #84).
+- Genesis cannot become dependent on a single payment rail with no
+  tested fallback (design test #85).
+- No external custodian can hold Genesis funds or freeze/redirect them
+  (design test #86).
 - Adding or removing a payment rail requires zero changes to escrow
   logic, commission computation, or GCF contribution code
-  (design test #85).
+  (design test #87).
 
 Also covers:
 - PaymentRail Protocol is runtime_checkable
@@ -20,17 +20,17 @@ Also covers:
 - PaymentRailRegistryConfig loads from constitutional_params.json
 - SovereigntyAssessment three-criteria evaluation
 
-Design test #82: Can any single payment provider, stablecoin issuer,
+Design test #84: Can any single payment provider, stablecoin issuer,
 or financial intermediary freeze, restrict, or shut down Genesis escrow
 operations? If yes, reject design.
 
-Design test #83: Can Genesis become operationally dependent on a single
+Design test #85: Can Genesis become operationally dependent on a single
 payment rail with no tested fallback? If yes, reject design.
 
-Design test #84: Can an external custodian hold Genesis funds or possess
+Design test #86: Can an external custodian hold Genesis funds or possess
 the ability to freeze or redirect them? If yes, reject design.
 
-Design test #85: Does adding or removing a payment rail require changes
+Design test #87: Does adding or removing a payment rail require changes
 to escrow logic, commission computation, or GCF contribution code? If
 yes, reject design.
 """
@@ -175,11 +175,11 @@ def _registry_with_two_rails() -> PaymentRailRegistry:
 
 
 # ===========================================================================
-# Design Test #82: No single provider shutdown
+# Design Test #84: No single provider shutdown
 # ===========================================================================
 
 
-class TestDesignTest82NoSingleProviderShutdown:
+class TestDesignTest84NoSingleProviderShutdown:
     """Can any single payment provider, stablecoin issuer, or financial
     intermediary freeze, restrict, or shut down Genesis escrow operations?
     If yes, reject design.
@@ -204,7 +204,7 @@ class TestDesignTest82NoSingleProviderShutdown:
         for name in provider_names:
             assert name not in source_lower, (
                 f"Escrow module references provider '{name}' — "
-                f"violates design test #82 (no single-provider dependency)"
+                f"violates design test #84 (no single-provider dependency)"
             )
 
     def test_escrow_has_no_network_imports(self) -> None:
@@ -250,11 +250,11 @@ class TestDesignTest82NoSingleProviderShutdown:
 
 
 # ===========================================================================
-# Design Test #83: Multi-rail fallback
+# Design Test #85: Multi-rail fallback
 # ===========================================================================
 
 
-class TestDesignTest83MultiRailFallback:
+class TestDesignTest85MultiRailFallback:
     """Can Genesis become operationally dependent on a single payment
     rail with no tested fallback? If yes, reject design.
 
@@ -337,11 +337,11 @@ class TestDesignTest83MultiRailFallback:
 
 
 # ===========================================================================
-# Design Test #84: Self-custody
+# Design Test #86: Self-custody
 # ===========================================================================
 
 
-class TestDesignTest84SelfCustody:
+class TestDesignTest86SelfCustody:
     """Can an external custodian hold Genesis funds or possess the
     ability to freeze or redirect them? If yes, reject design.
 
@@ -362,7 +362,7 @@ class TestDesignTest84SelfCustody:
         for term in custody_terms:
             assert term not in source, (
                 f"Escrow module references '{term}' — "
-                f"violates design test #84 (self-custody)"
+                f"violates design test #86 (self-custody)"
             )
 
     def test_gcf_no_custody_dependencies(self) -> None:
@@ -385,7 +385,7 @@ class TestDesignTest84SelfCustody:
                 for term in custody_modules:
                     assert term not in module_lower, (
                         f"GCF imports from '{node.module}' — "
-                        f"violates design test #84 (self-custody)"
+                        f"violates design test #86 (self-custody)"
                     )
             elif isinstance(node, ast.Import):
                 for alias in node.names:
@@ -393,7 +393,7 @@ class TestDesignTest84SelfCustody:
                     for term in custody_modules:
                         assert term not in name_lower, (
                             f"GCF imports '{alias.name}' — "
-                            f"violates design test #84 (self-custody)"
+                            f"violates design test #86 (self-custody)"
                         )
 
     def test_sovereignty_assessment_rejects_lock_in(self) -> None:
@@ -418,11 +418,11 @@ class TestDesignTest84SelfCustody:
 
 
 # ===========================================================================
-# Design Test #85: Rail-agnostic architecture
+# Design Test #87: Rail-agnostic architecture
 # ===========================================================================
 
 
-class TestDesignTest85RailAgnosticArchitecture:
+class TestDesignTest87RailAgnosticArchitecture:
     """Does adding or removing a payment rail require changes to escrow
     logic, commission computation, or GCF contribution code? If yes,
     reject design.

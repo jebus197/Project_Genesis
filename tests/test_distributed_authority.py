@@ -5,11 +5,11 @@ the authority of another. Traces constitutional amendments through the full
 legislative pipeline and verifies structural safeguards.
 
 Design tests covered:
-  #87 — No governance body can override another
-  #88 — No permanent ruling class or binding judicial precedent
-  #89 — No amendment permanently stalled by non-participation (voting deadline)
-  #90 — No single org can dominate amendment chambers
-  #91 — Founder cannot veto post-ratification amendments
+  #89 — No governance body can override another
+  #90 — No permanent ruling class or binding judicial precedent
+  #91 — No amendment permanently stalled by non-participation (voting deadline)
+  #92 — No single org can dominate amendment chambers
+  #93 — Founder cannot veto post-ratification amendments
 """
 
 from __future__ import annotations
@@ -87,11 +87,11 @@ NOW = datetime(2026, 3, 1, 12, 0, 0, tzinfo=timezone.utc)
 
 
 # ------------------------------------------------------------------
-# Design test #87: No single governance body can override another
+# Design test #89: No single governance body can override another
 # ------------------------------------------------------------------
 
 
-class TestDesignTest87NoGovernanceOverride:
+class TestDesignTest89NoGovernanceOverride:
     """No single governance body can override, bypass, or subsume another."""
 
     def test_amendment_engine_has_no_admin_bypass(self):
@@ -156,11 +156,11 @@ class TestDesignTest87NoGovernanceOverride:
 
 
 # ------------------------------------------------------------------
-# Design test #88: No permanent ruling class or binding precedent
+# Design test #90: No permanent ruling class or binding precedent
 # ------------------------------------------------------------------
 
 
-class TestDesignTest88NoPermanentAuthority:
+class TestDesignTest90NoPermanentAuthority:
     """No governance mechanism creates permanent authority or binding precedent."""
 
     def test_court_precedent_is_soft(self):
@@ -205,11 +205,11 @@ class TestDesignTest88NoPermanentAuthority:
 
 
 # ------------------------------------------------------------------
-# Design test #89: No amendment permanently stalled by non-participation
+# Design test #91: No amendment permanently stalled by non-participation
 # ------------------------------------------------------------------
 
 
-class TestDesignTest89VotingDeadline:
+class TestDesignTest91VotingDeadline:
     """Governance liveness — voting deadline prevents stalling."""
 
     def test_voting_deadline_set_on_panel_selection(self):
@@ -328,11 +328,11 @@ class TestDesignTest89VotingDeadline:
 
 
 # ------------------------------------------------------------------
-# Design test #90: No single org can dominate amendment chambers
+# Design test #92: No single org can dominate amendment chambers
 # ------------------------------------------------------------------
 
 
-class TestDesignTest90OrgDiversity:
+class TestDesignTest92OrgDiversity:
     """Single-org domination of amendment chambers prevented."""
 
     def test_org_diversity_enforced_in_panel_selection(self):
@@ -389,11 +389,11 @@ class TestDesignTest90OrgDiversity:
 
 
 # ------------------------------------------------------------------
-# Design test #91: Founder cannot veto post-ratification
+# Design test #93: Founder cannot veto post-ratification
 # ------------------------------------------------------------------
 
 
-class TestDesignTest91VetoScope:
+class TestDesignTest93VetoScope:
     """Founder veto is bounded — early-stage only, not post-democratic."""
 
     def test_veto_allowed_statuses_config(self):

@@ -19,9 +19,9 @@ Also covers:
 - InsightRegistry enforces non-empty payload.
 - InsightRegistry query is open (no access restriction).
 - compute_provenance_hash produces valid SHA-256.
-- Design test #92 structural verification.
+- Design test #94 structural verification.
 
-Design test #92: Can any entity restrict the flow of work-derived
+Design test #94: Can any entity restrict the flow of work-derived
 insights across the network for private advantage? If yes, reject design.
 """
 
@@ -356,11 +356,11 @@ class TestProvenanceHash:
 
 
 # ---------------------------------------------------------------------------
-# Design test #92 — structural verification
+# Design test #94 — structural verification
 # ---------------------------------------------------------------------------
 
-class TestDesignTest92NoInsightRestriction:
-    """Design test #92: Can any entity restrict the flow of work-derived
+class TestDesignTest94NoInsightRestriction:
+    """Design test #94: Can any entity restrict the flow of work-derived
     insights across the network for private advantage? If yes, reject design.
 
     Structural verification: the InsightRegistry has no mechanism for
