@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-05T22:30Z
+**Last updated:** 2026-03-06T00:15Z
 **Updated by:** CC (Claude)
-**Session:** Storyboard expanded 13→17 steps. 4th track "The Road Ahead" (First Light, Epochs, Beyond The Data Centre, Coexistence, It Is Real, Founder's Horizon). Founder allocation repositioned step 4→17 with civic framing. 1847 tests passing (1745 core + 102 web). Distributed compute activation decision: 2000 active users floor, stepwise bootstrap, SETI falsification case. Aegis cross-ref noted. All recorded in Open Brain.
-**Head commit:** b9921e8 — all web + open_brain + Step 5 lifecycle + storyboard expansion UNCOMMITTED on top
+**Session:** Storyboard expanded to 18 steps (added distributed immunity, self-falsification, enriched compute card with SETI falsification). Full push to origin: 4fae420. 22,305 lines across 104 files. RUNNING.md created for reviewer access. 1849 tests passing (1745 core + 104 web). Git clean.
+**Head commit:** 4fae420 — web layer, 18-step storyboard, mission lifecycle, agent collab, reviewer guide. COMMITTED AND PUSHED.
 
 ---
 
