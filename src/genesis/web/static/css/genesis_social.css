@@ -2257,28 +2257,108 @@ input, textarea, button {
     box-shadow: 0 0 0 2px rgba(31, 122, 140, 0.2);
 }
 
+/* ── FAQ Section ────────────────────────────────────────────── */
+
 .faq-card {
     padding-bottom: 10px;
+}
+
+.faq-card .card-title {
+    font-size: 1.25rem;
+    margin-bottom: 2px;
+}
+
+.faq-section-intro {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 14px;
 }
 
 .faq-item {
     border: 1px solid var(--border-light);
     border-radius: var(--radius-sm);
     background: var(--surface-raised);
-    padding: 10px 12px;
+    padding: 12px 14px;
     margin-bottom: 8px;
+    transition: border-color 0.18s var(--ease-standard),
+                background 0.18s var(--ease-standard),
+                box-shadow 0.18s var(--ease-standard);
+}
+
+.faq-item:hover {
+    border-color: var(--border);
+    box-shadow: 0 1px 3px rgba(24, 28, 35, 0.04);
+}
+
+.faq-item[open] {
+    border-color: var(--accent);
+    border-left-width: 3px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
 }
 
 .faq-item summary {
     cursor: pointer;
     font-weight: 700;
     color: var(--text-primary);
+    font-size: 0.95rem;
+    line-height: 1.45;
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    list-style: none;
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+.faq-item summary::marker { display: none; content: ""; }
+
+.faq-item summary::before {
+    content: "\203A";          /* single right-pointing angle ›  */
+    display: inline-block;
+    font-size: 1.15em;
+    font-weight: 400;
+    color: var(--text-muted);
+    transition: transform 0.2s var(--ease-standard), color 0.2s var(--ease-standard);
+    flex-shrink: 0;
+    width: 12px;
+    text-align: center;
+}
+
+.faq-item[open] summary::before {
+    transform: rotate(90deg);
+    color: var(--accent);
+}
+
+.faq-item summary:hover {
+    color: var(--accent);
+}
+
+.faq-item .faq-answer {
+    padding: 10px 0 4px 20px;
 }
 
 .faq-item p {
-    margin-top: 8px;
+    margin-top: 0;
+    margin-bottom: 8px;
     color: var(--text-secondary);
     font-size: 0.92rem;
+    line-height: 1.62;
+}
+
+.faq-item p:last-child {
+    margin-bottom: 0;
+}
+
+.faq-item p a {
+    color: var(--accent);
+    text-decoration: none;
+    border-bottom: 1px solid transparent;
+    transition: border-color 0.15s;
+}
+
+.faq-item p a:hover {
+    border-bottom-color: var(--accent);
 }
 
 .process-ladder {
