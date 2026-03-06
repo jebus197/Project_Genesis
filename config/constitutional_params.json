@@ -213,7 +213,8 @@
   },
   "machine_agency": {
     "tier3_min_years_at_tier2": 5,
-    "tier3_min_domain_trust": 0.70
+    "tier3_min_domain_trust": 0.70,
+    "tier3_class_min_expert_cohort": 5
   },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",

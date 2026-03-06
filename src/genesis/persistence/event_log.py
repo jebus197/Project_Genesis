@@ -172,6 +172,12 @@ class EventKind(str, enum.Enum):
     TIER3_REVOKED = "tier3_revoked"
     TIER3_SUSPENDED = "tier3_suspended"
     TIER3_VIOLATION_REVERT = "tier3_violation_revert"
+    # Machine Agency Class-level Tier 3 events
+    TIER3_CLASS_PETITION_FILED = "tier3_class_petition_filed"
+    TIER3_CLASS_APPROVED = "tier3_class_approved"
+    TIER3_CLASS_REJECTED = "tier3_class_rejected"
+    TIER3_CLASS_REVOKED = "tier3_class_revoked"
+    TIER3_PROCEDURAL_GRANTED = "tier3_procedural_granted"
 
 
 @dataclass(frozen=True)

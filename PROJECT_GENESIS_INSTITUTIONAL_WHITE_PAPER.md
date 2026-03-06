@@ -794,7 +794,7 @@ Tier 3 is the point at which a machine transitions from tool to agent — assumi
 
 1. **Track record:** Minimum `TIER3_MIN_YEARS_AT_TIER2 = 5` continuous years at Tier 2 with zero constitutional violations. The clock resets on any violation.
 2. **Domain trust:** Continuous ≥ `TIER3_MIN_DOMAIN_TRUST = 0.70` throughout the qualifying period.
-3. **Full constitutional amendment process:** The petition is processed through all three chambers (proposal, ratification, challenge) with all geographic diversity requirements, supermajority thresholds, cooling-off periods, and confirmation votes. Per individual machine, per domain. No batch process, no precedent shortcut.
+3. **Constitutional pathway — two layers:** (a) First-of-class constitutional amendment establishes that machines of a defined functional-capability class are eligible in a domain — the community decides a society-level question via full three-chamber process. (b) Subsequent machines of an approved class apply through procedural domain-expert verification with the same individual evidence bar. Individual one-off petitions via full amendment remain valid for machines outside any recognised class.
 4. **Human initiation:** Only the machine's human operator can file the petition — machines cannot petition for their own status.
 
 **What Tier 3 grants:** independent mission acceptance in the cleared domain, direct trust consequences (gains and losses accrue to the machine), nomination of other machines for Tier 1. **What it does not grant:** no governance voting (MACHINE_VOTING_EXCLUSION is entrenched), no general agency (always domain-scoped), no self-modification of status.
@@ -803,7 +803,7 @@ Tier 3 is the point at which a machine transitions from tool to agent — assumi
 
 Autonomous domain agency can be revoked through the same amendment process that granted it. Additionally: any single domain expert can file an emergency suspension, failed annual re-authorisation reverts to Tier 2, and any constitutional violation reverts to Tier 1 pending adjudication.
 
-Design tests: #73 (no Tier 3 without full amendment), #74 (no governance voting at Tier 3), #75 (no self-petition), #76 (no permanent foreclosure — structured pathway exists), #81 (machine self-improvement cannot bypass constitutional constraints).
+Design tests: #73 (no Tier 3 without amendment or approved-class procedural pathway), #74 (no governance voting at Tier 3), #75 (no self-petition), #76 (no permanent foreclosure — structured pathway exists), #77 (approved-class machines CAN gain Tier 3 procedurally), #78 (unapproved-class machines CANNOT bypass amendment), #81 (machine self-improvement cannot bypass constitutional constraints).
 
 📋 *Constitutional principle. Four-tier pathway defined in constitution and enforced in code (`src/genesis/governance/machine_agency.py`, 55 tests). Tier 3 activation trigger: when the first machine meets qualifying criteria — minimum 5 years from first Tier 2 clearance.*
 

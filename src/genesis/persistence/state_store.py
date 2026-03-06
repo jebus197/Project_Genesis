@@ -1514,19 +1514,20 @@ class StateStore:
 
     def save_machine_agency(
         self,
-        agency_data: list[dict[str, Any]],
+        agency_data: Any,
     ) -> None:
-        """Serialize machine agency Tier 3 grant data to state.
+        """Serialize machine agency Tier 3 grant + class grant data to state.
 
-        Expects a list of grant dicts from MachineAgencyEngine.to_records().
+        Expects a dict with 'grants' and 'class_grants' keys from
+        MachineAgencyEngine.to_records().
         """
         self._state["machine_agency"] = agency_data
         self._save()
 
-    def load_machine_agency(self) -> list[dict[str, Any]]:
+    def load_machine_agency(self) -> Any:
         """Deserialize machine agency data from state.
 
-        Returns list of Tier 3 grant dicts in the format expected by
-        MachineAgencyEngine.from_records().
+        Returns data in the format expected by MachineAgencyEngine.from_records().
+        Backward compatible: old format (list) is handled by from_records().
         """
-        return self._state.get("machine_agency", [])
+        return self._state.get("machine_agency", {"grants": [], "class_grants": []})

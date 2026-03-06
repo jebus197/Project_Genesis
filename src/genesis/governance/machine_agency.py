@@ -11,8 +11,11 @@ Tiers:
     2: Autonomous Operation — unsupervised in a domain
        (via DomainExpertEngine, 5+ experts, trust ≥ 0.70, machine trust ≥ 0.60).
     3: Autonomous Domain Agency — constitutional responsibility transfer.
-       Requires full constitutional amendment (three-chamber vote).
-       Per machine, per domain. No batch process, no precedent shortcut.
+       Two pathways: (a) First-of-class constitutional amendment establishes
+       that machines of a defined functional-capability class are eligible.
+       (b) Subsequent machines of an approved class apply through procedural
+       domain-expert verification. Individual one-off petitions via full
+       amendment remain valid for machines outside any recognised class.
     4: Extended Domain Agency — Tier 3 across multiple domains.
        Each domain independently qualified. No "general" agency.
 
@@ -54,6 +57,14 @@ class Tier3PetitionStatus(str, enum.Enum):
     SUSPENDED = "suspended"                  # Emergency suspension pending adjudication
 
 
+class Tier3ClassStatus(str, enum.Enum):
+    """Status of a Tier 3 functional-capability class eligibility."""
+    PENDING_AMENDMENT = "pending_amendment"  # Class amendment in progress
+    APPROVED = "approved"                    # Class is constitutionally eligible
+    REJECTED = "rejected"                    # Class amendment rejected
+    REVOKED = "revoked"                      # Class eligibility revoked by new amendment
+
+
 # ──────────────────────────────────────────────────────────────────
 # Constants
 # ──────────────────────────────────────────────────────────────────
@@ -65,6 +76,9 @@ TIER3_ZERO_VIOLATIONS = True  # Any violation resets the clock
 
 # Tier 3 provision key prefix — amendments use this pattern
 TIER3_PROVISION_KEY_PREFIX = "machine_agency"
+
+# Tier 3 CLASS provision key prefix — class-level amendments use this pattern
+TIER3_CLASS_PROVISION_KEY_PREFIX = "machine_agency_class"
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -99,8 +113,9 @@ class Tier3Prerequisite:
 class Tier3Grant:
     """Record of a Tier 3 autonomous domain agency grant.
 
-    Created when the amendment process confirms the petition.
-    Per machine, per domain. No batch process.
+    Created either when a constitutional amendment confirms the petition
+    (grant_pathway="amendment") or through procedural verification under
+    an approved functional-capability class (grant_pathway="procedural").
     """
     grant_id: str
     machine_id: str
@@ -111,10 +126,37 @@ class Tier3Grant:
     granted_utc: Optional[datetime] = None
     revoked_utc: Optional[datetime] = None
     revocation_reason: Optional[str] = None
+    class_grant_id: Optional[str] = None  # Set if granted via class pathway
+    grant_pathway: str = "amendment"       # "amendment" or "procedural"
     created_utc: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Structural guarantees: NO governance, voting, or constitutional power fields.
     # Tier 3 is operational agency only.
+
+
+@dataclass
+class Tier3ClassGrant:
+    """Record of a constitutional class-level Tier 3 eligibility approval.
+
+    Created when a first-of-class amendment petition is filed.
+    The class is defined by functional capability — what the machine
+    demonstrably does — not by architecture or model family.
+
+    Once APPROVED, individual machines of this class can gain Tier 3
+    through procedural verification without a separate amendment.
+    """
+    class_id: str
+    domain: str
+    functional_capability_description: str
+    status: Tier3ClassStatus
+    amendment_proposal_id: str
+    petitioner_id: str        # Human sponsor who filed the class petition
+    approved_utc: Optional[datetime] = None
+    revoked_utc: Optional[datetime] = None
+    revocation_reason: Optional[str] = None
+    created_utc: datetime = field(
+        default_factory=lambda: datetime.now(timezone.utc),
+    )
 
 
 # ──────────────────────────────────────────────────────────────────
@@ -131,13 +173,14 @@ class MachineAgencyEngine:
     This engine does NOT:
     - Grant voting power (MACHINE_VOTING_EXCLUSION is entrenched)
     - Allow self-petition (machine cannot initiate its own Tier 3)
-    - Bypass the amendment process
-    - Create batch/precedent shortcuts
+    - Bypass the amendment process for first-of-class eligibility
+    - Grant procedural Tier 3 without a constitutionally approved class
     """
 
     def __init__(self, config: dict[str, Any]) -> None:
         self._config = config
         self._tier3_grants: dict[str, Tier3Grant] = {}  # grant_id → Tier3Grant
+        self._tier3_class_grants: dict[str, Tier3ClassGrant] = {}  # class_id → Tier3ClassGrant
         self._min_years = config.get("tier3_min_years_at_tier2", TIER3_MIN_YEARS_AT_TIER2)
         self._min_domain_trust = config.get("tier3_min_domain_trust", TIER3_MIN_DOMAIN_TRUST)
 
@@ -537,14 +580,241 @@ class MachineAgencyEngine:
         return parts[1], parts[2]
 
     # ──────────────────────────────────────────────────────────────
+    # Class-level Tier 3 (first-of-class + procedural pathway)
+    # ──────────────────────────────────────────────────────────────
+
+    def class_provision_key_for(self, class_id: str, domain: str) -> str:
+        """Generate the amendment provision key for a class-level petition.
+
+        Returns a key like 'machine_agency_class.code-review.engineering'.
+        """
+        return f"{TIER3_CLASS_PROVISION_KEY_PREFIX}.{class_id}.{domain}"
+
+    @staticmethod
+    def is_tier3_class_provision_key(provision_key: str) -> bool:
+        """Check if an amendment provision key is a Tier 3 class petition."""
+        return provision_key.startswith(f"{TIER3_CLASS_PROVISION_KEY_PREFIX}.")
+
+    @staticmethod
+    def parse_tier3_class_provision_key(
+        provision_key: str,
+    ) -> tuple[str, str]:
+        """Parse a Tier 3 class provision key into (class_id, domain).
+
+        Args:
+            provision_key: e.g. 'machine_agency_class.code-review.engineering'
+
+        Returns:
+            (class_id, domain) tuple.
+
+        Raises:
+            ValueError: If the key is not a valid Tier 3 class provision key.
+        """
+        parts = provision_key.split(".", 2)
+        if len(parts) != 3 or parts[0] != TIER3_CLASS_PROVISION_KEY_PREFIX:
+            raise ValueError(
+                f"Invalid Tier 3 class provision key: {provision_key}"
+            )
+        return parts[1], parts[2]
+
+    def initiate_tier3_class_petition(
+        self,
+        class_id: str,
+        domain: str,
+        functional_capability_description: str,
+        petitioner_id: str,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> Tier3ClassGrant:
+        """Record a first-of-class Tier 3 petition routed through the
+        amendment engine.
+
+        The service layer creates the amendment first, then calls this
+        to track the class petition. The petitioner must be a human.
+
+        Raises:
+            ValueError: If a class petition already exists for this
+                class+domain (active or pending).
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        for cg in self._tier3_class_grants.values():
+            if (
+                cg.class_id == class_id
+                and cg.domain == domain
+                and cg.status in (
+                    Tier3ClassStatus.PENDING_AMENDMENT,
+                    Tier3ClassStatus.APPROVED,
+                )
+            ):
+                raise ValueError(
+                    f"Active or pending class petition already exists "
+                    f"for class '{class_id}' in domain '{domain}'"
+                )
+
+        class_grant = Tier3ClassGrant(
+            class_id=class_id,
+            domain=domain,
+            functional_capability_description=functional_capability_description,
+            status=Tier3ClassStatus.PENDING_AMENDMENT,
+            amendment_proposal_id=amendment_proposal_id,
+            petitioner_id=petitioner_id,
+            created_utc=now,
+        )
+        self._tier3_class_grants[class_id] = class_grant
+        return class_grant
+
+    def on_class_amendment_confirmed(
+        self,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> Optional[Tier3ClassGrant]:
+        """Handle a confirmed amendment that establishes class eligibility."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+        for cg in self._tier3_class_grants.values():
+            if (
+                cg.amendment_proposal_id == amendment_proposal_id
+                and cg.status == Tier3ClassStatus.PENDING_AMENDMENT
+            ):
+                cg.status = Tier3ClassStatus.APPROVED
+                cg.approved_utc = now
+                return cg
+        return None
+
+    def on_class_amendment_rejected(
+        self,
+        amendment_proposal_id: str,
+    ) -> Optional[Tier3ClassGrant]:
+        """Handle a rejected class-level amendment."""
+        for cg in self._tier3_class_grants.values():
+            if (
+                cg.amendment_proposal_id == amendment_proposal_id
+                and cg.status == Tier3ClassStatus.PENDING_AMENDMENT
+            ):
+                cg.status = Tier3ClassStatus.REJECTED
+                return cg
+        return None
+
+    def apply_tier3_procedural(
+        self,
+        machine_id: str,
+        domain: str,
+        class_id: str,
+        petitioner_id: str,
+        expert_cohort_ids: list[str],
+        now: Optional[datetime] = None,
+    ) -> Tier3Grant:
+        """Grant Tier 3 through procedural verification for a machine
+        of an approved functional-capability class.
+
+        Requires:
+        - The class is APPROVED (constitutional amendment confirmed).
+        - All individual prerequisites are met (checked by service layer).
+        - A human sponsor filed the application.
+        - A domain expert cohort validated class membership.
+
+        Does NOT create a constitutional amendment.
+
+        Raises:
+            ValueError: If class not approved, domain mismatch, or
+                duplicate active grant.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Verify class is approved
+        class_grant = self._tier3_class_grants.get(class_id)
+        if class_grant is None or class_grant.status != Tier3ClassStatus.APPROVED:
+            raise ValueError(
+                f"No approved class '{class_id}' — procedural pathway "
+                f"requires prior constitutional class approval"
+            )
+        if class_grant.domain != domain:
+            raise ValueError(
+                f"Class '{class_id}' is approved for domain "
+                f"'{class_grant.domain}', not '{domain}'"
+            )
+
+        # Check for existing active/pending individual grant
+        for grant in self._tier3_grants.values():
+            if (
+                grant.machine_id == machine_id
+                and grant.domain == domain
+                and grant.status in (
+                    Tier3PetitionStatus.PENDING_AMENDMENT,
+                    Tier3PetitionStatus.GRANTED,
+                )
+            ):
+                raise ValueError(
+                    f"Active or pending Tier 3 already exists "
+                    f"for {machine_id} in domain '{domain}'"
+                )
+
+        grant_id = f"t3_{uuid.uuid4().hex[:12]}"
+        grant = Tier3Grant(
+            grant_id=grant_id,
+            machine_id=machine_id,
+            domain=domain,
+            petition_id=f"procedural_{class_id}_{machine_id}",
+            petitioner_id=petitioner_id,
+            status=Tier3PetitionStatus.GRANTED,
+            granted_utc=now,
+            created_utc=now,
+            class_grant_id=class_id,
+            grant_pathway="procedural",
+        )
+        self._tier3_grants[grant_id] = grant
+        return grant
+
+    def revoke_class_eligibility(
+        self,
+        class_id: str,
+        reason: str,
+        now: Optional[datetime] = None,
+    ) -> Optional[Tier3ClassGrant]:
+        """Revoke class-level eligibility via new constitutional amendment.
+
+        Individual grants already issued remain valid — individual-scope
+        revocation is separate. Only prevents NEW procedural grants
+        under this class.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+        cg = self._tier3_class_grants.get(class_id)
+        if cg is None or cg.status != Tier3ClassStatus.APPROVED:
+            return None
+        cg.status = Tier3ClassStatus.REVOKED
+        cg.revoked_utc = now
+        cg.revocation_reason = reason
+        return cg
+
+    def get_class_grant(self, class_id: str) -> Optional[Tier3ClassGrant]:
+        """Get the class grant for a class_id, if any."""
+        return self._tier3_class_grants.get(class_id)
+
+    def get_approved_classes(
+        self, domain: Optional[str] = None,
+    ) -> list[Tier3ClassGrant]:
+        """Get all approved classes, optionally filtered by domain."""
+        result = [
+            cg for cg in self._tier3_class_grants.values()
+            if cg.status == Tier3ClassStatus.APPROVED
+        ]
+        if domain is not None:
+            result = [cg for cg in result if cg.domain == domain]
+        return result
+
+    # ──────────────────────────────────────────────────────────────
     # Persistence
     # ──────────────────────────────────────────────────────────────
 
-    def to_records(self) -> list[dict[str, Any]]:
-        """Serialise all Tier 3 grants for persistence."""
-        records = []
+    def to_records(self) -> dict[str, Any]:
+        """Serialise all Tier 3 grants and class grants for persistence."""
+        grant_records = []
         for grant in self._tier3_grants.values():
-            records.append({
+            grant_records.append({
                 "grant_id": grant.grant_id,
                 "machine_id": grant.machine_id,
                 "domain": grant.domain,
@@ -560,19 +830,54 @@ class MachineAgencyEngine:
                     if grant.revoked_utc else None
                 ),
                 "revocation_reason": grant.revocation_reason,
+                "class_grant_id": grant.class_grant_id,
+                "grant_pathway": grant.grant_pathway,
                 "created_utc": grant.created_utc.isoformat(),
             })
-        return records
+        class_records = []
+        for cg in self._tier3_class_grants.values():
+            class_records.append({
+                "class_id": cg.class_id,
+                "domain": cg.domain,
+                "functional_capability_description": cg.functional_capability_description,
+                "status": cg.status.value,
+                "amendment_proposal_id": cg.amendment_proposal_id,
+                "petitioner_id": cg.petitioner_id,
+                "approved_utc": (
+                    cg.approved_utc.isoformat()
+                    if cg.approved_utc else None
+                ),
+                "revoked_utc": (
+                    cg.revoked_utc.isoformat()
+                    if cg.revoked_utc else None
+                ),
+                "revocation_reason": cg.revocation_reason,
+                "created_utc": cg.created_utc.isoformat(),
+            })
+        return {"grants": grant_records, "class_grants": class_records}
 
     @classmethod
     def from_records(
         cls,
         config: dict[str, Any],
-        records: list[dict[str, Any]],
+        records: Any,
     ) -> MachineAgencyEngine:
-        """Restore engine state from persisted records."""
+        """Restore engine state from persisted records.
+
+        Backward compatible: accepts either a list (old format — grant
+        records only) or a dict with 'grants' and 'class_grants' keys.
+        """
         engine = cls(config)
-        for r in records:
+
+        # Backward compatibility: old format was a plain list of grants
+        if isinstance(records, list):
+            grant_records = records
+            class_records: list[dict[str, Any]] = []
+        else:
+            grant_records = records.get("grants", [])
+            class_records = records.get("class_grants", [])
+
+        for r in grant_records:
             grant = Tier3Grant(
                 grant_id=r["grant_id"],
                 machine_id=r["machine_id"],
@@ -589,7 +894,31 @@ class MachineAgencyEngine:
                     if r.get("revoked_utc") else None
                 ),
                 revocation_reason=r.get("revocation_reason"),
+                class_grant_id=r.get("class_grant_id"),
+                grant_pathway=r.get("grant_pathway", "amendment"),
                 created_utc=datetime.fromisoformat(r["created_utc"]),
             )
             engine._tier3_grants[grant.grant_id] = grant
+
+        for r in class_records:
+            cg = Tier3ClassGrant(
+                class_id=r["class_id"],
+                domain=r["domain"],
+                functional_capability_description=r["functional_capability_description"],
+                status=Tier3ClassStatus(r["status"]),
+                amendment_proposal_id=r["amendment_proposal_id"],
+                petitioner_id=r["petitioner_id"],
+                approved_utc=(
+                    datetime.fromisoformat(r["approved_utc"])
+                    if r.get("approved_utc") else None
+                ),
+                revoked_utc=(
+                    datetime.fromisoformat(r["revoked_utc"])
+                    if r.get("revoked_utc") else None
+                ),
+                revocation_reason=r.get("revocation_reason"),
+                created_utc=datetime.fromisoformat(r["created_utc"]),
+            )
+            engine._tier3_class_grants[cg.class_id] = cg
+
         return engine

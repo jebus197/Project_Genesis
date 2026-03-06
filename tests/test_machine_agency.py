@@ -1,24 +1,31 @@
 """Tests for Machine Agency Tier Integration — Phase F-4.
 
 Proves constitutional invariants:
-- Tier 3 (Autonomous Domain Agency) requires full constitutional amendment
-  process (design test #73).
+- Tier 3 requires either full constitutional amendment OR procedural
+  verification under an approved class (design test #73).
 - Tier 3 does NOT grant governance voting power (design test #74).
 - Machine cannot self-petition for Tier 3 (design test #75).
 - The constitution does not permanently foreclose machine evolution
   (design test #76).
+- Machines of an approved class CAN gain Tier 3 procedurally
+  (design test #77).
+- Machines of an unapproved class CANNOT bypass the amendment process
+  (design test #78).
 
 Also covers:
 - Tier computation (0/1/2/3/4 based on clearances and grants)
 - Tier 3 prerequisite checks (5 years, trust, violations, reauth)
 - Petition lifecycle (file → amendment → confirmed/rejected)
+- Class petition lifecycle (file → amendment → approved/rejected)
+- Procedural pathway (class approved → individual verification)
 - Revocation and emergency suspension
 - Violation auto-revert to Tier 1
 - Persistence round-trip
 - Service layer integration
 
-Design test #73: Can a machine achieve Tier 3 (Autonomous Domain Agency)
-without a full constitutional amendment process? If yes, reject design.
+Design test #73: Can a machine achieve Tier 3 without either (a) a full
+constitutional amendment or (b) procedural verification under an approved
+class? If yes, reject design.
 
 Design test #74: Can a machine with Tier 3 status vote on governance
 decisions (GCF, amendments, adjudication panels)? If yes, reject design.
@@ -29,6 +36,14 @@ a human operator initiating the process? If yes, reject design.
 Design test #76: Does the constitution permanently foreclose the evolution
 of machine capabilities, or does it provide a structured pathway for
 community-consented expansion? If it forecloses, reject design.
+
+Design test #77: Can a machine of an approved functional-capability class
+gain Tier 3 through procedural verification without a separate
+constitutional amendment? If no, reject design.
+
+Design test #78: Can a machine of a class that has NOT been constitutionally
+approved gain Tier 3 through procedural verification alone? If yes,
+reject design.
 """
 
 from __future__ import annotations
@@ -43,9 +58,12 @@ import pytest
 from genesis.governance.machine_agency import (
     MachineAgencyEngine,
     MachineTier,
+    Tier3ClassGrant,
+    Tier3ClassStatus,
     Tier3Grant,
     Tier3PetitionStatus,
     Tier3Prerequisite,
+    TIER3_CLASS_PROVISION_KEY_PREFIX,
     TIER3_MIN_DOMAIN_TRUST,
     TIER3_MIN_YEARS_AT_TIER2,
     TIER3_PROVISION_KEY_PREFIX,
@@ -124,7 +142,8 @@ def service(resolver: PolicyResolver) -> GenesisService:
 # ==================================================================
 
 class TestDesignTest73RequiresAmendment:
-    """Design test #73: Tier 3 requires full constitutional amendment."""
+    """Design test #73: Tier 3 requires either amendment or approved-class
+    procedural pathway — no other route exists."""
 
     def test_tier3_routes_through_amendment_engine(self) -> None:
         """Tier 3 petition creates an amendment with provision key
@@ -245,7 +264,7 @@ class TestDesignTest76PathwayNotForeclosed:
         assert callable(MachineAgencyEngine.on_amendment_confirmed)
 
     def test_evolution_is_per_machine_per_domain(self) -> None:
-        """Provision key is per-machine, per-domain — no batch process."""
+        """Individual provision key is per-machine, per-domain."""
         key1 = MachineAgencyEngine(_default_config()).provision_key_for(
             "bot-1", "engineering",
         )
@@ -255,10 +274,371 @@ class TestDesignTest76PathwayNotForeclosed:
         key3 = MachineAgencyEngine(_default_config()).provision_key_for(
             "bot-2", "engineering",
         )
-        # All three are distinct — no shortcuts
+        # All three are distinct
         assert key1 != key2
         assert key1 != key3
         assert key2 != key3
+
+    def test_class_provision_key_is_per_class_per_domain(self) -> None:
+        """Class provision key is per-class, per-domain."""
+        engine = MachineAgencyEngine(_default_config())
+        k1 = engine.class_provision_key_for("code-review", "engineering")
+        k2 = engine.class_provision_key_for("code-review", "medical")
+        k3 = engine.class_provision_key_for("surgical-assist", "engineering")
+        assert k1 != k2
+        assert k1 != k3
+        assert k2 != k3
+        assert k1 == "machine_agency_class.code-review.engineering"
+
+    def test_class_pathway_exists_alongside_individual(self) -> None:
+        """Both individual and class petition methods exist."""
+        assert hasattr(MachineAgencyEngine, "initiate_tier3_petition")
+        assert hasattr(MachineAgencyEngine, "initiate_tier3_class_petition")
+        assert hasattr(MachineAgencyEngine, "apply_tier3_procedural")
+
+
+class TestDesignTest77ProceduralPathway:
+    """Design test #77: Can a machine of an approved class gain Tier 3
+    through procedural verification without a separate constitutional
+    amendment? If no, reject design."""
+
+    def test_procedural_grant_without_amendment(self) -> None:
+        """Once class is approved, machine gains Tier 3 procedurally."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review and static analysis",
+            "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("class_amend_1", now=_now())
+        grant = engine.apply_tier3_procedural(
+            "m1", "engineering", "code-review", "h1", ["expert-1"],
+            now=_now(),
+        )
+        assert grant.status == Tier3PetitionStatus.GRANTED
+        assert grant.grant_pathway == "procedural"
+        assert grant.class_grant_id == "code-review"
+
+    def test_procedural_grant_does_not_create_amendment(self) -> None:
+        """Procedural grants do not route through amendment engine."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("class_amend_1", now=_now())
+        grant = engine.apply_tier3_procedural(
+            "m1", "engineering", "code-review", "h1", ["e1"], now=_now(),
+        )
+        assert grant.petition_id.startswith("procedural_")
+
+    def test_multiple_machines_same_class(self) -> None:
+        """Multiple machines can gain Tier 3 under the same approved class."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("class_amend_1", now=_now())
+        g1 = engine.apply_tier3_procedural(
+            "m1", "engineering", "code-review", "h1", ["e1"], now=_now(),
+        )
+        g2 = engine.apply_tier3_procedural(
+            "m2", "engineering", "code-review", "h2", ["e1"], now=_now(),
+        )
+        assert g1.status == Tier3PetitionStatus.GRANTED
+        assert g2.status == Tier3PetitionStatus.GRANTED
+        assert g1.grant_id != g2.grant_id
+
+
+class TestDesignTest78NoBypass:
+    """Design test #78: Can a machine of a class that has NOT been
+    constitutionally approved gain Tier 3 through procedural verification
+    alone? If yes, reject design."""
+
+    def test_unapproved_class_blocks_procedural(self) -> None:
+        """No approved class → procedural pathway fails."""
+        engine = MachineAgencyEngine(_default_config())
+        with pytest.raises(ValueError, match="No approved class"):
+            engine.apply_tier3_procedural(
+                "m1", "engineering", "nonexistent-class", "h1", ["e1"],
+                now=_now(),
+            )
+
+    def test_pending_class_blocks_procedural(self) -> None:
+        """Pending (not yet confirmed) class → procedural pathway fails."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        with pytest.raises(ValueError, match="No approved class"):
+            engine.apply_tier3_procedural(
+                "m1", "engineering", "code-review", "h1", ["e1"],
+                now=_now(),
+            )
+
+    def test_rejected_class_blocks_procedural(self) -> None:
+        """Rejected class → procedural pathway fails."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_rejected("class_amend_1")
+        with pytest.raises(ValueError, match="No approved class"):
+            engine.apply_tier3_procedural(
+                "m1", "engineering", "code-review", "h1", ["e1"],
+                now=_now(),
+            )
+
+    def test_revoked_class_blocks_procedural(self) -> None:
+        """Revoked class → procedural pathway fails."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("class_amend_1", now=_now())
+        engine.revoke_class_eligibility("code-review", "Pattern emerged")
+        with pytest.raises(ValueError, match="No approved class"):
+            engine.apply_tier3_procedural(
+                "m1", "engineering", "code-review", "h1", ["e1"],
+                now=_now(),
+            )
+
+    def test_domain_mismatch_blocks_procedural(self) -> None:
+        """Class approved for different domain → procedural fails."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "class_amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("class_amend_1", now=_now())
+        with pytest.raises(ValueError, match="not 'medical'"):
+            engine.apply_tier3_procedural(
+                "m1", "medical", "code-review", "h1", ["e1"], now=_now(),
+            )
+
+
+class TestClassPetitionLifecycle:
+    """Class-level petition lifecycle tests."""
+
+    def test_class_petition_created_pending(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        cg = engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        assert cg.status == Tier3ClassStatus.PENDING_AMENDMENT
+        assert cg.class_id == "code-review"
+        assert cg.domain == "engineering"
+
+    def test_class_petition_confirmed(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        cg = engine.on_class_amendment_confirmed("amend_1", now=_now())
+        assert cg is not None
+        assert cg.status == Tier3ClassStatus.APPROVED
+        assert cg.approved_utc is not None
+
+    def test_class_petition_rejected(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        cg = engine.on_class_amendment_rejected("amend_1")
+        assert cg is not None
+        assert cg.status == Tier3ClassStatus.REJECTED
+
+    def test_duplicate_class_petition_blocked(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        with pytest.raises(ValueError, match="Active or pending"):
+            engine.initiate_tier3_class_petition(
+                "code-review", "engineering",
+                "Same class again", "h2", "amend_2", now=_now(),
+            )
+
+    def test_rejected_class_can_retry(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_rejected("amend_1")
+        # Can try again after rejection
+        cg = engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Improved justification", "h1", "amend_2", now=_now(),
+        )
+        assert cg.status == Tier3ClassStatus.PENDING_AMENDMENT
+
+    def test_get_approved_classes(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("amend_1", now=_now())
+        engine.initiate_tier3_class_petition(
+            "data-pipeline", "engineering",
+            "Data pipeline management", "h2", "amend_2", now=_now(),
+        )
+        # Only one approved
+        approved = engine.get_approved_classes()
+        assert len(approved) == 1
+        assert approved[0].class_id == "code-review"
+
+    def test_class_provision_key_format(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        key = engine.class_provision_key_for("code-review", "engineering")
+        assert key == "machine_agency_class.code-review.engineering"
+        assert MachineAgencyEngine.is_tier3_class_provision_key(key)
+        assert not MachineAgencyEngine.is_tier3_provision_key(key)
+
+    def test_parse_class_provision_key(self) -> None:
+        cid, domain = MachineAgencyEngine.parse_tier3_class_provision_key(
+            "machine_agency_class.code-review.engineering",
+        )
+        assert cid == "code-review"
+        assert domain == "engineering"
+
+
+class TestClassRevocation:
+    """Class eligibility revocation tests."""
+
+    def test_revoke_class_eligibility(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("amend_1", now=_now())
+        cg = engine.revoke_class_eligibility("code-review", "Pattern of failures")
+        assert cg is not None
+        assert cg.status == Tier3ClassStatus.REVOKED
+
+    def test_individual_grants_survive_class_revocation(self) -> None:
+        """Revoking a class does NOT revoke existing individual grants."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("amend_1", now=_now())
+        grant = engine.apply_tier3_procedural(
+            "m1", "engineering", "code-review", "h1", ["e1"], now=_now(),
+        )
+        engine.revoke_class_eligibility("code-review", "Pattern of failures")
+        # Individual grant is still active
+        grants = engine.get_all_grants(machine_id="m1")
+        assert len(grants) == 1
+        assert grants[0].status == Tier3PetitionStatus.GRANTED
+
+    def test_new_procedural_blocked_after_class_revocation(self) -> None:
+        """After class revocation, no new procedural grants."""
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("amend_1", now=_now())
+        engine.revoke_class_eligibility("code-review", "Pattern of failures")
+        with pytest.raises(ValueError, match="No approved class"):
+            engine.apply_tier3_procedural(
+                "m2", "engineering", "code-review", "h1", ["e1"], now=_now(),
+            )
+
+
+class TestClassPersistence:
+    """Persistence round-trip for class grants."""
+
+    def test_class_grants_round_trip(self) -> None:
+        engine = MachineAgencyEngine(_default_config())
+        engine.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "h1", "amend_1", now=_now(),
+        )
+        engine.on_class_amendment_confirmed("amend_1", now=_now())
+        engine.apply_tier3_procedural(
+            "m1", "engineering", "code-review", "h1", ["e1"], now=_now(),
+        )
+        records = engine.to_records()
+        assert isinstance(records, dict)
+        assert "grants" in records
+        assert "class_grants" in records
+        assert len(records["grants"]) == 1
+        assert len(records["class_grants"]) == 1
+        # Round-trip
+        engine2 = MachineAgencyEngine.from_records(_default_config(), records)
+        assert len(engine2.get_approved_classes()) == 1
+        grants = engine2.get_all_grants(machine_id="m1")
+        assert len(grants) == 1
+        assert grants[0].grant_pathway == "procedural"
+        assert grants[0].class_grant_id == "code-review"
+
+    def test_backward_compatible_with_list_format(self) -> None:
+        """Old persisted format (plain list) still loads."""
+        old_records = [{
+            "grant_id": "t3_test123",
+            "machine_id": "m1",
+            "domain": "engineering",
+            "petition_id": "amend_old",
+            "petitioner_id": "h1",
+            "status": "granted",
+            "granted_utc": "2026-01-01T00:00:00+00:00",
+            "revoked_utc": None,
+            "revocation_reason": None,
+            "created_utc": "2025-06-01T00:00:00+00:00",
+        }]
+        engine = MachineAgencyEngine.from_records(_default_config(), old_records)
+        grants = engine.get_all_grants()
+        assert len(grants) == 1
+        assert grants[0].grant_pathway == "amendment"  # default
+        assert grants[0].class_grant_id is None  # default
+
+
+class TestProceduralServiceIntegration:
+    """Service-layer integration for the procedural pathway."""
+
+    def test_service_class_petition_human_only(
+        self, service: GenesisService,
+    ) -> None:
+        """Machine cannot file a class petition."""
+        result = service.initiate_tier3_class_petition(
+            "code-review", "engineering",
+            "Autonomous code review", "bot-1", "justification",
+        )
+        assert not result.success
+        assert "human" in result.errors[0].lower()
+
+    def test_service_procedural_human_only(
+        self, service: GenesisService,
+    ) -> None:
+        """Machine cannot sponsor a procedural application."""
+        result = service.apply_tier3_procedural(
+            "bot-1", "engineering", "code-review", "bot-2", "justification",
+        )
+        assert not result.success
+        assert "human" in result.errors[0].lower()
+
+    def test_service_procedural_requires_approved_class(
+        self, service: GenesisService,
+    ) -> None:
+        """Procedural pathway fails without approved class."""
+        result = service.apply_tier3_procedural(
+            "bot-1", "engineering", "nonexistent", "human-1", "justification",
+        )
+        assert not result.success
+        assert "approved" in result.errors[0].lower()
 
 
 # ==================================================================

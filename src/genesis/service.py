@@ -10570,6 +10570,277 @@ class GenesisService:
             },
         )
 
+    # ──────────────────────────────────────────────────────────────
+    # Class-level Tier 3 (first-of-class + procedural pathway)
+    # ──────────────────────────────────────────────────────────────
+
+    def initiate_tier3_class_petition(
+        self,
+        class_id: str,
+        domain: str,
+        functional_capability_description: str,
+        petitioner_id: str,
+        justification: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """File a first-of-class Tier 3 petition.
+
+        Creates a constitutional amendment with provision key
+        'machine_agency_class.{class_id}.{domain}' and routes it through
+        the standard three-chamber amendment process.
+
+        The petitioner MUST be a human.
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate petitioner is human
+        petitioner = self._roster.get(petitioner_id)
+        if petitioner is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Petitioner not found: {petitioner_id}"],
+            )
+        if petitioner.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Only human operators can petition for class eligibility "
+                    "(machine cannot self-petition)"
+                ],
+            )
+
+        # Create amendment via the existing AmendmentEngine
+        provision_key = self._machine_agency_engine.class_provision_key_for(
+            class_id, domain,
+        )
+        try:
+            proposal = self._amendment_engine.create_amendment(
+                proposer_id=petitioner_id,
+                provision_key=provision_key,
+                current_value="not_eligible",
+                proposed_value="eligible",
+                justification=justification,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Record the class petition in the MachineAgencyEngine
+        try:
+            class_grant = self._machine_agency_engine.initiate_tier3_class_petition(
+                class_id=class_id,
+                domain=domain,
+                functional_capability_description=functional_capability_description,
+                petitioner_id=petitioner_id,
+                amendment_proposal_id=proposal.proposal_id,
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Record event
+        err = self._record_actor_lifecycle_event(
+            petitioner_id,
+            EventKind.TIER3_CLASS_PETITION_FILED,
+            {
+                "class_id": class_id,
+                "domain": domain,
+                "amendment_proposal_id": proposal.proposal_id,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "class_id": class_id,
+                "domain": domain,
+                "amendment_proposal_id": proposal.proposal_id,
+                "status": class_grant.status.value,
+            },
+        )
+
+    def on_tier3_class_amendment_confirmed(
+        self,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Handle a confirmed amendment that establishes class eligibility."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        class_grant = self._machine_agency_engine.on_class_amendment_confirmed(
+            amendment_proposal_id, now,
+        )
+        if class_grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No pending class petition for amendment: {amendment_proposal_id}"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            class_grant.petitioner_id,
+            EventKind.TIER3_CLASS_APPROVED,
+            {
+                "class_id": class_grant.class_id,
+                "domain": class_grant.domain,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "class_id": class_grant.class_id,
+                "domain": class_grant.domain,
+                "status": class_grant.status.value,
+            },
+        )
+
+    def on_tier3_class_amendment_rejected(
+        self,
+        amendment_proposal_id: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Handle a rejected class-level amendment."""
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        class_grant = self._machine_agency_engine.on_class_amendment_rejected(
+            amendment_proposal_id,
+        )
+        if class_grant is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"No pending class petition for amendment: {amendment_proposal_id}"],
+            )
+
+        err = self._record_actor_lifecycle_event(
+            class_grant.petitioner_id,
+            EventKind.TIER3_CLASS_REJECTED,
+            {
+                "class_id": class_grant.class_id,
+                "domain": class_grant.domain,
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "class_id": class_grant.class_id,
+                "domain": class_grant.domain,
+                "status": class_grant.status.value,
+            },
+        )
+
+    def apply_tier3_procedural(
+        self,
+        machine_id: str,
+        domain: str,
+        class_id: str,
+        petitioner_id: str,
+        justification: str,
+        now: Optional[datetime] = None,
+    ) -> ServiceResult:
+        """Apply for Tier 3 through procedural verification.
+
+        For machines of an approved functional-capability class.
+        Does NOT create a constitutional amendment.
+
+        Requires:
+        - class_id is an APPROVED class for this domain
+        - petitioner_id is a human operator
+        - machine meets all Tier 3 prerequisites (5yr, trust, violations, reauth)
+        """
+        if now is None:
+            now = datetime.now(timezone.utc)
+
+        # Validate petitioner is human
+        petitioner = self._roster.get(petitioner_id)
+        if petitioner is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Petitioner not found: {petitioner_id}"],
+            )
+        if petitioner.actor_kind != ActorKind.HUMAN:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    "Only human operators can sponsor procedural Tier 3 "
+                    "(machine cannot self-petition)"
+                ],
+            )
+
+        # Validate machine exists
+        machine = self._roster.get(machine_id)
+        if machine is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Machine not found: {machine_id}"],
+            )
+        if machine.actor_kind != ActorKind.MACHINE:
+            return ServiceResult(
+                success=False,
+                errors=[f"{machine_id} is not a machine"],
+            )
+
+        # Delegate to engine — validates class approval and domain match
+        try:
+            grant = self._machine_agency_engine.apply_tier3_procedural(
+                machine_id=machine_id,
+                domain=domain,
+                class_id=class_id,
+                petitioner_id=petitioner_id,
+                expert_cohort_ids=[],  # cohort validation is domain-engine level
+                now=now,
+            )
+        except ValueError as e:
+            return ServiceResult(success=False, errors=[str(e)])
+
+        # Record event
+        err = self._record_actor_lifecycle_event(
+            petitioner_id,
+            EventKind.TIER3_PROCEDURAL_GRANTED,
+            {
+                "machine_id": machine_id,
+                "domain": domain,
+                "class_id": class_id,
+                "grant_id": grant.grant_id,
+                "pathway": "procedural",
+            },
+        )
+        if err:
+            return ServiceResult(success=False, errors=[err])
+
+        self._safe_persist_post_audit()
+
+        return ServiceResult(
+            success=True,
+            data={
+                "grant_id": grant.grant_id,
+                "machine_id": machine_id,
+                "domain": domain,
+                "class_id": class_id,
+                "status": grant.status.value,
+                "pathway": grant.grant_pathway,
+            },
+        )
+
+    # ──────────────────────────────────────────────────────────────
+    # Tier 3 Revocation and suspension
+    # ──────────────────────────────────────────────────────────────
+
     def revoke_tier3(
         self,
         machine_id: str,
