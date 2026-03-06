@@ -292,8 +292,8 @@ STORYBOARD_TRACKS = {
                     "On-chain committed as a constitutional lifecycle event.",
                     "Decoupled from governance phases — no perverse incentive to delay.",
                 ],
-                "deep_link": "/audit",
-                "deep_label": "View constitutional events",
+                "deep_link": "/about#faq-economics",
+                "deep_label": "Read First Light FAQ",
             },
             {
                 "title": "The Epochs",
@@ -310,8 +310,8 @@ STORYBOARD_TRACKS = {
                     "G3: 2,000+ humans, full constitutional governance. Genesis protocol terminates.",
                     "One-way transitions only. No regression. Hard time limits at every phase.",
                 ],
-                "deep_link": "/assembly",
-                "deep_label": "See governance in action",
+                "deep_link": "/about#faq-governance",
+                "deep_label": "Read governance epochs FAQ",
             },
             {
                 "title": "Beyond The Data Centre",
