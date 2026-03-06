@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-06T14:00Z
+**Last updated:** 2026-03-06T18:00Z
 **Updated by:** CC (Claude)
-**Session:** FAQ prose rewrite (8 sections, ~46 items, multi-paragraph answers), deep link refinement (6 storyboard steps now target FAQ anchors), FAQ visual polish (chevron indicators, hover/open states, section intros). Storyboard SETI@Home + falsification fixes. 1854 tests passing (1745 core + 109 web). Git clean.
-**Head commit:** f26126a — FAQ visual polish: chevron indicators, hover/open states, section intros. COMMITTED AND PUSHED.
+**Session:** Tier 3 class recognition — first-of-class amendment + procedural pathway. Split per-machine Tier 3 into two layers: (a) first-of-class constitutional amendment for functional-capability class eligibility, (b) procedural verification for subsequent machines of approved class. New enum Tier3ClassStatus, dataclass Tier3ClassGrant, 8+ engine methods, 4 service methods, 5 event kinds, persistence backward compat. 26 new tests. 1887 tests (1771 core + 116 web). Git clean.
+**Head commit:** 833ad89 — Tier 3 class recognition: first-of-class amendment + procedural pathway. COMMITTED AND PUSHED.
 
 ---
 
@@ -38,11 +38,11 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1820 passed (1741 core + 79 web). |
-| **w** | Written: committed + pushed | PENDING | All web + Step 5 lifecycle work uncommitted — awaiting George's word. Last committed HEAD: `b9921e8`. |
-| **e** | Exchanged: CX notified | PASS | IM: Step 5 lifecycle build posted. CX asked to buddy-check. |
-| **r** | Recorded: MEMORY.md updated | PASS | Test count updated to 1820, Step 5 line added to Current State. |
-| **ty** | Tidy: docs lock-stepped | PASS | QWERTY_CHECKPOINT.md + MEMORY.md updated. No README/constitution changes needed — uncommitted web layer only. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
+| **w** | Written: committed + pushed | PASS | HEAD: `833ad89` — Tier 3 class recognition. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: 833ad89 posted with full summary. |
+| **r** | Recorded: MEMORY.md updated | PASS | Test count updated to 1887, Tier 3 class recognition line added. |
+| **ty** | Tidy: docs lock-stepped | PASS | Constitution, white paper, FAQ, QWERTY_CHECKPOINT.md, MEMORY.md all updated. |
 
 ## Commits Pending CX Review
 
@@ -324,6 +324,7 @@ CX: on every turn, verify CC's claims above against actual state:
 | Canonical docs P3 | `d907dec` | 0 | White Paper + Public Brief: sovereignty, implementation status, appendices, consistency pass |
 | CX fixes | `4159d6f` | 2 | P1 duplicate signal_id in InsightRegistry + ThreatRegistry, P2 stale doc counts x4 |
 | CX fixes | `b9921e8` | 0 | P2 test-count drift fix (1739→1741 in README + TECHNICAL_OVERVIEW) |
+| Tier 3 class | `833ad89` | 26 | First-of-class amendment + procedural pathway. Tier3ClassStatus/Tier3ClassGrant, 8+ engine methods, 4 service methods, 5 event kinds, backward-compat persistence. Constitution, white paper, FAQ, design tests #77-78. |
 | Web scaffold | uncommitted | 21 | Step 4a: 43 files, 21 routes, Meridian CSS, JSON+HTML content negotiation, HTMX, PoC seed data |
 | Social plumbing | uncommitted | 0 | Social scaffold: 3 new routers, social_context.py, 2 new templates, 5 modified files |
 | **Total** | | **822** | **842 → 1762 tests** |
@@ -393,7 +394,7 @@ NOT current blockers. Captured with trigger conditions for future sessions.
 - Assembly: content-only (zero identity attribution), Speaker's Corner not Parliament
 - Organisation Registry: tiered verification, all members constitutionally equal
 - Domain expertise: governance/operations split (equal in governance, meritocratic in operations)
-- Machine self-agency: 4-tier pathway, Tier 3 = 5yr + full constitutional amendment per machine per domain
+- Machine self-agency: 4-tier pathway, Tier 3 = two layers: (a) first-of-class via full constitutional amendment (functional-capability class), (b) procedural verification for subsequent machines of approved class. Individual one-off petition via amendment remains valid.
 - Anti-dogma principle: bar, not wall. MACHINE_VOTING_EXCLUSION remains entrenched.
 - Open Work Principle: all work visible by default, three-tier visibility (fact→metadata→substance), narrow exception (METADATA_ONLY) requires justification + time limit + auto-lapse. No retroactive concealment. Structurally incompatible with secrecy.
 
@@ -403,6 +404,7 @@ NOT current blockers. Captured with trigger conditions for future sessions.
 
 | Timestamp | Head Commit | Tests | Notes |
 |---|---|---|---|
+| 2026-03-06T18:00Z | `833ad89` | 1887 | Tier 3 class recognition: first-of-class amendment + procedural pathway. 26 new tests. Constitution, white paper, FAQ updated. |
 | 2026-02-27T23:00Z | `b9921e8`+uncommitted | 1762 | Social scaffold plumbing complete. All 12 scaffold templates wired to live routes. 3 new routers (circles, social, profile redirect), social_context.py for PoC globals, 2 new templates (debates, assembly). JSON content negotiation intact. Uncommitted — awaiting George's browser review. |
 | 2026-02-25T01:15Z | `b9921e8` | 1741 | CX review CLEAN through b9921e8. P2 test-count drift 1739→1741 fixed in README + TECHNICAL_OVERVIEW. |
 | 2026-02-25T00:10Z | `4159d6f` | 1741 | CX review of commits 47-54: 2xP1 + 4xP2 fixed. P1: duplicate signal_id rejection in InsightRegistry + ThreatRegistry (tamper-evident). P2: README GB7→GB8 anchor, FOUNDERS_ROLE 4→5 entrenched, TRUST_CONSTITUTION seven→eight Genesis Blocks, TECHNICAL_OVERVIEW 1244→1739 test count. 2 regression tests. Awaiting CX re-review. |
