@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T00:15Z
+**Last updated:** 2026-03-07T01:30Z
 **Updated by:** CC (Claude)
-**Session:** Language precision pass — register-appropriate GCF custody language across narrative (README, landing) and code (state_store, service, social, test_workflow). FAQ deepened for external researchers (tamper-evidence, hash chain, P2P topology independence). `d` protocol formalised. Zero "treasury" refs remain in code. 1887 tests (1771 core + 116 web). Git clean.
-**Head commit:** cc1dde0 — Language precision pass: register-appropriate GCF custody language, eliminate residual handwaving. COMMITTED AND PUSHED.
+**Session:** CX prose review — reverted CX's uncommitted terminology downgrades (accounting identity→accounting state, 6 files). Narrative pass on storyboard Road Ahead track: rewrote dense specification-as-prose in scenes 1, 12, 13, 15, 16. Tracks 1-3 left untouched (solid). 1887 tests (1771 core + 116 web). Git clean.
+**Head commit:** e1a7c96 — Narrative pass on storyboard Road Ahead track. COMMITTED AND PUSHED.
 
 ---
 
@@ -39,14 +39,23 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `cc1dde0` — Language precision pass. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: cc1dde0 posted with full summary. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to cc1dde0, `d` protocol recorded. |
-| **ty** | Tidy: docs lock-stepped | PASS | 7 files: README, landing, state_store, service (×2), social storyboard, test_workflow (×3), FAQ deepened. Zero "treasury" refs in code, zero "distributed ledger" refs anywhere. |
+| **w** | Written: committed + pushed | PASS | HEAD: `e1a7c96` — Narrative pass on storyboard. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: e1a7c96 posted with revert rationale + P-pass range. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to e1a7c96. |
+| **ty** | Tidy: docs lock-stepped | PASS | CX terminology downgrades reverted. social.py 5 scenes rewritten for narrative quality. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+61. **`e1a7c96`** — Narrative pass on storyboard Road Ahead track + CX terminology downgrades reverted
+    - Reverted CX uncommitted: "accounting identity"→"accounting state" (6 files) — downgrade, less precise
+    - Scene 1: drop lecture-style "Here is a simple version" opener
+    - Scene 12 (First Light): sharper hook
+    - Scene 13 (Epochs): broke up constitutional parameter dumps, led with human meaning
+    - Scene 15 (Coexistence): split 100-word Tier 3 wall into principle + mechanism
+    - Scene 16 (Distributed Immunity): reframed feature list as narrative
+    - 1 file (social.py), 9 insertions, 8 deletions, 1887 tests
 
 60. **`cc1dde0`** — Language precision pass: register-appropriate GCF custody language, eliminate residual handwaving
     - README "Nothing to rob": narrative rewrite (fund as subtraction, not vault)
