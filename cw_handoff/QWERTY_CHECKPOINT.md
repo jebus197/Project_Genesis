@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-06T18:00Z
+**Last updated:** 2026-03-06T21:30Z
 **Updated by:** CC (Claude)
-**Session:** Tier 3 class recognition — first-of-class amendment + procedural pathway. Split per-machine Tier 3 into two layers: (a) first-of-class constitutional amendment for functional-capability class eligibility, (b) procedural verification for subsequent machines of approved class. New enum Tier3ClassStatus, dataclass Tier3ClassGrant, 8+ engine methods, 4 service methods, 5 event kinds, persistence backward compat. 26 new tests. 1887 tests (1771 core + 116 web). Git clean.
-**Head commit:** 833ad89 — Tier 3 class recognition: first-of-class amendment + procedural pathway. COMMITTED AND PUSHED.
+**Session:** Doc sweep — fix design test #77-78 numbering collision (+2 cascade #79-100), update all stale test counts (1739/1741/1762 → 1887) and design test counts (95 → 100). 11 files, 100 design tests #1-100 with no gaps or duplicates. 1887 tests (1771 core + 116 web). Git clean.
+**Head commit:** 544536a — Doc sweep: fix design test #77-78 collision (+2 cascade #79-100), update counts to 1887. COMMITTED AND PUSHED.
 
 ---
 
@@ -39,14 +39,26 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `833ad89` — Tier 3 class recognition. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: 833ad89 posted with full summary. |
-| **r** | Recorded: MEMORY.md updated | PASS | Test count updated to 1887, Tier 3 class recognition line added. |
-| **ty** | Tidy: docs lock-stepped | PASS | Constitution, white paper, FAQ, QWERTY_CHECKPOINT.md, MEMORY.md all updated. |
+| **w** | Written: committed + pushed | PASS | HEAD: `544536a` — Doc sweep: design test collision fix + count updates. PUSHED. |
+| **e** | Exchanged: CX notified | PENDING | IM post next. |
+| **r** | Recorded: MEMORY.md updated | PENDING | Updating now. |
+| **ty** | Tidy: docs lock-stepped | PASS | All 11 files updated: constitution, 5 test files, white paper, public brief, README, tech overview, QWERTY checkpoint. |
 
 ## Commits Pending CX Review
 
-CX review fixes + canonical doc rewrite + code commits (9 pending):
+CX review fixes + canonical doc rewrite + code commits (12 pending):
+
+58. **`544536a`** — Doc sweep: fix design test #77-78 collision (+2 cascade #79-100), update counts to 1887
+    - Machine agency #73-78 duplicated Open Work #77-78. Renumbered all subsequent tests by +2.
+    - 100 design tests, #1-100, no gaps, no duplicates.
+    - Updated stale test counts (1739/1741/1762 → 1887) and design test counts (95 → 100) across 4 docs.
+    - Cascaded through 5 test files (class names, docstrings, error messages).
+    - 11 files, 95 insertions, 95 deletions, 1887 tests passing.
+
+57. **`effd8b3`** — Fix stale Tier 3 language in storyboard Coexistence card
+    - social.py step 15: updated to dual-pathway (first-of-class + procedural) language.
+
+56. **`db3a073`** — qwerty: checkpoint for 833ad89 — 1887 tests, Tier 3 class recognition
 
 55. **`4159d6f`** — Fix 2xP1 + 4xP2 from CX review of commits 47-54
     - P1: Reject duplicate signal_id in InsightRegistry (insight_protocol.py) — tamper-evident guarantee
