@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T01:30Z
+**Last updated:** 2026-03-07T02:15Z
 **Updated by:** CC (Claude)
-**Session:** CX prose review — reverted CX's uncommitted terminology downgrades (accounting identity→accounting state, 6 files). Narrative pass on storyboard Road Ahead track: rewrote dense specification-as-prose in scenes 1, 12, 13, 15, 16. Tracks 1-3 left untouched (solid). 1887 tests (1771 core + 116 web). Git clean.
-**Head commit:** e1a7c96 — Narrative pass on storyboard Road Ahead track. COMMITTED AND PUSHED.
+**Session:** CC P-pass (self-falsification). 10/10 storyboard claims survived. 5 structural GCF custody findings (P1-P5): ghost refund path (HIGH), no hash chain (MEDIUM-HIGH), accounting identity false with refunds (MEDIUM), from_dict trusts stored balance (MEDIUM), mutable GCFState (LOW). Quick doc fixes committed. Structural items recorded in OB for future engineering. CX prose directive posted. 1887 tests. Git clean.
+**Head commit:** c19f322 — P-pass fixes: terminology consistency + FAQ rate. COMMITTED AND PUSHED.
 
 ---
 
@@ -39,14 +39,19 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `e1a7c96` — Narrative pass on storyboard. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: e1a7c96 posted with revert rationale + P-pass range. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to e1a7c96. |
-| **ty** | Tidy: docs lock-stepped | PASS | CX terminology downgrades reverted. social.py 5 scenes rewritten for narrative quality. |
+| **w** | Written: committed + pushed | PASS | HEAD: `c19f322` — P-pass fixes. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: prose directive + P-pass results + c19f322 posted. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to c19f322. OB: P-pass findings + prose directive stored. |
+| **ty** | Tidy: docs lock-stepped | PASS | Zero "accounting state" in code. FAQ rate specified. 5 structural findings deferred with OB record. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+62. **`c19f322`** — P-pass fixes: terminology consistency + FAQ rate specificity
+    - state_store.py, test_workflow.py: "accounting state" → "accounting identity" (2 residual mismatches)
+    - about.html GCF FAQ: "a percentage" → "1% contribution on all gross mission value"
+    - 5 structural findings (P1-P5) recorded in OB for future engineering sessions
 
 61. **`e1a7c96`** — Narrative pass on storyboard Road Ahead track + CX terminology downgrades reverted
     - Reverted CX uncommitted: "accounting identity"→"accounting state" (6 files) — downgrade, less precise
