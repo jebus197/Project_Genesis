@@ -898,7 +898,7 @@ class TestCXRegressionsP1Durability:
     """Regression tests for CX P1 durability bugs (3c32e2d review cycle).
 
     Covers:
-    - P1-1: GCF treasury balance, contributions, disbursements survive restart
+    - P1-1: GCF accounting state (derived balance, contributions, disbursements) survives restart
     - P1-2: Disbursement proposals survive restart
     - P1-3: Amendment panel selection survives restart
     """
@@ -912,7 +912,7 @@ class TestCXRegressionsP1Durability:
         )
         return svc
 
-    def test_gcf_treasury_survives_restart(self, tmp_path):
+    def test_gcf_state_survives_restart(self, tmp_path):
         """GCF balance and contributions must survive service restart (P1-1)."""
         from genesis.persistence.state_store import StateStore
 
@@ -930,7 +930,7 @@ class TestCXRegressionsP1Durability:
         svc1._gcf_tracker.activate(now=now)
         svc1._gcf_tracker.record_contribution(
             amount=Decimal("100.50"),
-            mission_id="m_treasury_test",
+            mission_id="m_gcf_state_test",
             now=now,
         )
         # Persist state

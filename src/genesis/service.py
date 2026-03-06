@@ -335,7 +335,7 @@ class GenesisService:
             self._first_light_achieved = lifecycle["first_light_achieved"]
             self._founder_id = lifecycle["founder_id"]
             self._founder_last_action_utc = lifecycle["founder_last_action_utc"]
-            # Restore GCF tracker state (treasury balance, contributions, disbursements)
+            # Restore GCF tracker state (derived balance, contributions, disbursements)
             gcf_data = state_store.load_gcf()
             if gcf_data:
                 self._gcf_tracker = GCFTracker.from_dict(gcf_data)
@@ -7612,7 +7612,7 @@ class GenesisService:
         proposal_id: str,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
-        """Execute an approved disbursement — transfer funds from GCF.
+        """Execute an approved disbursement — record GCF outflow.
 
         Validates:
         1. Proposal exists and is APPROVED.

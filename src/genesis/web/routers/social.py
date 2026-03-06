@@ -287,7 +287,7 @@ STORYBOARD_TRACKS = {
                 "paragraphs": [
                     "Every platform eventually faces the same question: can it survive without life support? First Light is Genesis's answer. It is a named constitutional event — the precise moment the network crosses from proof-of-concept into self-sustaining operations.",
                     "The trigger is financial, not political: revenue must reach at least 1.5 times operating costs, with a three-month reserve established. When those conditions are met simultaneously, three things fire at once — and none of them can be reversed.",
-                    "First: proof-of-concept mode is removed permanently. Genesis is no longer a prototype. Second: the Genesis Common Fund activates at a 1% contribution rate, creating the platform's collective treasury. Third — and most importantly — the founder's veto expires. Irreversibly. No extension, no re-grant, no emergency exception.",
+                    "First: proof-of-concept mode is removed permanently. Genesis is no longer a prototype. Second: the Genesis Common Fund activates at a 1% contribution rate, activating the platform's constitutional commons. Third — and most importantly — the founder's veto expires. Irreversibly. No extension, no re-grant, no emergency exception.",
                     "First Light is deliberately decoupled from the governance phases. It could fire before or after the G0-to-G1 transition. Financial sustainability and governance scaling are separate constitutional tracks, because coupling them would create perverse incentives to delay one for the sake of the other.",
                 ],
                 "points": [

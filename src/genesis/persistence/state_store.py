@@ -1175,7 +1175,7 @@ class StateStore:
         return workflows
 
     # ------------------------------------------------------------------
-    # GCF Tracker persistence (treasury state)
+    # GCF Tracker persistence (accounting state: derived balance + contribution/disbursement records)
     # ------------------------------------------------------------------
 
     def save_gcf(self, gcf_data: dict) -> None:
