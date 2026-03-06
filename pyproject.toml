@@ -11,7 +11,7 @@ license = {text = "MIT"}
 authors = [{name = "George Jackson"}]
 
 [project.optional-dependencies]
-web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "python-multipart>=0.0.18"]
+web = ["fastapi>=0.115", "uvicorn[standard]>=0.34", "python-multipart>=0.0.18", "jinja2>=3.1"]
 dev = ["pytest>=8.0", "httpx>=0.28", "anyio>=4.0"]
 
 [tool.setuptools.packages.find]
