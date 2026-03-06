@@ -87,7 +87,7 @@ STORYBOARD_TRACKS = {
                     "When things went wrong, accountability diffused until nobody was responsible.",
                     "People lost confidence not just in outputs, but in the institutions behind them.",
                 ],
-                "deep_link": "/about",
+                "deep_link": "/about#faq-platform",
                 "deep_label": "Read origin FAQ",
             },
             {
@@ -123,8 +123,8 @@ STORYBOARD_TRACKS = {
                     "No hidden authority rewriting outcomes without a traceable reason.",
                     "Every present element survived falsification. Every absent element was eliminated with a traceable reason.",
                 ],
-                "deep_link": "/about",
-                "deep_label": "See what survived and why",
+                "deep_link": "/about#faq-platform",
+                "deep_label": "Read the full FAQ",
             },
         ],
     },
@@ -331,7 +331,7 @@ STORYBOARD_TRACKS = {
                     "Baseline compute access guaranteed for every member, funded by GCF.",
                     "External dependency follows a bootstrap curve toward zero — mathematically defined, not discretionary.",
                 ],
-                "deep_link": "/about",
+                "deep_link": "/about#faq-compute",
                 "deep_label": "Read compute architecture FAQ",
             },
             {
@@ -350,7 +350,7 @@ STORYBOARD_TRACKS = {
                     "Tier 3 requires 5 years, zero violations, and a full constitutional amendment per machine, per domain.",
                     "Voting exclusion changeable via super-constitutional process (80% supermajority).",
                 ],
-                "deep_link": "/about",
+                "deep_link": "/about#faq-machines",
                 "deep_label": "Read machine agency FAQ",
             },
             {

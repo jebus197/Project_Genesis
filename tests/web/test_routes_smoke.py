@@ -113,6 +113,62 @@ class TestAbout:
         assert r.status_code == 307
         assert r.headers["location"] == "/about/story?step=1"
 
+    async def test_about_faq_section_anchors(self, client):
+        """Every FAQ section has an anchor ID for deep linking."""
+        r = await client.get("/about")
+        assert r.status_code == 200
+        for anchor in [
+            "faq-platform", "faq-workflow", "faq-trust",
+            "faq-governance", "faq-economics", "faq-safety",
+            "faq-machines", "faq-compute",
+        ]:
+            assert f'id="{anchor}"' in r.text, f"Missing anchor: {anchor}"
+
+    async def test_about_faq_section_titles(self, client):
+        """All 8 FAQ section titles are present."""
+        r = await client.get("/about")
+        for title in [
+            "What Genesis Is",
+            "How Work Flows",
+            "Trust and Reputation",
+            "Governance and Constitutional Design",
+            "Economics, First Light, and Epochs",
+            "Safety, Justice, and Accommodation",
+            "Machine Agency and Coexistence",
+            "Distributed Compute and Sovereignty",
+        ]:
+            assert title in r.text, f"Missing section: {title}"
+
+    async def test_about_faq_key_concepts(self, client):
+        """Key philosophical concepts appear in expanded FAQ answers."""
+        r = await client.get("/about")
+        text = r.text.lower()
+        assert "falsif" in text  # Popperian falsification
+        assert "escrow" in text  # Escrow-first payment
+        assert "first light" in text
+        assert "four-tier" in text  # Machine autonomy pathway
+        assert "common fund" in text  # GCF
+        assert "cannot be bought" in text  # Trust rule
+
+    async def test_about_faq_answer_depth(self, client):
+        """FAQ has sufficient items with substantive prose."""
+        r = await client.get("/about")
+        faq_count = r.text.count('class="faq-item"')
+        assert faq_count >= 38, f"Expected ≥38 FAQ items, found {faq_count}"
+
+    async def test_storyboard_deep_links_use_anchors(self, client):
+        """Storyboard steps that link to /about use section anchors."""
+        # Step 1 links to /about#faq-platform
+        r1 = await client.get("/about/story?step=1")
+        assert r1.status_code == 200
+        assert "/about#faq-" in r1.text
+        # Step 14 (Beyond The Data Centre) links to /about#faq-compute
+        r14 = await client.get("/about/story?step=14")
+        assert "/about#faq-compute" in r14.text
+        # Step 15 (Coexistence) links to /about#faq-machines
+        r15 = await client.get("/about/story?step=15")
+        assert "/about#faq-machines" in r15.text
+
 
 class TestRegistration:
     async def test_register_form(self, client):
