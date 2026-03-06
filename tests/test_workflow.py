@@ -898,7 +898,7 @@ class TestCXRegressionsP1Durability:
     """Regression tests for CX P1 durability bugs (3c32e2d review cycle).
 
     Covers:
-    - P1-1: GCF accounting state (derived balance, contributions, disbursements) survives restart
+    - P1-1: GCF accounting identity (derived balance, contributions, disbursements) survives restart
     - P1-2: Disbursement proposals survive restart
     - P1-3: Amendment panel selection survives restart
     """
