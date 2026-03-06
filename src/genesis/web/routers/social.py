@@ -8,6 +8,7 @@ with seed data. Post-First Light, they connect to real services.
 import json
 import re
 from datetime import datetime, timezone
+from pathlib import Path
 from urllib.parse import quote_plus
 
 from fastapi import APIRouter, Form, Query, Request
@@ -818,6 +819,41 @@ async def about_genesis(request: Request):
         "active_tab": "about",
     }
     return respond(request, templates, "about.html", context)
+
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[4]
+
+
+@router.get("/about/readme")
+async def about_readme(request: Request):
+    """Render the project README as styled HTML."""
+    from genesis.web.markdown_render import render_markdown_file
+
+    templates = get_templates(request)
+    context = {
+        "request": request,
+        "active_tab": "about",
+        "doc_title": "Project Genesis — README",
+        "doc_html": render_markdown_file(_PROJECT_ROOT / "README.md"),
+        "doc_source": "README.md",
+    }
+    return respond(request, templates, "document.html", context)
+
+
+@router.get("/about/constitution")
+async def about_constitution(request: Request):
+    """Render the Genesis Constitution as styled HTML."""
+    from genesis.web.markdown_render import render_markdown_file
+
+    templates = get_templates(request)
+    context = {
+        "request": request,
+        "active_tab": "about",
+        "doc_title": "Genesis Trust Constitution",
+        "doc_html": render_markdown_file(_PROJECT_ROOT / "TRUST_CONSTITUTION.md"),
+        "doc_source": "TRUST_CONSTITUTION.md",
+    }
+    return respond(request, templates, "document.html", context)
 
 
 @router.get("/about/story")

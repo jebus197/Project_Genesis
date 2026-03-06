@@ -1,0 +1,17 @@
+{% extends "base_social.html" %}
+{% block title %}{{ doc_title }}{% endblock %}
+{% block content %}
+
+<article class="feed-card feed-card-group page-intro">
+    <h1 class="card-title">{{ doc_title }}</h1>
+    <p class="card-body">
+        Source document: <code>{{ doc_source }}</code>
+        · <a href="/about">Back to About</a>
+    </p>
+</article>
+
+<article class="feed-card feed-card-group document-prose">
+    {{ doc_html | safe }}
+</article>
+
+{% endblock %}

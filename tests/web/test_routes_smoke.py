@@ -170,6 +170,56 @@ class TestAbout:
         assert "/about#faq-machines" in r15.text
 
 
+    async def test_about_readme_html(self, client):
+        """README renders as HTML at /about/readme."""
+        r = await client.get("/about/readme")
+        assert r.status_code == 200
+        assert "Project Genesis" in r.text
+        assert "README" in r.text
+
+    async def test_about_readme_json(self, client):
+        """README JSON response includes doc_html."""
+        r = await client.get("/about/readme", headers={"Accept": "application/json"})
+        assert r.status_code == 200
+        data = r.json()
+        assert data.get("active_tab") == "about"
+        assert "doc_html" in data
+
+    async def test_about_constitution_html(self, client):
+        """Constitution renders as HTML at /about/constitution."""
+        r = await client.get("/about/constitution")
+        assert r.status_code == 200
+        assert "Constitution" in r.text
+
+    async def test_about_constitution_json(self, client):
+        """Constitution JSON response includes doc_html."""
+        r = await client.get("/about/constitution", headers={"Accept": "application/json"})
+        assert r.status_code == 200
+        data = r.json()
+        assert data.get("active_tab") == "about"
+        assert "doc_html" in data
+
+    async def test_about_no_faq_auto_open(self, client):
+        """No FAQ item should auto-expand."""
+        r = await client.get("/about")
+        assert r.status_code == 200
+        assert '<details class="faq-item" open>' not in r.text
+
+    async def test_about_foundational_documents_links(self, client):
+        """About page links to README and Constitution."""
+        r = await client.get("/about")
+        assert r.status_code == 200
+        assert "/about/readme" in r.text
+        assert "/about/constitution" in r.text
+
+    async def test_about_project_origin_expanded(self, client):
+        """Project Origin is expanded prose, not a stub."""
+        r = await client.get("/about")
+        text = r.text.lower()
+        assert "karl popper" in text or "popper" in text
+        assert "constitution" in text
+
+
 class TestRegistration:
     async def test_register_form(self, client):
         r = await client.get("/register")

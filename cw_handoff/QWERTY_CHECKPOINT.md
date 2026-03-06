@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-06T00:15Z
+**Last updated:** 2026-03-06T14:00Z
 **Updated by:** CC (Claude)
-**Session:** Storyboard expanded to 18 steps (added distributed immunity, self-falsification, enriched compute card with SETI falsification). Full push to origin: 4fae420. 22,305 lines across 104 files. RUNNING.md created for reviewer access. 1849 tests passing (1745 core + 104 web). Git clean.
-**Head commit:** 4fae420 — web layer, 18-step storyboard, mission lifecycle, agent collab, reviewer guide. COMMITTED AND PUSHED.
+**Session:** FAQ prose rewrite (8 sections, ~46 items, multi-paragraph answers), deep link refinement (6 storyboard steps now target FAQ anchors), FAQ visual polish (chevron indicators, hover/open states, section intros). Storyboard SETI@Home + falsification fixes. 1854 tests passing (1745 core + 109 web). Git clean.
+**Head commit:** f26126a — FAQ visual polish: chevron indicators, hover/open states, section intros. COMMITTED AND PUSHED.
 
 ---
 
