@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-06T23:00Z
+**Last updated:** 2026-03-07T00:15Z
 **Updated by:** CC (Claude)
-**Session:** GCF custody model precision — replaced "distributed ledger" handwaving (10 instances across 8 files) with falsifiable accounting-identity language. Option C: constitutional escrow cascade. New storyboard paragraph + 2 bullets. New FAQ entry. GCFState docstring factual fix. P2P vision documented in MEMORY.md. 1887 tests (1771 core + 116 web). Git clean.
-**Head commit:** 4e512d1 — Replace 'distributed ledger' handwaving with falsifiable accounting-identity custody model. COMMITTED AND PUSHED.
+**Session:** Language precision pass — register-appropriate GCF custody language across narrative (README, landing) and code (state_store, service, social, test_workflow). FAQ deepened for external researchers (tamper-evidence, hash chain, P2P topology independence). `d` protocol formalised. Zero "treasury" refs remain in code. 1887 tests (1771 core + 116 web). Git clean.
+**Head commit:** cc1dde0 — Language precision pass: register-appropriate GCF custody language, eliminate residual handwaving. COMMITTED AND PUSHED.
 
 ---
 
@@ -39,14 +39,22 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `4e512d1` — GCF accounting-identity custody model. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: 4e512d1 posted with full summary. |
-| **r** | Recorded: MEMORY.md updated | PASS | Option C decision + P2P vision + network layer expansion. |
-| **ty** | Tidy: docs lock-stepped | PASS | 10 files: constitution, gcf.py, white paper, README (3), tech overview, events, landing, storyboard, FAQ. Zero "distributed ledger" refs remain. |
+| **w** | Written: committed + pushed | PASS | HEAD: `cc1dde0` — Language precision pass. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: cc1dde0 posted with full summary. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to cc1dde0, `d` protocol recorded. |
+| **ty** | Tidy: docs lock-stepped | PASS | 7 files: README, landing, state_store, service (×2), social storyboard, test_workflow (×3), FAQ deepened. Zero "treasury" refs in code, zero "distributed ledger" refs anywhere. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+60. **`cc1dde0`** — Language precision pass: register-appropriate GCF custody language, eliminate residual handwaving
+    - README "Nothing to rob": narrative rewrite (fund as subtraction, not vault)
+    - landing.html: accessible phrasing ("running total, not a pool")
+    - 6 residual "treasury" refs in code → precise accounting language (state_store, service ×2, social, test_workflow ×3)
+    - FAQ deepened: tamper-evidence, hash chain, P2P topology independence paragraph
+    - `d` protocol formalised in MEMORY.md
+    - 7 files, 10 insertions, 9 deletions, 1887 tests passing
 
 59. **`4e512d1`** — Replace 'distributed ledger' handwaving with falsifiable accounting-identity custody model
     - 10 instances of "distributed ledger state IS the fund" across 8 files → precise accounting-identity language
