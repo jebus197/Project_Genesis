@@ -39,9 +39,9 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `544536a` — Doc sweep: design test collision fix + count updates. PUSHED. |
-| **e** | Exchanged: CX notified | PENDING | IM post next. |
-| **r** | Recorded: MEMORY.md updated | PENDING | Updating now. |
+| **w** | Written: committed + pushed | PASS | HEAD: `0a4b8c6` — qwerty checkpoint for doc sweep. PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: 544536a posted with full summary + CX review advisory. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to 544536a, doc sweep line added, design test refs updated. |
 | **ty** | Tidy: docs lock-stepped | PASS | All 11 files updated: constitution, 5 test files, white paper, public brief, README, tech overview, QWERTY checkpoint. |
 
 ## Commits Pending CX Review

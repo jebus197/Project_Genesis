@@ -279,7 +279,7 @@ The Genesis constitution was re-anchored to Ethereum Sepolia after wiring the li
 
 The Genesis constitution was re-anchored to Ethereum Sepolia after building the constitutional infrastructure required for a functioning economy. This is the largest constitutional expansion to date, covering four major subsystems:
 
-1. **Genesis Common Fund (E-1):** A constitutional 1% contribution on all gross transaction value. Non-discretionary, activated automatically at First Light. The distributed ledger state IS the fund — no bank, no custodian.
+1. **Genesis Common Fund (E-1):** A constitutional 1% contribution on all gross transaction value. Non-discretionary, activated automatically at First Light. The fund is an accounting identity derived from the event log — no bank, no custodian.
 
 2. **Harmful work prevention (E-2):** 17 prohibited categories with three-layer enforcement (automated screening, compliance quorum, post-hoc complaints). Four-tier penalty escalation from warning to permanent decommission. Pattern escalation for repeat offenders.
 

@@ -188,12 +188,15 @@ STORYBOARD_TRACKS = {
                 "paragraphs": [
                     "Trust on Genesis cannot be bought, sold, delegated, inherited, rented, or gifted. It is earned exclusively through verified work outcomes. Your trust score reflects what you have demonstrably done, checked by people who were not involved in doing it.",
                     "Rewards flow through transparent channels: escrow releases on verification, creator allocation on success, and a portion flows to the Genesis Common Fund — a constitutional commons that funds collective infrastructure, distributed compute, and long-term sustainability. You can see where GCF money goes at destination level, not hidden behind personal balances.",
+                    "The GCF is structurally unrobbable. There is no vault, no pool, no account to target. The fund balance is a derived quantity — total contributions minus total disbursements — computed from the event log. Disbursement requires governance approval through the same constitutional process that governs everything else. No individual has a per-actor balance, so there is nothing to individually extract.",
                 ],
                 "points": [
                     "Trust is earned from verified outcomes — never purchased or transferred.",
                     "Escrow-first settlement: value is committed before work starts, released after verification.",
                     "A constitutional allocation funds long-term sustainability — details in The Founder's Horizon.",
                     "GCF allocation is collectively governed and visible at destination level.",
+                    "The fund is an accounting identity, not a vault — there is no pool of money to steal.",
+                    "Disbursement requires governance approval; no individual — including the founder — can extract value.",
                 ],
                 "deep_link": "/members",
                 "deep_label": "Open member dashboard",

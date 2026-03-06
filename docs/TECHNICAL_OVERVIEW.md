@@ -720,7 +720,7 @@ The `GCFTracker` (`src/genesis/compensation/gcf.py`) manages the fund state:
 - **Activation**: the fund activates at First Light (financial sustainability trigger). Before First Light, no contributions are collected. Activation is a one-time event — once activated, it cannot be deactivated.
 - **Contribution**: on every successful mission completion, 1% of the `mission_reward` (gross value) is deducted from the worker's payout and recorded as a `GCFContribution`. The contribution rate is loaded from `config/commission_policy.json` (`gcf_contribution_rate = "0.01"`).
 - **Accounting invariant**: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`. This invariant is tested automatically.
-- **Non-extractability**: the fund tracks total balance, total contributed, and contribution count — but it has **no per-actor balance method**. No individual can determine the precise value of their own contributions, because the fund is trust-proportional and architecturally opaque at the individual level. The distributed ledger state is the fund. There is no bank account, no custodian, no external financial intermediary.
+- **Non-extractability**: the fund tracks total balance, total contributed, and contribution count — but it has **no per-actor balance method**. No individual can determine the precise value of their own contributions, because the fund is trust-proportional and architecturally opaque at the individual level. The fund is an accounting identity: total contributions minus total disbursements, derived from the event log. There is no bank account, no custodian, no external financial intermediary.
 
 **GCFState fields:**
 

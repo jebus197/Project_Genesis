@@ -9,7 +9,8 @@ Key properties:
 - Activates automatically at First Light (no human decision).
 - Trust-proportional but individually non-extractable — there is NO
   per-actor balance method. The fund is a shared commons.
-- The distributed ledger state IS the fund. No bank. No custodian.
+- The fund is an accounting identity (total_contributed - total_disbursed),
+  derived from the event log. Not a pool, not a vault. No bank. No custodian.
 - Deducted from worker_payout (after commission and creator allocation).
 - Scope: all human activity that doesn't increase net human suffering.
 
@@ -56,8 +57,9 @@ class GCFDisbursement:
 class GCFState:
     """Observable state of the Genesis Common Fund.
 
-    The balance is the sum of all contributions. Individual actor shares
-    are architecturally unknowable — no per-actor balance query exists.
+    The balance is a derived accounting identity: total_contributed minus
+    total_disbursed. Individual actor shares are architecturally unknowable
+    — no per-actor balance query exists.
     """
     balance: Decimal = Decimal("0")
     total_contributed: Decimal = Decimal("0")

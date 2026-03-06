@@ -215,7 +215,7 @@ The Genesis Common Fund is a constitutional 1% contribution on all gross transac
 **Structure:**
 - Rate: 1% of `mission_reward`, deducted from worker payout after commission and creator allocation.
 - Activation: automatic at First Light (§9.5). No human decision triggers it — it is a function of the system architecture.
-- Distribution: trust-proportional but individually non-extractable. No per-actor balance query exists. The distributed ledger state is the fund. No bank. No custodian.
+- Distribution: trust-proportional but individually non-extractable. No per-actor balance query exists. The GCF balance is a derived accounting identity (total contributions minus total disbursements) computed from the tamper-evident event log. Not a pool, not a vault. No bank. No custodian.
 - Updated invariant: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`.
 
 **Total take rate (worker perspective):**
