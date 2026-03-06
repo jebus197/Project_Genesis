@@ -24,6 +24,7 @@ import json
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -297,6 +298,7 @@ class GenesisService:
 
         # Assembly — anonymous deliberation (Phase F-1)
         self._assembly_engine = AssemblyEngine(resolver.assembly_config())
+        self._assembly_compliance_salts: dict[str, str] = {}
 
         # Organisation Registry — coordination structures (Phase F-2)
         self._org_registry_engine = OrgRegistryEngine(
@@ -387,6 +389,7 @@ class GenesisService:
                     resolver.assembly_config(),
                     assembly_topics,
                 )
+            self._assembly_compliance_salts = state_store.load_assembly_compliance_salts()
             # Restore Organisation Registry state (Phase F-2)
             org_records = state_store.load_org_registry()
             if org_records:
@@ -4624,6 +4627,87 @@ class GenesisService:
         except RuntimeError as e:
             return ServiceResult(success=False, errors=[str(e)])
 
+    def should_anchor(
+        self,
+        tier: Any,
+        hours_since_last_anchor: float,
+        has_constitutional_event: bool = False,
+    ) -> bool:
+        """Check whether L1 anchoring is due for the current commitment."""
+        return self._epoch_service.should_anchor(
+            tier, hours_since_last_anchor, has_constitutional_event,
+        )
+
+    def anchor_commitment(
+        self,
+        record: Any,
+        rpc_url: str,
+        private_key: str,
+        chain_id: int = 11155111,
+    ) -> ServiceResult:
+        """Anchor a commitment record to L1 and emit COMMITMENT_ANCHORED event.
+
+        Delegates to EpochService for the chain transaction, then records
+        the anchor in the event log. No on-chain badge without a real tx.
+        """
+        try:
+            anchor = self._epoch_service.anchor_commitment(
+                record, rpc_url, private_key, chain_id,
+            )
+        except Exception as e:
+            return ServiceResult(
+                success=False,
+                errors=[f"Anchoring failed: {e}"],
+            )
+
+        # Emit COMMITMENT_ANCHORED event — this is the runtime record
+        # that /audit surfaces with a verified badge.
+        event_recorded = True
+        event_warning = ""
+        if self._event_log is not None:
+            try:
+                event = EventRecord.create(
+                    event_id=self._next_event_id(),
+                    event_kind=EventKind.COMMITMENT_ANCHORED,
+                    actor_id="system",
+                    payload={
+                        "tx_hash": anchor.tx_hash,
+                        "block_number": anchor.block_number,
+                        "chain_id": anchor.chain_id,
+                        "explorer_url": anchor.explorer_url,
+                        "sha256_hash": anchor.sha256_hash,
+                        "document_path": anchor.document_path,
+                        "epoch_id": getattr(record, "epoch_id", ""),
+                    },
+                )
+                # Anchoring happens AFTER epoch close, so the epoch may not
+                # be open. Record directly to event log without epoch insertion.
+                self._event_log.append(event)
+            except (ValueError, OSError, RuntimeError):
+                event_recorded = False
+                event_warning = (
+                    "On-chain anchor succeeded but runtime audit event recording failed. "
+                    "Verify via explorer link and inspect persistence/IO health."
+                )
+
+        warning = self._safe_persist_post_audit()
+        data: dict[str, Any] = {
+            "tx_hash": anchor.tx_hash,
+            "block_number": anchor.block_number,
+            "chain_id": anchor.chain_id,
+            "explorer_url": anchor.explorer_url,
+            "sha256_hash": anchor.sha256_hash,
+            "runtime_event_recorded": event_recorded,
+        }
+        warnings: list[str] = []
+        if event_warning:
+            warnings.append(event_warning)
+        if warning:
+            warnings.append(str(warning))
+        if warnings:
+            data["warning"] = " | ".join(warnings)
+        return ServiceResult(success=True, data=data)
+
     # ------------------------------------------------------------------
     # Founder's veto — pre-sustainability constitutional guardian
     # ------------------------------------------------------------------
@@ -5176,6 +5260,65 @@ class GenesisService:
     # Status and queries
     # ------------------------------------------------------------------
 
+    def get_gcf_snapshot(self) -> dict[str, Any]:
+        """Return a UI-safe snapshot of Genesis Common Fund state.
+
+        Exposes only collective channels and percentages. No per-actor
+        balances are derivable.
+        """
+        state = self._gcf_tracker.get_state()
+        disbursements = self._gcf_tracker.get_disbursements()
+
+        channels: list[dict[str, Any]] = []
+        by_category: dict[str, Decimal] = {}
+        for item in disbursements:
+            by_category[item.category] = by_category.get(item.category, Decimal("0")) + item.amount
+
+        if state.total_disbursed > Decimal("0"):
+            total = state.total_disbursed
+            category_rows = sorted(by_category.items(), key=lambda entry: entry[1], reverse=True)
+            running_share = 0
+            for idx, (category, amount) in enumerate(category_rows):
+                if idx == len(category_rows) - 1:
+                    share = max(0, 100 - running_share)
+                else:
+                    share = int(((amount * Decimal("100")) / total).quantize(Decimal("1")))
+                    running_share += share
+                channels.append({
+                    "channel": category.replace("_", " ").title(),
+                    "share": int(share),
+                    "measurable": True,
+                    "purpose": "Executed disbursement channel under constitutional vote controls.",
+                })
+        elif state.activated and state.balance > Decimal("0"):
+            channels.append({
+                "channel": "Undeployed Commons Reserve",
+                "share": None,
+                "measurable": False,
+                "purpose": "Contributions received; no approved disbursement executed yet. Percent allocation appears after first disbursement event.",
+            })
+        else:
+            channels.append({
+                "channel": "Pre-Activation",
+                "share": None,
+                "measurable": False,
+                "purpose": "GCF has not activated yet (awaiting First Light conditions). Allocation percentages are unavailable in this state.",
+            })
+
+        now = datetime.now(timezone.utc)
+        quarter = ((now.month - 1) // 3) + 1
+        return {
+            "activated": bool(state.activated),
+            "epoch_label": f"{now.year}-Q{quarter}",
+            "allocation_index": 100 if state.activated else 0,
+            "allocation_channels": channels,
+            "totals": {
+                "contribution_count": state.contribution_count,
+                "disbursement_count": state.disbursement_count,
+                "balance": str(state.balance),
+            },
+        }
+
     def status(self) -> dict[str, Any]:
         """Return system-wide status summary."""
         return {
@@ -5230,6 +5373,21 @@ class GenesisService:
             },
             "persistence_degraded": self._persistence_degraded,
         }
+
+    def recent_events(
+        self,
+        limit: int = 120,
+        kind: Optional[EventKind] = None,
+    ) -> list[EventRecord]:
+        """Return a bounded window of recent audit events."""
+        if self._event_log is None:
+            return []
+        try:
+            bounded_limit = int(limit)
+        except (TypeError, ValueError):
+            return []
+        bounded_limit = max(0, min(bounded_limit, 5000))
+        return self._event_log.recent_events(limit=bounded_limit, kind=kind)
 
     # ------------------------------------------------------------------
     # Internal helpers
@@ -5617,6 +5775,9 @@ class GenesisService:
         # Assembly (Phase F-1)
         self._state_store.save_assembly_topics(
             self._assembly_engine.to_records(),
+        )
+        self._state_store.save_assembly_compliance_salts(
+            self._assembly_compliance_salts,
         )
         # Organisation Registry (Phase F-2)
         self._state_store.save_org_registry(
@@ -7738,6 +7899,7 @@ class GenesisService:
         provision_key: str,
         proposed_value: Any,
         justification: str,
+        source_topic_id: Optional[str] = None,
         now: Optional[datetime] = None,
     ) -> ServiceResult:
         """Propose a constitutional amendment.
@@ -7790,6 +7952,7 @@ class GenesisService:
                 current_value=current_value,
                 proposed_value=proposed_value,
                 justification=justification,
+                source_topic_id=source_topic_id,
                 now=now,
             )
         except ValueError as e:
@@ -7807,6 +7970,7 @@ class GenesisService:
                         "provision_key": provision_key,
                         "proposed_value": str(proposed_value),
                         "is_entrenched": proposal.is_entrenched,
+                        "source_topic_id": proposal.source_topic_id,
                     },
                     timestamp_utc=now,
                 )
@@ -7823,6 +7987,7 @@ class GenesisService:
                 "provision_key": provision_key,
                 "is_entrenched": proposal.is_entrenched,
                 "status": proposal.status.value,
+                "source_topic_id": proposal.source_topic_id,
             },
         )
 
@@ -8922,6 +9087,11 @@ class GenesisService:
         h = hashlib.sha256(raw).hexdigest()
         return h, salt
 
+    @staticmethod
+    def _assembly_hash_for_actor_with_salt(actor_id: str, salt: str) -> str:
+        raw = f"{actor_id}:{salt}".encode("utf-8")
+        return hashlib.sha256(raw).hexdigest()
+
     def create_assembly_topic(
         self,
         actor_id: str,
@@ -8971,7 +9141,7 @@ class GenesisService:
             )
 
         is_machine = entry.actor_kind == ActorKind.MACHINE
-        compliance_hash, _salt = self._assembly_compliance_hash(actor_id)
+        compliance_hash, salt = self._assembly_compliance_hash(actor_id)
 
         try:
             if now is None:
@@ -8992,13 +9162,15 @@ class GenesisService:
             EventKind.ASSEMBLY_TOPIC_CREATED,
             {"topic_id": topic.topic_id},
         )
+        contribution_id = topic.contributions[0].contribution_id
+        self._assembly_compliance_salts[contribution_id] = salt
 
         self._safe_persist_post_audit()
         return ServiceResult(
             success=True,
             data={
                 "topic_id": topic.topic_id,
-                "contribution_id": topic.contributions[0].contribution_id,
+                "contribution_id": contribution_id,
                 "compliance_flagged": screening.verdict == ComplianceVerdict.FLAGGED,
             },
         )
@@ -9052,7 +9224,7 @@ class GenesisService:
             )
 
         is_machine = entry.actor_kind == ActorKind.MACHINE
-        compliance_hash, _salt = self._assembly_compliance_hash(actor_id)
+        compliance_hash, salt = self._assembly_compliance_hash(actor_id)
 
         try:
             if now is None:
@@ -9073,6 +9245,7 @@ class GenesisService:
             EventKind.ASSEMBLY_CONTRIBUTION_ADDED,
             {"topic_id": topic_id, "contribution_id": contribution.contribution_id},
         )
+        self._assembly_compliance_salts[contribution.contribution_id] = salt
 
         self._safe_persist_post_audit()
         return ServiceResult(
@@ -9199,6 +9372,49 @@ class GenesisService:
                 "created_utc": topic.created_utc.isoformat(),
                 "last_activity_utc": topic.last_activity_utc.isoformat(),
                 "contributions": contributions,
+            },
+        )
+
+    def check_assembly_contribution_actor_match(
+        self,
+        contribution_id: str,
+        actor_id: str,
+    ) -> ServiceResult:
+        """Compliance-only check: does actor_id match contribution author hash?
+
+        This method is intentionally scoped for post-hoc compliance workflows.
+        It does not expose author identity from Assembly read APIs.
+        """
+        if not contribution_id.strip():
+            return ServiceResult(success=False, errors=["Contribution ID is required"])
+        if self._roster.get(actor_id) is None:
+            return ServiceResult(success=False, errors=[f"Actor not found: {actor_id}"])
+
+        salt = self._assembly_compliance_salts.get(contribution_id)
+        if not salt:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"No compliance salt recorded for contribution {contribution_id}",
+                ],
+            )
+
+        candidate_hash = self._assembly_hash_for_actor_with_salt(actor_id, salt)
+        match = self._assembly_engine.check_compliance_hash_match(
+            contribution_id,
+            candidate_hash,
+        )
+        if match is None:
+            return ServiceResult(
+                success=False,
+                errors=[f"Contribution not found: {contribution_id}"],
+            )
+        return ServiceResult(
+            success=True,
+            data={
+                "contribution_id": contribution_id,
+                "actor_id": actor_id,
+                "match": bool(match),
             },
         )
 

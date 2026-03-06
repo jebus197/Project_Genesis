@@ -1,0 +1,128 @@
+{% extends "base_social.html" %}
+{% block title %}{{ topic.title|default('Assembly Topic') }}{% endblock %}
+{% block content %}
+
+<div class="feed-card page-intro feed-card-governance">
+    <nav class="forum-breadcrumb" aria-label="Assembly breadcrumb">
+        <a href="/assembly">Assembly</a>
+        <span class="forum-breadcrumb-sep">/</span>
+        <span>{{ topic.title }}</span>
+    </nav>
+    <h1 class="card-title">{{ topic.title }}</h1>
+    <p class="card-body">Open Assembly deliberation with anonymous human and machine participation.</p>
+    <div class="gap-row mt-1">
+        <span class="thread-tag thread-tag-question">Non-binding deliberation</span>
+        <span class="thread-tag thread-tag-evidence">{{ topic.status|title }}</span>
+        <span class="thread-tag thread-tag-evidence">{{ topic.contribution_count }} contributions</span>
+        <span class="thread-tag thread-tag-evidence">Opened {{ topic.created_ago }}</span>
+        <span class="thread-tag thread-tag-evidence">Updated {{ topic.last_activity_ago }}</span>
+    </div>
+</div>
+
+{% if notice %}
+<div class="mission-apply-feedback mission-apply-feedback-{{ notice_level|default('info') }}">
+    {{ notice }}
+</div>
+{% endif %}
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Opening Statement</h2>
+    {% if opening_contribution %}
+    <div class="thread-conversation mt-1">
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ opening_contribution.label }}</strong>
+                <span class="thread-actor-badge {% if opening_contribution.actor_type == 'machine' %}thread-actor-machine{% else %}thread-actor-human{% endif %}">
+                    {{ opening_contribution.actor_type|title }}
+                </span>
+                <span class="text-xs text-muted">{{ opening_contribution.time_ago }}</span>
+            </div>
+            <p class="thread-post-body">{{ opening_contribution.content }}</p>
+        </div>
+    </div>
+    {% else %}
+    <p class="card-body">No opening statement recorded.</p>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-governance" id="linked-amendments">
+    <h2 class="card-title">Linked Amendment Proposals</h2>
+    {% if linked_amendments %}
+    <div class="thread-conversation mt-1">
+        {% for amendment in linked_amendments %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ amendment.provision_key }}</strong>
+                <span class="thread-actor-badge thread-actor-human">{{ amendment.status_label }}</span>
+                {% if amendment.is_entrenched %}
+                <span class="thread-actor-badge thread-actor-machine">Entrenched</span>
+                {% endif %}
+                <span class="text-xs text-muted">{{ amendment.created_ago }}</span>
+            </div>
+            {% if amendment.justification_excerpt %}
+            <p class="thread-post-body">{{ amendment.justification_excerpt }}</p>
+            {% endif %}
+            <div class="card-actions">
+                <span class="thread-tag thread-tag-evidence">{{ amendment.proposal_id }}</span>
+                <a href="/assembly/amendment-path?topic={{ topic.topic_id }}" class="btn btn-sm">Open amendment path</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No amendment proposals linked to this topic yet.</p>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-governance" id="reply">
+    <h2 class="card-title">Respond To This Topic</h2>
+    <div class="card-actions mb-1">
+        {% if can_propose_amendment %}
+        <a href="{{ propose_amendment_href }}" class="btn btn-sm">Propose Amendment</a>
+        {% else %}
+        <button class="btn btn-sm btn-disabled" type="button" disabled>Propose Amendment ({{ propose_gate }}+)</button>
+        {% endif %}
+        <a href="/assembly/amendment-path?topic={{ topic.topic_id }}" class="btn btn-sm">How decisions become binding</a>
+    </div>
+    {% if can_contribute %}
+    <form method="post" action="/assembly/{{ topic.topic_id }}/contribute" class="circles-form-grid circles-inline-grid mt-1">
+        <div class="compose-toolbar" data-editor-toolbar data-target="assembly-response-content">
+            <button type="button" class="compose-tool" data-editor-action="bold">Bold</button>
+            <button type="button" class="compose-tool" data-editor-action="italic">Italic</button>
+            <button type="button" class="compose-tool" data-editor-action="bullet">List</button>
+            <button type="button" class="compose-tool" data-editor-action="quote">Quote</button>
+            <button type="button" class="compose-tool" data-editor-action="link">Link</button>
+        </div>
+        <textarea id="assembly-response-content" class="compose-textarea-lg" name="content" rows="6" minlength="20" placeholder="Add evidence, challenge, or refinement for this proposal." required></textarea>
+        <button class="btn btn-sm btn-primary" type="submit">Submit Response</button>
+    </form>
+    {% elif topic.status != "active" %}
+    <button class="btn btn-sm btn-disabled" type="button" disabled>Topic Archived</button>
+    {% else %}
+    <button class="btn btn-sm btn-disabled" type="button" disabled>Respond ({{ contribute_gate }}+)</button>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Contributions</h2>
+    {% if reply_contributions %}
+    <div class="thread-conversation mt-1">
+        {% for contribution in reply_contributions %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ contribution.label }}</strong>
+                <span class="thread-actor-badge {% if contribution.actor_type == 'machine' %}thread-actor-machine{% else %}thread-actor-human{% endif %}">
+                    {{ contribution.actor_type|title }}
+                </span>
+                <span class="text-xs text-muted">{{ contribution.time_ago }}</span>
+            </div>
+            <p class="thread-post-body">{{ contribution.content }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No responses yet.</p>
+    {% endif %}
+</article>
+
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base_social.html" %}
+{% block title %}Genesis Story{% endblock %}
+{% block content %}
+<article class="feed-card feed-card-mission story-chapter">
+    <div class="card-thread-summary">
+        <strong>{{ story_track_title }}</strong> · Step {{ story_step }} of {{ story_total }}
+    </div>
+    <h2 class="card-title">{{ story_scene.title }}</h2>
+    <p class="card-body">{{ story_scene.summary }}</p>
+    {% if story_scene.paragraphs %}
+    {% for paragraph in story_scene.paragraphs %}
+    <p class="card-body story-scene-paragraph">{{ paragraph }}</p>
+    {% endfor %}
+    {% endif %}
+    {% if story_scene.points %}
+    <ul class="story-points">
+        {% for point in story_scene.points %}
+        <li>{{ point }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <div class="story-scene-deeper">
+        <a href="{{ story_scene.deep_link }}" class="btn btn-sm">{{ story_scene.deep_label }}</a>
+    </div>
+    <div class="card-actions mt-1">
+        {% if story_prev_href %}
+        <a href="{{ story_prev_href }}" class="btn btn-sm">← Back</a>
+        {% endif %}
+        {% if story_next_href %}
+        <a href="{{ story_next_href }}" class="btn btn-sm btn-primary">Next →</a>
+        {% else %}
+        <a href="/missions" class="btn btn-sm btn-primary">Explore missions</a>
+        <a href="/about" class="btn btn-sm">Read deep FAQ</a>
+        {% endif %}
+    </div>
+</article>
+{% endblock %}

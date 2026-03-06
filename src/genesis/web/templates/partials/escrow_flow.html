@@ -1,0 +1,10 @@
+{# Expects: escrow_state (string: 'pending', 'locked', 'released', 'refunded') #}
+<div class="escrow-flow" aria-label="Escrow lifecycle">
+    <span class="escrow-step {% if escrow_state == 'pending' %}active{% endif %}">Pending</span>
+    <span class="escrow-arrow">&rarr;</span>
+    <span class="escrow-step {% if escrow_state == 'locked' %}active{% endif %}">Locked</span>
+    <span class="escrow-arrow">&rarr;</span>
+    <span class="escrow-step {% if escrow_state == 'released' %}active{% endif %}">Released</span>
+    <span class="escrow-arrow">/</span>
+    <span class="escrow-step {% if escrow_state == 'refunded' %}active{% endif %}">Refunded</span>
+</div>

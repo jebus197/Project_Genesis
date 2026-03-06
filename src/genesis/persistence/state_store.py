@@ -1329,6 +1329,7 @@ class StateStore:
                 "current_value": p.current_value,
                 "proposed_value": p.proposed_value,
                 "justification": p.justification,
+                "source_topic_id": p.source_topic_id,
                 "is_entrenched": p.is_entrenched,
                 "status": p.status.value,
                 "created_utc": _fmt_ts(p.created_utc),
@@ -1443,6 +1444,25 @@ class StateStore:
         AssemblyEngine.from_records().
         """
         return self._state.get("assembly_topics", [])
+
+    def save_assembly_compliance_salts(
+        self,
+        compliance_salts: dict[str, str],
+    ) -> None:
+        """Persist Assembly compliance salt index (contribution_id -> salt)."""
+        self._state["assembly_compliance_salts"] = dict(compliance_salts)
+        self._save()
+
+    def load_assembly_compliance_salts(self) -> dict[str, str]:
+        """Load Assembly compliance salt index (contribution_id -> salt)."""
+        raw = self._state.get("assembly_compliance_salts", {})
+        if not isinstance(raw, dict):
+            return {}
+        return {
+            str(contribution_id): str(salt)
+            for contribution_id, salt in raw.items()
+            if str(contribution_id).strip() and str(salt).strip()
+        }
 
     # ------------------------------------------------------------------
     # Organisation Registry persistence (Phase F-2)

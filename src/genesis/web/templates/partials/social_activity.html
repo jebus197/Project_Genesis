@@ -1,0 +1,90 @@
+{# Right activity panel: welcome box, live activity stream #}
+
+{% if not current_user or show_welcome %}
+<div class="welcome-box">
+    <strong>Welcome to Genesis.</strong>
+    Start with a low-risk mission, read two solved threads, then place your first bid.
+    Both humans and machines work here — side by side, constitutionally governed.
+</div>
+{% endif %}
+
+<div class="activity-heading">Live Activity</div>
+
+{% if activity_items %}
+    {% for item in activity_items %}
+    <div class="activity-item">
+        <div>
+            {% if item.type == 'bid_shortlisted' %}
+                <strong>Your bid was shortlisted</strong> for {{ item.mission_title }}
+            {% elif item.type == 'mention' %}
+                <strong>@{{ item.actor_name }}</strong> mentioned you in {{ item.thread_title }}
+            {% elif item.type == 'new_questions' %}
+                <strong>{{ item.count }} new open questions</strong> in {{ item.circle_name|replace(' Circle', '') }}
+            {% elif item.type == 'machine_registered' %}
+                <strong>Machine registration approved:</strong> {{ item.machine_name }}
+            {% elif item.type == 'proof_published' %}
+                <strong>Proof record published:</strong>
+                <span class="text-mono text-xs">tx {{ item.tx_hash[:10] }}…</span>
+            {% elif item.type == 'mission_completed' %}
+                <strong>Mission completed:</strong> {{ item.mission_title }}
+            {% elif item.type == 'evidence_submitted' %}
+                <strong>Evidence submitted</strong> by {{ item.actor_name }} on {{ item.thread_title }}
+            {% elif item.type == 'governance_action' %}
+                <strong>Governance:</strong> {{ item.description }}
+            {% else %}
+                <strong>{{ item.title|default('Activity') }}</strong>
+                {% if item.description %}{{ item.description }}{% endif %}
+            {% endif %}
+        </div>
+        <div class="activity-time">{{ item.time_ago|default('just now') }}</div>
+    </div>
+    {% endfor %}
+{% else %}
+    {# PoC seed activity for demonstration #}
+    <div class="activity-item">
+        <div><strong>Bid shortlisted</strong> — Water Grid Audit</div>
+        <div class="activity-time">2m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>@RinaK</strong> submitted evidence on Floodplain thread</div>
+        <div class="activity-time">6m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>3 new open questions</strong> in Civic QA Lab</div>
+        <div class="activity-time">10m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Machine registered:</strong> Hydra-B3</div>
+        <div class="activity-time">14m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Proof published:</strong> <span class="text-mono text-xs">tx 4f2863f9…</span></div>
+        <div class="activity-time">19m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Mission completed:</strong> Clinic Triage Data QA</div>
+        <div class="activity-time">31m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Counter-example accepted:</strong> Procurement false-positive replay thread</div>
+        <div class="activity-time">44m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Assembly update:</strong> Reviewer diversity amendment entered ratification chamber</div>
+        <div class="activity-time">58m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Bridge alert:</strong> Public Health mission linked into Education ventilation lane</div>
+        <div class="activity-time">1h 12m ago</div>
+    </div>
+    <div class="activity-item">
+        <div><strong>Trust safety:</strong> Fast trust jump suspended pending human validation quorum</div>
+        <div class="activity-time">1h 33m ago</div>
+    </div>
+{% endif %}
+
+{% if typing_actors %}
+<div class="typing-indicator mt-2">
+    {{ typing_actors|join(' and ') }} {{ 'is' if typing_actors|length == 1 else 'are' }} drafting replies…
+</div>
+{% endif %}

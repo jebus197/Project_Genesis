@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en"{% if poc_mode %} class="has-poc-banner"{% endif %}>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Genesis{% endblock %} — Genesis</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/genesis_social.css') }}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+    <script src="{{ url_for('static', path='js/genesis_social.js') }}" defer></script>
+    {% block head %}{% endblock %}
+</head>
+<body>
+    {% if poc_mode %}
+    <div class="poc-banner">
+        <strong>Proof of Concept</strong> — demonstration mode. Real missions begin at First Light.
+    </div>
+    {% endif %}
+
+    {% include "partials/social_header.html" %}
+
+    <nav class="nav-tabs">
+        <a href="/" class="nav-tab{% if active_tab == 'home' %} active{% endif %}">Home</a>
+        <a href="/missions" class="nav-tab{% if active_tab == 'missions' %} active{% endif %}">Missions</a>
+        <a href="/debates" class="nav-tab{% if active_tab == 'debates' %} active{% endif %}">Debates</a>
+        <a href="/circles" class="nav-tab{% if active_tab == 'circles' %} active{% endif %}">Circles</a>
+        <a href="/members" class="nav-tab{% if active_tab == 'members' %} active{% endif %}">Members</a>
+        <a href="/assembly" class="nav-tab{% if active_tab == 'assembly' %} active{% endif %}">Assembly</a>
+        <a href="/audit" class="nav-tab{% if active_tab == 'audit' %} active{% endif %}">Audit</a>
+        <a href="/about" class="nav-tab{% if active_tab == 'about' %} active{% endif %}">About</a>
+    </nav>
+
+    <div class="app-shell">
+        <div class="app-layout">
+            <aside class="app-sidebar">
+                {% block sidebar %}
+                {% include "partials/social_sidebar.html" %}
+                {% endblock %}
+            </aside>
+
+            <main class="app-feed">
+                {% block content %}{% endblock %}
+            </main>
+
+            <aside class="app-activity">
+                {% block activity %}
+                {% include "partials/social_activity.html" %}
+                {% endblock %}
+            </aside>
+        </div>
+    </div>
+</body>
+</html>

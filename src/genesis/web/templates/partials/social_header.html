@@ -1,0 +1,38 @@
+<header class="site-header">
+    <div class="inner">
+        <a href="/" class="site-logo">Genesis <span class="site-logo-mark">anti-social network</span></a>
+
+        <div class="header-search">
+            <details class="search-popover">
+                <summary class="header-search-trigger">Search</summary>
+                <form class="header-search-panel" action="/missions" method="get">
+                    <input type="search"
+                           placeholder="Search missions, domains, debates, and evidence themes"
+                           name="q"
+                           autocomplete="off">
+                    <button type="submit" class="btn btn-sm btn-primary">Go</button>
+                </form>
+            </details>
+        </div>
+
+        <div class="header-actions">
+            <div class="header-pulse">
+                <span class="pulse-dot"></span>
+                {{ active_count|default('0') }} active
+            </div>
+            <a href="/members" class="header-btn" title="Member activity">
+                ✉{% if unread_messages %}<span class="header-badge">{{ unread_messages }}</span>{% endif %}
+            </a>
+            <a href="/audit" class="header-btn" title="Notifications and events">
+                🔔{% if unread_notifications %}<span class="header-badge">{{ unread_notifications }}</span>{% endif %}
+            </a>
+            {% if current_user %}
+            <a href="/profile/{{ current_user.actor_id }}" class="avatar avatar-sm {% if current_user.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}" title="{{ current_user.display_name }}">
+                {{ current_user.initials|default('?') }}
+            </a>
+            {% else %}
+            <a href="/register" class="btn btn-sm btn-primary">Register</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

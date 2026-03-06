@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Post a Mission{% endblock %}
+{% block content %}
+<h1>Post a mission</h1>
+<p style="color: var(--text-secondary); margin-bottom: 24px;">
+    Describe the work. Set skill requirements. Fund the escrow.
+    Every mission is visible by default and subject to independent review.
+</p>
+
+{% if errors %}
+<div class="notice notice--warning" style="margin-bottom: 20px;">
+    <strong>Could not create mission:</strong>
+    <ul style="margin: 8px 0 0 16px;">
+    {% for e in errors %}
+        <li>{{ e }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" action="/missions/create" class="panel" style="max-width: 640px;">
+    <fieldset style="border: none; padding: 0; margin: 0;">
+        <legend class="sr-only">Mission details</legend>
+
+        <label for="title" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Title
+        </label>
+        <input type="text" id="title" name="title" required
+               placeholder="e.g. Maternal Health Data Review — North Region"
+               value="{{ form_data.get('title', '') }}"
+               style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px;">
+
+        <label for="description" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Description
+        </label>
+        <textarea id="description" name="description" required rows="4"
+                  placeholder="What needs to be done, why it matters, and what a successful outcome looks like."
+                  style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px;">{{ form_data.get('description', '') }}</textarea>
+
+        <label for="domain" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Domain
+        </label>
+        <select id="domain" name="domain"
+                style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px;">
+            <option value="healthcare" {% if form_data.get('domain') == 'healthcare' %}selected{% endif %}>Healthcare</option>
+            <option value="education" {% if form_data.get('domain') == 'education' %}selected{% endif %}>Education</option>
+            <option value="transport" {% if form_data.get('domain') == 'transport' %}selected{% endif %}>Transport</option>
+            <option value="environment" {% if form_data.get('domain') == 'environment' %}selected{% endif %}>Environment</option>
+            <option value="governance" {% if form_data.get('domain') == 'governance' %}selected{% endif %}>Governance</option>
+            <option value="audit" {% if form_data.get('domain') == 'audit' %}selected{% endif %}>Audit</option>
+            <option value="general" {% if form_data.get('domain', 'general') == 'general' %}selected{% endif %}>General</option>
+        </select>
+
+        <label for="risk_tier" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Risk tier
+        </label>
+        <select id="risk_tier" name="risk_tier"
+                style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px;">
+            <option value="R1" {% if form_data.get('risk_tier') == 'R1' %}selected{% endif %}>R1 — Standard (1 reviewer)</option>
+            <option value="R2" {% if form_data.get('risk_tier', 'R2') == 'R2' %}selected{% endif %}>R2 — Elevated (2 reviewers)</option>
+            <option value="R3" {% if form_data.get('risk_tier') == 'R3' %}selected{% endif %}>R3 — Critical (2 human + 1 machine, human sign-off)</option>
+        </select>
+
+        <label for="reward" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Reward (units)
+        </label>
+        <input type="number" id="reward" name="reward" min="1" step="1" required
+               placeholder="100"
+               value="{{ form_data.get('reward', '') }}"
+               style="width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px;">
+        <p style="color: var(--text-secondary); font-size: 0.85em; margin: 0 0 16px 0;">
+            This amount is locked in escrow when the mission opens.
+            Commission, GCF contribution (1%), and creator allocation (5% each side) are deducted on settlement.
+        </p>
+
+        <label for="deadline_days" style="display: block; font-weight: 600; margin-bottom: 4px;">
+            Deadline (days)
+        </label>
+        <input type="number" id="deadline_days" name="deadline_days" min="1" max="90" required
+               placeholder="7"
+               value="{{ form_data.get('deadline_days', '7') }}"
+               style="width: 100%; padding: 10px; margin-bottom: 24px; border: 1px solid var(--border); border-radius: 6px;">
+    </fieldset>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button type="submit"
+                style="padding: 10px 24px; background: var(--accent, #2563eb); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            Create &amp; open for bids
+        </button>
+        <a href="/missions" style="color: var(--text-secondary);">Cancel</a>
+    </div>
+
+    <p style="color: var(--text-secondary); font-size: 0.85em; margin-top: 16px;">
+        Your identity and trust score are verified server-side. Missions are subject to
+        compliance screening and constitutional constraints. All work is visible by default
+        (Open Work Principle).
+    </p>
+</form>
+{% endblock %}

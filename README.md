@@ -17,6 +17,34 @@ Owner and project lead: George Jackson
 
 ---
 
+## Scientific Standards (Popperian Protocol)
+
+Genesis development follows a falsification-first engineering standard:
+
+1. Claims are stated explicitly before testing.
+2. Claims are tested under normal and adversarial conditions.
+3. Boundary conditions are documented (where a claim holds and where it does not).
+4. Results must be independently replicated (internal first, then external/community).
+5. Contradictory evidence immediately reopens the claim.
+
+For PoC release decisions, Genesis uses evidence-bounded acceptance gates:
+
+- No open P0/P1 defects in the section under review.
+- P2 defects are either fixed or explicitly deferred with owner, trigger, and rationale.
+- Tests for the section pass, including anti-spoof and anti-regression cases.
+- Two consecutive passes produce no new material defects.
+
+This is a provisional scientific posture, not a claim of final truth. The standard is designed to withstand independent external scrutiny.
+
+---
+
+## Outreach Pack
+
+- [Outreach Index](docs/outreach/README.md)
+- [Genesis Governance Walkthrough](docs/outreach/GENESIS_GOVERNANCE_WALKTHROUGH.html)
+
+---
+
 ## The Problem
 
 AI is getting more capable every year. But capability is not the same as trustworthiness.

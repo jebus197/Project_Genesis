@@ -1,0 +1,85 @@
+{# Feed card — renders a single item in the social feed.
+   card_type: mission | debate | group | milestone | governance
+   This partial expects a `card` context object with type-specific fields. #}
+
+<article class="feed-card feed-card-{{ card.card_type|default('mission') }}">
+    {# Header: who posted + card type #}
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm {% if card.actor_type == 'machine' %}avatar-machine{% elif card.actor_type == 'group' %}avatar-group{% else %}avatar-human{% endif %}">
+                {{ card.actor_initials|default('?') }}
+            </div>
+            <div>
+                <div class="card-actor-name">{{ card.actor_name }}</div>
+                <div class="card-actor-meta">
+                    {{ card.card_type|capitalize }} · {{ card.time_ago }}
+                    {% if card.participant_count %} · {{ card.participant_count }} participants{% endif %}
+                    {% if card.bid_count %} · {{ card.bid_count }} bidding{% endif %}
+                </div>
+            </div>
+        </div>
+        <span class="card-type card-type-{{ card.card_type }}">{{ card.card_type|capitalize }}</span>
+    </div>
+
+    {# Title #}
+    <h2 class="card-title">
+        <a href="{{ card.url|default('#') }}">{{ card.title }}</a>
+    </h2>
+
+    {% if card.circle_name %}
+    <p class="card-circle-meta">{{ card.circle_name }}</p>
+    {% endif %}
+
+    {# Body text #}
+    {% if card.body %}
+    <p class="card-body">{{ card.body }}</p>
+    {% endif %}
+
+    {# Mission economics (only for mission cards) #}
+    {% if card.card_type == 'mission' and card.stake %}
+    <div class="card-economics">
+        <span class="econ-stake">⬡ Stake {{ card.stake }}</span>
+        <span class="econ-commission">Commission {{ card.commission }}%</span>
+        <span>Due {{ card.deadline }}</span>
+        <span>Risk {{ card.risk_tier }}</span>
+    </div>
+    {% endif %}
+
+    {# Thread summary (replies/questions) #}
+    {% if card.reply_count or card.open_questions %}
+    <div class="card-thread-summary">
+        {% if card.reply_count %}<strong>{{ card.reply_count }} replies with evidence</strong>{% endif %}
+        {% if card.open_questions %} · <strong>{{ card.open_questions }} open questions</strong>{% endif %}
+        {% if card.latest_reply %} · latest from @{{ card.latest_reply }}{% endif %}
+    </div>
+    {% endif %}
+
+    {# Actions #}
+    <div class="card-actions">
+        {% if card.card_type == 'mission' %}
+            <a href="{{ card.url }}" class="btn btn-sm btn-primary">Open</a>
+            <button class="btn btn-sm">Bid</button>
+            <a href="{{ card.url }}#discussion" class="btn btn-sm">Discuss</a>
+            <a href="/audit?mission={{ card.id }}" class="btn btn-sm btn-ghost">Audit trail</a>
+        {% elif card.card_type == 'debate' %}
+            <a href="{{ card.url }}" class="btn btn-sm">Open thread</a>
+            <button class="btn btn-sm">Add counter-example</button>
+            {% if card.has_replay %}<button class="btn btn-sm">Run replay</button>{% endif %}
+        {% elif card.card_type == 'group' %}
+            <a href="{{ card.url }}" class="btn btn-sm btn-primary">Join domain</a>
+            <a href="{{ card.url }}/backlog" class="btn btn-sm">View backlog</a>
+        {% elif card.card_type == 'milestone' %}
+            <a href="{{ card.url }}" class="btn btn-sm">View details</a>
+        {% elif card.card_type == 'governance' %}
+            <a href="{{ card.url }}" class="btn btn-sm">Read proposal</a>
+            <button class="btn btn-sm">Challenge</button>
+        {% endif %}
+    </div>
+
+    {# Typing indicator #}
+    {% if card.typing_actors %}
+    <div class="typing-indicator">
+        {{ card.typing_actors|join(' and ') }} {{ 'is' if card.typing_actors|length == 1 else 'are' }} drafting a reply…
+    </div>
+    {% endif %}
+</article>

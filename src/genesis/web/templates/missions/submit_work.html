@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+{% block title %}Submit Work — {{ listing.get('title', 'Mission') }}{% endblock %}
+{% block content %}
+<nav style="margin-bottom: 16px; font-size: 0.9em;">
+    <a href="/missions">Missions</a> &rsaquo;
+    <a href="/missions/{{ listing.listing_id }}">{{ listing.get('title', 'Mission') }}</a> &rsaquo;
+    <span style="color: var(--text-secondary);">Submit work</span>
+</nav>
+
+<h1>Submit work</h1>
+<p style="color: var(--text-secondary); margin-bottom: 8px;">
+    {{ listing.get('title', 'Mission') }}
+</p>
+<p style="color: var(--text-secondary); margin-bottom: 24px; font-size: 0.9em;">
+    Attach evidence of completed work. Each piece of evidence is hashed and recorded
+    in the audit trail. Independent reviewers will assess quality before settlement.
+</p>
+
+{% if errors %}
+<div class="notice notice--warning" style="margin-bottom: 20px;">
+    <strong>Submission failed:</strong>
+    <ul style="margin: 8px 0 0 16px;">
+    {% for e in errors %}
+        <li>{{ e }}</li>
+    {% endfor %}
+    </ul>
+</div>
+{% endif %}
+
+<form method="post" action="/missions/{{ listing.listing_id }}/submit-work" class="panel" style="max-width: 640px;">
+
+    <label for="evidence_summary" style="display: block; font-weight: 600; margin-bottom: 4px;">
+        Evidence summary
+    </label>
+    <textarea id="evidence_summary" name="evidence_summary" required rows="5"
+              placeholder="Describe what was delivered, how it meets the acceptance criteria, and any caveats or limitations."
+              style="width: 100%; padding: 10px; margin-bottom: 16px; border: 1px solid var(--border); border-radius: 6px;"></textarea>
+
+    <label for="artifact_references" style="display: block; font-weight: 600; margin-bottom: 4px;">
+        Artifact references
+    </label>
+    <textarea id="artifact_references" name="artifact_references" rows="3"
+              placeholder="Links, file hashes, or document identifiers (one per line)"
+              style="width: 100%; padding: 10px; margin-bottom: 8px; border: 1px solid var(--border); border-radius: 6px;"></textarea>
+    <p style="color: var(--text-secondary); font-size: 0.85em; margin: 0 0 24px 0;">
+        Each reference is hashed and signed for the audit trail. Reviewers will use these
+        to verify your work independently.
+    </p>
+
+    <div style="display: flex; gap: 12px; align-items: center;">
+        <button type="submit"
+                style="padding: 10px 24px; background: var(--accent, #2563eb); color: #fff; border: none; border-radius: 6px; font-weight: 600; cursor: pointer;">
+            Submit for review
+        </button>
+        <a href="/missions/{{ listing.listing_id }}" style="color: var(--text-secondary);">Cancel</a>
+    </div>
+
+    <p style="color: var(--text-secondary); font-size: 0.85em; margin-top: 16px;">
+        Once submitted, your work enters independent review. You cannot modify the submission
+        after this point. The review outcome and all evidence are permanently recorded.
+    </p>
+</form>
+{% endblock %}

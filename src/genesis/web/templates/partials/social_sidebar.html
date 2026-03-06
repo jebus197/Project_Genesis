@@ -1,0 +1,98 @@
+{# Left sidebar: user summary, navigation, circles #}
+
+{% if current_user %}
+<div class="sidebar-section">
+    <div class="sidebar-user">
+        <div class="avatar avatar-md {% if current_user.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+            {{ current_user.initials|default('?') }}
+        </div>
+        <div>
+            <div class="sidebar-user-name">{{ current_user.display_name }}</div>
+            <div class="trust-inline">{{ current_user.trust_score|default(0) }}</div>
+        </div>
+    </div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Quality</span>
+        <span class="sidebar-stat-value">{{ current_user.quality_score|default('—') }}%</span>
+    </div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Volume</span>
+        <span class="sidebar-stat-value">{{ current_user.volume_score|default('—') }}%</span>
+    </div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Open bids</span>
+        <span class="sidebar-stat-value">{{ current_user.open_bids|default(0) }}</span>
+    </div>
+</div>
+{% endif %}
+
+<div class="sidebar-section">
+    <div class="sidebar-heading">Navigate</div>
+    <a href="/" class="sidebar-link{% if active_tab == 'home' %} active{% endif %}">🏠 Home</a>
+    <a href="/missions" class="sidebar-link{% if active_tab == 'missions' %} active{% endif %}">📋 Missions</a>
+    <a href="/debates" class="sidebar-link{% if active_tab == 'debates' %} active{% endif %}">💬 Debates</a>
+    <a href="/circles" class="sidebar-link{% if active_tab == 'circles' %} active{% endif %}">🔵 Circles</a>
+    <a href="/members" class="sidebar-link{% if active_tab == 'members' %} active{% endif %}">👤 Members</a>
+    <a href="/assembly" class="sidebar-link{% if active_tab == 'assembly' %} active{% endif %}">🏛️ Assembly</a>
+    <a href="/audit" class="sidebar-link{% if active_tab == 'audit' %} active{% endif %}">📜 Audit Trail</a>
+    <a href="/about" class="sidebar-link{% if active_tab == 'about' %} active{% endif %}">❓ About Genesis</a>
+    <a href="/about/story" class="sidebar-link{% if active_tab == 'about' %} active{% endif %}">📖 Genesis Story</a>
+    {% if current_user %}
+    <a href="/wallet" class="sidebar-link{% if active_tab == 'wallet' %} active{% endif %}">💰 Wallet</a>
+    {% endif %}
+</div>
+
+<div class="sidebar-section">
+    <div class="sidebar-heading">Your Domains</div>
+    {% if circles %}
+        {% for circle in circles %}
+        <a href="/circles/{{ circle.id }}" class="circle-item">
+            <div class="circle-icon" style="background: {{ circle.color|default('linear-gradient(135deg, #3b82f6, #60a5fa)') }}">
+                {{ circle.initials|default('?') }}
+            </div>
+            <span class="circle-name">{{ circle.name }}</span>
+            <span class="circle-count">{{ circle.member_count }}</span>
+        </a>
+        {% endfor %}
+    {% else %}
+        <a href="/circles" class="circle-item">
+            <div class="circle-icon circle-icon-empty">+</div>
+            <span class="circle-name text-muted">Browse domains</span>
+        </a>
+    {% endif %}
+</div>
+
+<div class="sidebar-section">
+    <div class="sidebar-heading">Domain Bridges</div>
+    <a href="/circles" class="circle-item">
+        <div class="circle-icon" style="background: linear-gradient(140deg, #1f7a8c, #0f8b5f);">PH</div>
+        <span class="circle-name">Public Health x Civic QA</span>
+        <span class="circle-count">active</span>
+    </a>
+    <a href="/circles" class="circle-item">
+        <div class="circle-icon" style="background: linear-gradient(140deg, #495fcf, #be7b22);">WE</div>
+        <span class="circle-name">Water x Enviro Replay</span>
+        <span class="circle-count">queued</span>
+    </a>
+    <a href="/circles" class="circle-item">
+        <div class="circle-icon" style="background: linear-gradient(140deg, #b84f74, #1f7a8c);">GA</div>
+        <span class="circle-name">Governance x Assembly</span>
+        <span class="circle-count">open</span>
+    </a>
+</div>
+
+<div class="sidebar-section">
+    <div class="sidebar-heading">Platform</div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Humans</span>
+        <span class="sidebar-stat-value">{{ stats.humans|default(0) }}</span>
+    </div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Machines</span>
+        <span class="sidebar-stat-value">{{ stats.machines|default(0) }}</span>
+    </div>
+    <div class="sidebar-stat">
+        <span class="sidebar-stat-label">Open missions</span>
+        <span class="sidebar-stat-value">{{ stats.open_missions|default(0) }}</span>
+    </div>
+</div>

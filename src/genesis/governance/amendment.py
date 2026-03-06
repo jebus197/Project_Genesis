@@ -117,6 +117,7 @@ class AmendmentProposal:
     proposed_value: Any
     justification: str
     is_entrenched: bool
+    source_topic_id: Optional[str] = None
     status: AmendmentStatus = AmendmentStatus.PROPOSED
     created_utc: Optional[datetime] = None
     decided_utc: Optional[datetime] = None
@@ -229,6 +230,7 @@ class AmendmentEngine:
                 current_value=p["current_value"],
                 proposed_value=p["proposed_value"],
                 justification=p["justification"],
+                source_topic_id=p.get("source_topic_id"),
                 is_entrenched=p["is_entrenched"],
                 status=AmendmentStatus(p["status"]),
                 created_utc=datetime.fromisoformat(p["created_utc"]) if p.get("created_utc") else None,
@@ -258,6 +260,7 @@ class AmendmentEngine:
         current_value: Any,
         proposed_value: Any,
         justification: str,
+        source_topic_id: Optional[str] = None,
         now: Optional[datetime] = None,
     ) -> AmendmentProposal:
         """Create a new constitutional amendment proposal.
@@ -298,6 +301,7 @@ class AmendmentEngine:
             current_value=current_value,
             proposed_value=proposed_value,
             justification=justification.strip(),
+            source_topic_id=source_topic_id.strip() if isinstance(source_topic_id, str) else None,
             is_entrenched=is_entrenched,
             created_utc=now,
         )

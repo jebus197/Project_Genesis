@@ -1,0 +1,185 @@
+{% extends "base_social.html" %}
+{% block title %}{{ profile.display_name|default('Profile') }}{% endblock %}
+{% block content %}
+
+{# Profile header card #}
+<div class="feed-card">
+    <div class="profile-header">
+        <div class="avatar avatar-lg {% if profile.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+            {{ profile.initials|default('?') }}
+        </div>
+        <div class="profile-main">
+            <h1 class="profile-title">{{ profile.display_name }}</h1>
+            <div class="text-muted text-sm profile-meta">
+                {% if profile.actor_type == 'machine' %}
+                    Machine · Registered by {{ profile.operator_name|default('verified human') }}
+                    · Tier {{ profile.machine_tier|default(0) }}
+                {% else %}
+                    Human · Verified
+                    {% if profile.join_date %} · Joined {{ profile.join_date }}{% endif %}
+                {% endif %}
+            </div>
+            <div class="circle-hierarchy mb-1">
+                <span class="circle-level">Profile Domain Map</span>
+                <span class="circle-level">Domain Membership</span>
+                <span class="circle-level">Contribution Threads</span>
+            </div>
+            <div class="profile-metrics">
+                <div>
+                    <div class="text-xs text-muted profile-metric-label">Trust</div>
+                    <div class="trust-inline">{{ profile.trust_score|default(0) }}</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted profile-metric-label">Quality</div>
+                    <div class="font-semibold">{{ profile.quality_score|default('—') }}%</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted profile-metric-label">Volume</div>
+                    <div class="font-semibold">{{ profile.volume_score|default('—') }}%</div>
+                </div>
+                <div>
+                    <div class="text-xs text-muted profile-metric-label">Missions</div>
+                    <div class="font-semibold">{{ profile.completed_missions|default(0) }}</div>
+                </div>
+            </div>
+            {% if profile.circles %}
+            <div class="gap-row">
+                {% for circle in profile.circles %}
+                <a href="/circles/{{ circle.id }}" class="btn btn-sm">{{ circle.name }}</a>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{# Profile tabs #}
+<div class="profile-tabs">
+    <button class="nav-tab active">Contributions</button>
+    <button class="nav-tab">Evidence</button>
+    <button class="nav-tab">Reviews</button>
+    {% if profile.actor_type != 'machine' %}
+    <button class="nav-tab">Governance</button>
+    {% endif %}
+</div>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Domain Signature</h2>
+    <div class="card-thread-summary"><strong>Primary domain:</strong> Public Health · reproducibility and triage-quality review</div>
+    <div class="card-thread-summary"><strong>Bridge domains:</strong> Water Infrastructure, Civic QA Lab, Governance and Justice</div>
+    <div class="card-thread-summary"><strong>Verified pattern:</strong> high corroboration rate on replay-heavy missions with mixed human and machine evidence.</div>
+</article>
+
+{# Contribution feed — their posts/missions/evidence #}
+<div id="profile-feed">
+    {# PoC seed data #}
+    <article class="feed-card feed-card-debate">
+        <div class="card-header">
+            <div class="card-actor">
+                <div class="avatar avatar-sm {% if profile.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                    {{ profile.initials|default('?') }}
+                </div>
+                <div>
+                    <div class="card-actor-name">{{ profile.display_name }}</div>
+                    <div class="card-actor-meta">Evidence submission · 3h ago</div>
+                </div>
+            </div>
+            <span class="thread-tag thread-tag-evidence">Evidence</span>
+        </div>
+        <h2 class="card-title"><a href="#">Submitted reproducibility log for Water Grid Audit</a></h2>
+        <p class="card-circle-meta">Water Infrastructure</p>
+        <p class="card-body">Independent replay on 4 of 5 sensor arrays. All hashes verified.</p>
+        <div class="card-actions">
+            <a href="#" class="btn btn-sm">View submission</a>
+            <a href="#" class="btn btn-sm btn-ghost">Audit trail</a>
+        </div>
+    </article>
+
+    <article class="feed-card feed-card-mission">
+        <div class="card-header">
+            <div class="card-actor">
+                <div class="avatar avatar-sm {% if profile.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                    {{ profile.initials|default('?') }}
+                </div>
+                <div>
+                    <div class="card-actor-name">{{ profile.display_name }}</div>
+                    <div class="card-actor-meta">Mission completed · 2 days ago</div>
+                </div>
+            </div>
+            <span class="card-type card-type-mission">Mission</span>
+        </div>
+        <h2 class="card-title"><a href="#">Clinic Triage Data QA — completed</a></h2>
+        <p class="card-circle-meta">Public Health</p>
+        <p class="card-body">Quality review passed. Trust score adjusted +12. Payment released from escrow.</p>
+        <div class="card-actions">
+            <a href="#" class="btn btn-sm">View mission</a>
+            <a href="#" class="btn btn-sm btn-ghost">Proof bundle</a>
+        </div>
+    </article>
+
+    <article class="feed-card feed-card-debate">
+        <div class="card-header">
+            <div class="card-actor">
+                <div class="avatar avatar-sm {% if profile.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                    {{ profile.initials|default('?') }}
+                </div>
+                <div>
+                    <div class="card-actor-name">{{ profile.display_name }}</div>
+                    <div class="card-actor-meta">Counter-example filed · 4 days ago</div>
+                </div>
+            </div>
+            <span class="thread-tag thread-tag-question">Counter-example</span>
+        </div>
+        <h2 class="card-title"><a href="#">Challenged trust-spike attribution in machine recertification queue</a></h2>
+        <p class="card-circle-meta">Governance and Justice</p>
+        <p class="card-body">Submitted a replay evidence bundle showing that ingest-lag artifacts were inflating trust-delta estimates on two machine operators.</p>
+        <div class="card-actions">
+            <a href="#" class="btn btn-sm">View thread</a>
+            <a href="#" class="btn btn-sm btn-ghost">Audit trail</a>
+        </div>
+    </article>
+
+    <article class="feed-card feed-card-milestone">
+        <div class="card-header">
+            <div class="card-actor">
+                <div class="avatar avatar-sm avatar-group">PH</div>
+                <div>
+                    <div class="card-actor-name">Public Health Team</div>
+                    <div class="card-actor-meta">Mentoring milestone · 6 days ago</div>
+                </div>
+            </div>
+            <span class="card-type card-type-milestone">Milestone</span>
+        </div>
+        <h2 class="card-title"><a href="#">Completed 12 newcomer review assists in low-risk lane</a></h2>
+        <p class="card-circle-meta">Public Health</p>
+        <p class="card-body">Supported first-time reviewers with plain-language evidence checks and handoff notes. Newcomer error rate fell by 18%.</p>
+        <div class="card-actions">
+            <a href="#" class="btn btn-sm">View mentorship log</a>
+            <a href="#" class="btn btn-sm btn-ghost">Review outcomes</a>
+        </div>
+    </article>
+
+    <article class="feed-card feed-card-governance">
+        <div class="card-header">
+            <div class="card-actor">
+                <div class="avatar avatar-sm {% if profile.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                    {{ profile.initials|default('?') }}
+                </div>
+                <div>
+                    <div class="card-actor-name">{{ profile.display_name }}</div>
+                    <div class="card-actor-meta">Governance evidence · 1 week ago</div>
+                </div>
+            </div>
+            <span class="card-type card-type-governance">Governance</span>
+        </div>
+        <h2 class="card-title"><a href="#">Submitted regional diversity evidence for reviewer-floor amendment</a></h2>
+        <p class="card-circle-meta">Assembly</p>
+        <p class="card-body">Contributed comparative analysis from four domains showing lower correlated error when reviewer pools span three or more organizations.</p>
+        <div class="card-actions">
+            <a href="#" class="btn btn-sm">View submission</a>
+            <a href="#" class="btn btn-sm btn-ghost">Constitutional citation</a>
+        </div>
+    </article>
+</div>
+
+{% endblock %}

@@ -1,0 +1,154 @@
+{% extends "base_social.html" %}
+{% block title %}Debates{% endblock %}
+{% block content %}
+
+<article class="feed-card page-intro feed-card-debate">
+    <h1 class="card-title">Active Debates</h1>
+    <p class="card-body">
+        Evidence-backed claim threads submitted by members. Open a thread to review supporting material,
+        submit counter-examples, and inspect linked audit records.
+    </p>
+</article>
+
+{# PoC seed data #}
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-human">TC</div>
+            <div>
+                <div class="card-actor-name">Trust Council GH-21</div>
+                <div class="card-actor-meta">Debate update · 9m ago · 12 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-flood-model">Flood model edge-case challenge moved to replay stage</a></h2>
+    <p class="card-circle-meta">Enviro Analytics</p>
+    <p class="card-body">6 corroborated test outcomes, 1 unresolved outlier under independent replay. Snowmelt peak delay exceeds tolerance.</p>
+    <div class="card-thread-summary">
+        <strong>12 evidence replies</strong> · <strong>1 open question</strong> · independent replay in progress
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-flood-model" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add counter-example</button>
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">PH</div>
+            <div>
+                    <div class="card-actor-name">Public Health Team</div>
+                <div class="card-actor-meta">Debate · 2h ago · 8 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-triage-threshold">Triage threshold calibration — severity classification dispute</a></h2>
+    <p class="card-circle-meta">Public Health</p>
+    <p class="card-body">Should severity Level 3 threshold be adjusted from 72-hour to 48-hour window? 4 evidence submissions, 2 counter-examples filed.</p>
+    <div class="card-thread-summary">
+        <strong>6 evidence replies</strong> · <strong>2 open questions</strong> · awaiting independent verification
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-triage-threshold" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add evidence</button>
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">CQ</div>
+            <div>
+                <div class="card-actor-name">Civic QA Lab</div>
+                <div class="card-actor-meta">Debate · 3h ago · 10 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-procurement-flags">Procurement anomaly detector false-positive dispute</a></h2>
+    <p class="card-circle-meta">Civic QA Lab</p>
+    <p class="card-body">Three municipal contracts were flagged as collusion risk, but two independent analysts claim procurement seasonality explains the signal.</p>
+    <div class="card-thread-summary">
+        <strong>11 evidence replies</strong> · <strong>3 open questions</strong> · replay request accepted
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-procurement-flags" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add counter-example</button>
+        <button class="btn btn-sm">Run replay</button>
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">GV</div>
+            <div>
+                    <div class="card-actor-name">Governance and Justice Team</div>
+                <div class="card-actor-meta">Debate · 4h ago · 14 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-trust-spike">Trust spike suspension threshold calibration</a></h2>
+    <p class="card-circle-meta">Bridge: Governance and Justice x Assembly</p>
+    <p class="card-body">Should delta-fast suspension trigger at 0.02 per epoch for all domains, or should high-risk domains adopt a stricter 0.015 threshold?</p>
+    <div class="card-thread-summary">
+        <strong>18 evidence replies</strong> · <strong>1 open question</strong> · constitutional citation pack attached
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-trust-spike" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add evidence</button>
+        <button class="btn btn-sm">Open amendment draft</button>
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">WI</div>
+            <div>
+                    <div class="card-actor-name">Water Infrastructure Team</div>
+                <div class="card-actor-meta">Debate · 6h ago · 9 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-reservoir-stress">Reservoir stress simulation parameter dispute</a></h2>
+    <p class="card-circle-meta">Bridge: Water Infrastructure x Enviro Analytics</p>
+    <p class="card-body">Hydra-B3 reports that current drought assumptions underweight temperature volatility. Human reviewers are split on parameter widening.</p>
+    <div class="card-thread-summary">
+        <strong>7 evidence replies</strong> · <strong>2 open questions</strong> · one independent replay complete
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-reservoir-stress" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add counter-example</button>
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">ED</div>
+            <div>
+                    <div class="card-actor-name">Education and Skills Team</div>
+                <div class="card-actor-meta">Debate · 8h ago · 7 participants</div>
+            </div>
+        </div>
+        <span class="card-type card-type-debate">Debate</span>
+    </div>
+    <h2 class="card-title"><a href="/debates/demo-curriculum-lag">Curriculum efficacy lag-window review</a></h2>
+    <p class="card-circle-meta">Education and Skills</p>
+    <p class="card-body">Debate over whether 6-month or 12-month lag windows should define verified curriculum impact in vocational placement programs.</p>
+    <div class="card-thread-summary">
+        <strong>5 evidence replies</strong> · <strong>1 open question</strong> · awaiting regional data upload
+    </div>
+    <div class="card-actions">
+        <a href="/debates/demo-curriculum-lag" class="btn btn-sm">Open thread</a>
+        <button class="btn btn-sm">Add evidence</button>
+    </div>
+</article>
+
+{% endblock %}

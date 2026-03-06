@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}PoC Status{% endblock %}
+{% block content %}
+<h1>Proof of Concept mode</h1>
+<p style="color: var(--text-secondary); margin-bottom: 24px;">
+    Genesis is in Proof of Concept mode. All data shown across the platform is demonstration data.
+    The platform transitions to live operations at <strong>First Light</strong> &mdash;
+    a financial sustainability trigger, not a headcount counter. Only verified human activity
+    drives the mission volume that generates revenue.
+</p>
+
+<div class="grid-2">
+    <div class="panel">
+        <div class="eyebrow">First Light conditions</div>
+        <p style="font-size: 0.92rem;">
+            First Light is achieved when commission revenue sustainably covers operating costs:
+        </p>
+        <ul style="font-size: 0.92rem; padding-left: 20px; line-height: 1.8;">
+            <li>Revenue &ge; 1.5&times; monthly costs</li>
+            <li>3-month reserve fund accumulated</li>
+        </ul>
+        {% if first_light %}
+        <div style="margin-top: 16px;">
+            <strong>Status:</strong>
+            {% if first_light.achieved %}
+            <span class="status status-ok">Achieved</span>
+            {% else %}
+            <span class="status status-warn">Not yet</span>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+    <div class="panel">
+        <div class="eyebrow">What changes at First Light</div>
+        <ul style="font-size: 0.92rem; padding-left: 20px; line-height: 1.8;">
+            <li>PoC mode deactivates globally</li>
+            <li>Registration creates live actors, escrow settles real contracts</li>
+            <li>Genesis Common Fund activates (1% of every mission for public goods)</li>
+            <li>Founder&rsquo;s Veto expires irreversibly &mdash; a self-sustaining system
+                no longer needs a single person holding emergency powers</li>
+        </ul>
+    </div>
+</div>
+
+<section style="margin-top: 32px;">
+    <div class="panel">
+        <div class="eyebrow">PoC disclosure</div>
+        <p style="font-size: 0.92rem;">
+            The PoC banner appears on every page. Demonstration data is labelled with
+            <span class="demo-label">Demonstration Data</span> badges.
+            No user should mistake demonstration content for real, verified data.
+        </p>
+    </div>
+</section>
+{% endblock %}

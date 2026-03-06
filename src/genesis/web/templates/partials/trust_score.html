@@ -1,0 +1,12 @@
+{# Expects: score (float 0.0-1.0) #}
+<div class="trust-score-block">
+    <div class="trust-score-number">{{ (score * 1000)|int }}</div>
+    <div class="trust-score-scale">of 1,000</div>
+    <div class="trust-bar" role="progressbar"
+         aria-valuenow="{{ (score * 1000)|int }}" aria-valuemin="0" aria-valuemax="1000">
+        <div class="trust-bar-fill" style="width: {{ (score * 100)|round(1) }}%"></div>
+    </div>
+    <p style="font-size: 0.78rem; color: var(--text-light); margin-top: 6px; margin-bottom: 0;">
+        Earned through verified work. Cannot be bought, traded, or inherited.
+    </p>
+</div>

@@ -1,0 +1,12 @@
+{# Expects: page (int), total_pages (int), base_url (str) #}
+{% if total_pages > 1 %}
+<nav class="pagination" aria-label="Pagination">
+    {% if page > 1 %}
+    <a href="{{ base_url }}?page={{ page - 1 }}" class="btn btn-secondary btn-sm">&laquo; Previous</a>
+    {% endif %}
+    <span class="pagination-info">Page {{ page }} of {{ total_pages }}</span>
+    {% if page < total_pages %}
+    <a href="{{ base_url }}?page={{ page + 1 }}" class="btn btn-secondary btn-sm">Next &raquo;</a>
+    {% endif %}
+</nav>
+{% endif %}

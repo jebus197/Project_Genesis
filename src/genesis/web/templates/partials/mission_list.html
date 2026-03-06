@@ -1,0 +1,25 @@
+{# HTMX partial — returned when mission board filter is submitted via HTMX #}
+{% if lifecycle_sections %}
+    {% for section in lifecycle_sections %}
+    <article class="feed-card feed-card-group mission-section-head">
+        <div class="mission-section-row">
+            <h2 class="card-title">{{ section.label }}</h2>
+            <span class="thread-tag thread-tag-evidence">{{ section.count }} missions</span>
+        </div>
+        {% if section.description %}
+        <p class="card-body mission-section-description">{{ section.description }}</p>
+        {% endif %}
+    </article>
+    {% for listing in section.missions %}
+    {% include "partials/mission_card.html" %}
+    {% endfor %}
+    {% endfor %}
+{% elif listings %}
+    {% for listing in listings %}
+    {% include "partials/mission_card.html" %}
+    {% endfor %}
+{% else %}
+    <div class="feed-card feed-card-mission">
+        <p class="card-body">No missions match this filter. Try a broader domain query.</p>
+    </div>
+{% endif %}

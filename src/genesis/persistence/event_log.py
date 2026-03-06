@@ -261,6 +261,32 @@ class EventLog:
             return list(self._events)
         return [e for e in self._events if e.event_kind == kind]
 
+    def recent_events(
+        self,
+        limit: int,
+        kind: Optional[EventKind] = None,
+    ) -> list[EventRecord]:
+        """Return the most recent events with bounded read cost.
+
+        Results are ordered oldest->newest within the returned window.
+        """
+        if limit <= 0:
+            return []
+
+        if kind is None:
+            return list(self._events[-limit:])
+
+        # For kind-filtered queries, walk backwards and stop once the
+        # requested window has been collected.
+        matched: list[EventRecord] = []
+        for event in reversed(self._events):
+            if event.event_kind == kind:
+                matched.append(event)
+                if len(matched) >= limit:
+                    break
+        matched.reverse()
+        return matched
+
     def events_since(
         self,
         since_utc: str,

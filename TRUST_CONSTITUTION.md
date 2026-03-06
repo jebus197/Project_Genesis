@@ -833,6 +833,29 @@ Every human oversight decision is a training signal. Upheld detections strengthe
 94. Can any entity become a permanent immune overseer, creating a security authority that concentrates threat-response power? If yes, reject design.
 95. Does the immune system learn from resolved incidents to improve future detection, with human oversight decisions serving as training signals? If not, reject design.
 
+### Human competence preservation
+
+Genesis coordinates work between humans and machines. As machines become more capable, a structural risk emerges: automation removes the routine practice opportunities through which humans build and maintain expertise. Workers feel productive while their independent capability silently atrophies. When automation fails — and all systems eventually fail — the humans who must intervene are the least prepared. This is the automation paradox (Bainbridge, 1983): the more you automate, the more critical the human becomes at the moment of failure, and the less practice they have had.
+
+A second, compounding risk applies to new entrants. Workers who enter a heavily automated domain may never develop foundational expertise at all — not deskilling (losing what was held) but never-skilling (never acquiring it in the first place). The system accumulates actors whose trust scores reflect AI-assisted output but whose independent competence was never established.
+
+Genesis does not treat these as future risks to be addressed later. They are structural consequences of mixed human-AI work that the constitution must address from inception:
+
+1. **Trust scores detect invisible degradation.** Blind review evaluates output quality regardless of how it was produced. Declining competence — whether from deskilling, over-reliance on AI assistance, or insufficient independent practice — manifests as declining quality scores over time. The trust engine makes visible what the worker themselves may not perceive.
+
+2. **Circles may designate skill-maintenance work.** Working circles in safety-critical domains may, through circle-level governance, designate a proportion of missions as human-practice — where machine assistance is restricted or prohibited. This preserves the practice opportunities that automation would otherwise eliminate. The proportion and scope are domain-level governance decisions, not constitutional mandates — the people closest to the work decide which skills require active maintenance.
+
+3. **Review independence assurance.** The system must provide structural mechanisms to make AI assistance in reviews visible. Review quality is the quality gate for all other quality — if it degrades silently, every downstream trust score is compromised. Circles may set their own policies on AI-assisted review; the constitutional requirement is visibility, not prohibition.
+
+4. **Never-skilling prevention.** Domains may require new actors to demonstrate independent competence thresholds before AI-assisted output is weighted at full trust. The mechanism is circle-governed and domain-specific — not a blanket gate, but a constitutional permission for circles to protect foundational skill acquisition in their domain.
+
+The constitutional principle: **automation must not silently erode the human competence that the system depends on when automation fails.** The trust engine, blind review, circle governance, and open work principle provide the structural hooks. Specific mechanisms are domain-level governance decisions operating within these constitutional constraints.
+
+**Human competence preservation design tests:**
+96. Can a human actor accumulate high trust scores in a domain entirely through AI-assisted work without any structural mechanism to verify independent competence? If yes, reject design.
+97. Can a working circle in a safety-critical domain designate skill-maintenance missions where machine assistance is restricted? If not, reject design.
+98. Can review quality silently degrade through undisclosed AI assistance without any structural mechanism making this visible to the community? If yes, reject design.
+
 ### Legal compliance layer
 
 Genesis is a white market for work. Cryptocurrency is used as a payment rail — not as a product, a token, or a speculative instrument. Every unit of value entering and leaving the system is attached to verified, quality-assessed labour. The constitutional constraints (mandatory escrow, deterministic commission formula, published cost breakdowns, auditable operational costs) structurally prevent the system from becoming a vehicle for speculation or value extraction detached from productive output. This is the foundational economic constraint: crypto earns its legitimacy by serving real work.

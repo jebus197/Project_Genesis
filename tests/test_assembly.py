@@ -42,6 +42,7 @@ from genesis.governance.assembly import (
 )
 from genesis.models.trust import ActorKind
 from genesis.persistence.event_log import EventKind, EventLog
+from genesis.persistence.state_store import StateStore
 from genesis.policy.resolver import PolicyResolver
 from genesis.service import GenesisService
 
@@ -652,3 +653,58 @@ class TestAssemblyComplianceHash:
         assert engine.check_compliance_hash_match(cid, "known_hash") is True
         assert engine.check_compliance_hash_match(cid, "wrong_hash") is False
         assert engine.check_compliance_hash_match("fake_id", "hash") is None
+
+    def test_service_retains_salt_for_compliance_match(self, service: GenesisService):
+        """Service should retain contribution salt for compliance-only matching."""
+        created = service.create_assembly_topic(
+            "human-1",
+            "Compliance traceability test",
+            "Initial assembly content for compliance check.",
+            now=_now(),
+        )
+        assert created.success
+        contribution_id = created.data["contribution_id"]
+
+        correct = service.check_assembly_contribution_actor_match(
+            contribution_id=contribution_id,
+            actor_id="human-1",
+        )
+        assert correct.success
+        assert correct.data["match"] is True
+
+        wrong = service.check_assembly_contribution_actor_match(
+            contribution_id=contribution_id,
+            actor_id="human-2",
+        )
+        assert wrong.success
+        assert wrong.data["match"] is False
+
+    def test_service_persists_assembly_compliance_salts(
+        self,
+        resolver: PolicyResolver,
+        tmp_path: Path,
+    ):
+        """Contribution salt index must survive state-store restart."""
+        store = StateStore(tmp_path / "state.json")
+        svc1 = GenesisService(resolver, event_log=EventLog(), state_store=store)
+        svc1.open_epoch()
+        svc1.register_actor("human-1", ActorKind.HUMAN, "eu", "acme", initial_trust=0.7)
+        svc1.register_actor("human-2", ActorKind.HUMAN, "us", "beta", initial_trust=0.7)
+
+        created = svc1.create_assembly_topic(
+            "human-1",
+            "Persistence compliance test",
+            "Persist this contribution to verify compliance salt round-trip.",
+            now=_now(),
+        )
+        assert created.success
+        contribution_id = created.data["contribution_id"]
+        svc1._persist_state()
+
+        svc2 = GenesisService(resolver, event_log=EventLog(), state_store=StateStore(tmp_path / "state.json"))
+        check = svc2.check_assembly_contribution_actor_match(
+            contribution_id=contribution_id,
+            actor_id="human-1",
+        )
+        assert check.success
+        assert check.data["match"] is True

@@ -1,0 +1,363 @@
+{% extends "base_social.html" %}
+{% block title %}{{ listing.title|default('Mission Detail') }}{% endblock %}
+{% block content %}
+<p class="mb-1"><a href="/missions">&larr; Back to mission exchange</a></p>
+
+{% if listing %}
+{% set lifecycle_key = listing.lifecycle_key|default('active_operations') %}
+{% if lifecycle_key == 'ratification_queue' %}
+    {% set lifecycle_style = 'ratification' %}
+{% elif lifecycle_key == 'ratified_in_force' %}
+    {% set lifecycle_style = 'ratified' %}
+{% elif lifecycle_key == 'org_submitted' %}
+    {% set lifecycle_style = 'submitted' %}
+{% elif lifecycle_key == 'validated_archive' %}
+    {% set lifecycle_style = 'validated' %}
+{% else %}
+    {% set lifecycle_style = 'active' %}
+{% endif %}
+<div class="feed-card feed-card-mission page-intro">
+    <h1 class="card-title">{{ listing.title|default('Mission')
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('circles', 'domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</h1>
+    <p class="card-circle-meta">{{ listing.circle_name|default('Mission Domain')
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+    <div class="mission-stage-row mb-1">
+        <span class="mission-stage-chip mission-stage-chip-{{ lifecycle_style }}">
+            {{ listing.lifecycle_label|default('Current Community Missions') }}
+        </span>
+        <span class="mission-stage-chip mission-stage-chip-neutral">{{ listing.state_label|default('Bid Proposal Review') }}</span>
+        <span class="mission-stage-chip mission-stage-chip-neutral">{{ listing.risk_tier|default('R2') }}</span>
+    </div>
+
+    {% if listing.story and listing.story.lede %}
+    <p class="card-body mission-story-lede">{{ listing.story.lede
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('circles', 'domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+    {% endif %}
+
+    <p class="card-body">{{ listing.summary|default('Mission dossier')
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('circles', 'domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+
+    {% if listing.story and listing.story.human_frame %}
+    <p class="card-thread-summary mission-human-frame">{{ listing.story.human_frame }}</p>
+    {% endif %}
+
+    {% if listing.mandate %}
+    <div class="mission-mandate-panel mt-1">
+        <p class="mission-mandate-line"><strong>Mandate status:</strong> {{ listing.mandate.status|default('Mandate in review') }}</p>
+        <p class="mission-mandate-line"><strong>Ratification path:</strong> {{ listing.mandate.ratification_note|default('Ratification path under review.') }}</p>
+        <p class="mission-mandate-line"><strong>Bridge lane:</strong> {{ listing.mandate.bridge_lane|default(listing.bridge|default('Cross-domain lane')) }}</p>
+        <p class="mission-mandate-line"><strong>Submission note:</strong> {{ listing.mandate.org_submission_note|default('Submitted through domain lane.') }}</p>
+    </div>
+    {% endif %}
+
+    {% if listing.dossier %}
+    <div class="mission-expanded mt-1">
+        <h2 class="card-title">Mission Description</h2>
+        {% if listing.dossier.human_description %}
+        {% if listing.dossier.human_description.story_paragraphs %}
+            {% for paragraph in listing.dossier.human_description.story_paragraphs %}
+            <p class="card-body mission-story-paragraph">{{ paragraph }}</p>
+            {% endfor %}
+        {% else %}
+        <p class="card-body mission-story-paragraph">{{ listing.dossier.human_description.whats_happening_now }} {{ listing.dossier.human_description.why_it_matters }}</p>
+        <p class="card-body mission-story-paragraph">{{ listing.dossier.human_description.if_we_miss }}</p>
+        <p class="card-body mission-story-paragraph">{{ listing.dossier.human_description.who_should_apply }}</p>
+        {% endif %}
+        {% else %}
+        <p class="card-body">{{ listing.dossier.context }}</p>
+        <p class="card-body">{{ listing.dossier.objective }}</p>
+        {% endif %}
+
+        <details class="mission-expanded-details mt-1">
+            <summary>Show Assurance Details (decision, evidence, safeguards)</summary>
+            <div class="mission-expanded-details-body">
+                {% if listing.dossier.brief %}
+                <div class="mission-brief-panel">
+                    <div class="mission-brief-headline">
+                        <strong>Problem signal:</strong> {{ listing.dossier.brief.problem_signal }}
+                    </div>
+                    <div class="mission-brief-flow">
+                        <p><span class="mission-brief-label">Decision now</span> {{ listing.dossier.brief.decision_required }}</p>
+                        <p><span class="mission-brief-label">Human impact</span> {{ listing.dossier.brief.human_impact }}</p>
+                        <p><span class="mission-brief-label">Success looks like</span> {{ listing.dossier.brief.success_definition }}</p>
+                        <div class="mission-brief-constraints">
+                            <span class="mission-brief-label">Hard constraints</span>
+                            <ul class="dossier-list">
+                                {% for item in listing.dossier.brief.constraints %}
+                                <li>{{ item }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                <h4 class="card-title mt-1">Mission Objective</h4>
+                <p class="card-body">{{ listing.dossier.objective }}</p>
+
+                <h4 class="card-title mt-1">Delivery Expectations</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.deliverables %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h4 class="card-title mt-1">Acceptance Gates</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.acceptance_criteria %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h4 class="card-title mt-1">Evidence Inputs</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.evidence_inputs %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h4 class="card-title mt-1">Risk Watchpoints</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.risk_watchpoints %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+                <h4 class="card-title mt-1">Dependencies</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.dependencies %}
+                    <li>{{ item }}</li>
+                    {% endfor %}
+                </ul>
+
+                {% if listing.dossier.timeline %}
+                <h4 class="card-title mt-1">Mission Timeline</h4>
+                <ul class="dossier-list">
+                    {% for item in listing.dossier.timeline %}
+                    <li><strong>{{ item.label }}:</strong> {{ item.window }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                {% if listing.dossier.intake_policy %}
+                <h4 class="card-title mt-1">Intake Policy</h4>
+                <ul class="dossier-list">
+                    <li>{{ listing.dossier.intake_policy.owner_mode }}</li>
+                    <li>Capacity: {{ listing.dossier.intake_policy.capacity }} applicants</li>
+                    <li>Human review required: {% if listing.dossier.intake_policy.human_review_required %}Yes{% else %}No{% endif %}</li>
+                    <li>{{ listing.dossier.intake_policy.note }}</li>
+                </ul>
+                {% endif %}
+            </div>
+        </details>
+    </div>
+    {% endif %}
+    <div class="card-economics">
+        <span class="econ-stake">{{ listing.stake_band|default('mission band M2') }}</span>
+        <span class="econ-commission">{{ listing.risk_tier|default('R2') }}</span>
+        <span>Due {{ listing.due_window|default('TBD') }}</span>
+        <span>{{ listing.bid_count|default(0) }} bid proposals</span>
+    </div>
+    {% if application_gate %}
+    <div class="mission-intake-row mt-1">
+        <button type="button" class="btn btn-sm mission-intake-btn mission-intake-btn-{{ application_gate.intake_style }}" aria-label="Mission intake status">
+            {{ application_gate.intake_label }}
+        </button>
+        <span class="text-xs text-muted">Slots: {{ application_gate.capacity_remaining }}/{{ application_gate.capacity_total }}</span>
+    </div>
+    {% endif %}
+</div>
+
+<article id="apply" class="feed-card feed-card-mission">
+    <h2 class="card-title">Apply to Mission</h2>
+    <div class="mission-intake-row">
+        <button type="button" class="btn btn-sm mission-intake-btn mission-intake-btn-{{ application_gate.intake_style }}" aria-label="Mission intake status">
+            {{ application_gate.intake_label }}
+        </button>
+        <span class="text-xs text-muted">Slots: {{ application_gate.capacity_remaining }}/{{ application_gate.capacity_total }}</span>
+    </div>
+    {% if application_notice %}
+    <div class="mission-apply-feedback mission-apply-feedback-{{ application_notice_level|default('info') }}">
+        {{ application_notice }}
+    </div>
+    {% endif %}
+
+    <div class="bids-grid mt-1">
+        <div class="bid-card">
+            <div class="bid-head">
+                <strong>Trust gate</strong>
+                <span class="gate-status-chip {% if application_gate.trust_pass %}gate-status-pass{% else %}gate-status-fail{% endif %}">
+                    {% if application_gate.trust_pass %}PASS{% else %}BLOCKED{% endif %}
+                </span>
+            </div>
+            <p class="text-sm text-secondary mt-1">
+                Minimum {{ application_gate.min_trust }} · Yours {{ application_gate.viewer_trust }}
+            </p>
+        </div>
+
+        <div class="bid-card">
+            <div class="bid-head">
+                <strong>Skill gate</strong>
+                <span class="gate-status-chip {% if application_gate.skills_pass %}gate-status-pass{% else %}gate-status-fail{% endif %}">
+                    {% if application_gate.skills_pass %}PASS{% else %}BLOCKED{% endif %}
+                </span>
+            </div>
+            <p class="text-sm text-secondary mt-1">
+                Required level: {{ application_gate.required_level }}
+            </p>
+            <div class="gap-row mt-1">
+                {% for req in application_gate.required_skills %}
+                <span class="thread-tag thread-tag-question">{{ req.domain }} · {{ req.minimum_level }}</span>
+                {% endfor %}
+            </div>
+            {% if application_gate.missing_domains %}
+            <p class="text-sm text-secondary mt-1">Missing domains: {{ application_gate.missing_domains|join(', ') }}</p>
+            {% endif %}
+            {% if application_gate.underlevel_domains %}
+            <p class="text-sm text-secondary mt-1">Level upgrades needed: {{ application_gate.underlevel_domains|join(', ') }}</p>
+            {% endif %}
+        </div>
+
+        <div class="bid-card">
+            <div class="bid-head">
+                <strong>Intake and review</strong>
+                {% if application_gate.requires_human_review %}
+                <span class="gate-status-chip gate-status-review">HUMAN REVIEW</span>
+                {% else %}
+                <span class="gate-status-chip gate-status-pass">AUTO ROUTE</span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-secondary mt-1">
+                Slots remaining: {{ application_gate.capacity_remaining }}/{{ application_gate.capacity_total }}
+            </p>
+            <p class="text-sm text-secondary">
+                Intake: {% if application_gate.intake_open %}Open{% else %}Closed by owner{% endif %}
+            </p>
+        </div>
+    </div>
+
+    <div class="card-actions" style="flex-wrap: wrap; gap: 8px;">
+        {% if application_gate.outcome == 'eligible' or application_gate.outcome == 'human_review' %}
+        <form action="/missions/{{ listing.listing_id }}/apply" method="post" class="inline-form">
+            <button type="submit" class="btn btn-sm btn-primary">{{ application_gate.cta_label }}</button>
+        </form>
+        {% else %}
+        <button type="button" class="btn btn-sm btn-disabled" disabled>{{ application_gate.cta_label }}</button>
+        {% endif %}
+        <a href="/missions/{{ listing.listing_id }}/submit-work" class="btn btn-sm">Submit work</a>
+        <a href="/missions/{{ listing.listing_id }}/review" class="btn btn-sm">Review</a>
+        <a href="/missions/{{ listing.listing_id }}/settle" class="btn btn-sm">Settlement</a>
+        <a href="/audit?mission={{ listing.listing_id }}" class="btn btn-sm btn-ghost">Audit trail</a>
+    </div>
+</article>
+
+<article id="bids" class="feed-card feed-card-mission">
+    <h2 class="card-title">Bid Proposals and Status</h2>
+    <div class="card-thread-summary"><strong>Current stage:</strong> {{ listing.state_label|default('Bid Proposal Review') }}</div>
+    <div class="card-thread-summary"><strong>Next gate:</strong> {{ listing.next_gate|default('Independent review') }}</div>
+    <div class="bids-grid mt-1">
+        {% if bids %}
+            {% for bid in bids %}
+            <div class="bid-card">
+                <div class="bid-head">
+                    <strong>{{ bid.actor_name|default(bid.worker_id|default('Unknown bidder')) }}</strong>
+                    <span class="bid-status">{{ bid.status|default('bid-review')|replace('packet', 'proposal')|replace('-', ' ')|title }}</span>
+                </div>
+                <p class="text-sm text-secondary">{{ bid.org|default('Bidder org unavailable') }}</p>
+                <div class="bid-score-row">
+                    <span>Trust: {{ bid.trust_points|default('n/a') }}</span>
+                    <span>Skill: {{ bid.skill_points|default('n/a') }}</span>
+                    <span>Domain: {{ bid.domain_points|default('n/a') }}</span>
+                    <span><strong>Composite: {{ bid.composite_score|default('n/a') }}</strong></span>
+                </div>
+                <div class="text-xs text-muted mt-1">Reference {{ bid.packet_ref|default(bid.bid_id|default('n/a')) }}</div>
+                <div class="text-sm mt-1">{{ bid.independence_check|default('Independence review pending.') }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+        <p class="card-body">No bid proposals yet.</p>
+        {% endif %}
+    </div>
+</article>
+
+{% if related_examples %}
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Connected Missions</h2>
+    {% for item in related_examples %}
+    <div class="card-thread-summary">
+        <strong><a href="/missions/{{ item.listing_id }}">{{ item.title }}</a></strong>
+        · {{ item.circle_name
+            |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+            |replace('Cross-Circle', 'Cross-Domain')
+            |replace('cross-circle', 'cross-domain')
+            |replace('Cross-circle', 'Cross-domain')
+            |replace('CIRCLES', 'DOMAINS')
+            |replace('Circles', 'Domains')
+            |replace('-CIRCLE', '-DOMAIN')
+            |replace('-Circle', '-Domain')
+            |replace('-circle', '-domain')
+            |replace(' Circle', ' Domain')
+            |replace(' circle', ' domain')
+            |replace('Circle ', 'Domain ')
+            |replace('circle ', 'domain ') }} · {{ item.state_label }}
+    </div>
+    {% endfor %}
+</article>
+{% endif %}
+{% else %}
+<div class="feed-card feed-card-mission">
+    <p class="card-body">Listing not found.</p>
+</div>
+{% endif %}
+{% endblock %}

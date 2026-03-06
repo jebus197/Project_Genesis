@@ -1,0 +1,26 @@
+{# Compose box — appears at top of feed for creating new content.
+   Feels like a social media post box; leads to full mission composer. #}
+
+<div class="compose-box">
+    {% if current_user %}
+    <div class="avatar avatar-md {% if current_user.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+        {{ current_user.initials|default('?') }}
+    </div>
+    {% else %}
+    <div class="avatar avatar-md avatar-human">?</div>
+    {% endif %}
+    <div>
+        <p class="text-xs text-secondary mb-1">Post into your active domains: missions, claims, and evidence.</p>
+        <textarea placeholder="What do you need done, tested, or reviewed?"
+                  {% if not current_user %}disabled{% endif %}></textarea>
+        <div id="compose-expand"></div>
+        <div class="compose-actions">
+            <div class="compose-types">
+                <a href="/missions" class="btn btn-sm">📋 Mission</a>
+                <a href="/debates" class="btn btn-sm">💬 Claim</a>
+                <a href="#" class="btn btn-sm">📎 Evidence</a>
+            </div>
+            <a href="/missions" class="btn btn-sm btn-primary">Compose</a>
+        </div>
+    </div>
+</div>

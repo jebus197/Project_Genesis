@@ -1,0 +1,161 @@
+{% extends "base_social.html" %}
+{% block title %}Audit Trail{% endblock %}
+{% block content %}
+<div class="feed-card page-intro feed-card-governance audit-hero-card">
+    <h1 class="card-title">Audit Trail</h1>
+    <p class="card-body">
+        One verification surface for the whole platform. Every record is source-labeled so
+        reviewers can immediately distinguish on-chain proof from internal service events.
+    </p>
+    <div class="audit-pill-row mt-1">
+        <span class="audit-pill audit-pill-primary">On-Chain Proof</span>
+        <span class="audit-pill">Runtime Anchor</span>
+        <span class="audit-pill">Internal Ledger</span>
+        <span class="audit-pill">Verifiable Source</span>
+    </div>
+    <div class="forum-meta-grid audit-meta-grid mt-1">
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Total Chain Anchors</div>
+            <div class="forum-meta-value">{{ total_chain_anchors }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Runtime Anchors</div>
+            <div class="forum-meta-value">{{ runtime_anchors|length }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Ledger Events</div>
+            <div class="forum-meta-value">{{ events|length }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Latest Chain Record</div>
+            <div class="forum-meta-value text-sm text-mono">
+                {{ latest_chain_anchor_display if latest_chain_anchor_display else "Pending first runtime anchor" }}
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── On-chain constitutional anchors ── #}
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Historical On-Chain Anchors</h2>
+    <p class="card-body">
+        Constitutional snapshots anchored on Ethereum Sepolia. Each entry below links
+        directly to the transaction record for independent verification.
+    </p>
+
+    {% for anchor in anchors %}
+    <div class="audit-entry {% if anchor.status == 'superseded' %}audit-entry-superseded{% else %}audit-entry-anchor{% endif %}">
+        <div class="audit-entry-head">
+            <h3 class="audit-entry-title">
+                Genesis Block {{ anchor.genesis_block }}
+                {% if anchor.status == 'superseded' %}<span class="text-muted">(superseded)</span>{% endif %}
+            </h3>
+            <span class="audit-status {% if anchor.status == 'superseded' %}audit-status-superseded{% else %}audit-status-verified{% endif %}">
+                {% if anchor.status == 'superseded' %}superseded{% else %}✓ on-chain verified{% endif %}
+            </span>
+        </div>
+        <p class="audit-entry-summary">{{ anchor.summary }}</p>
+        <div class="audit-meta-row text-mono">
+            <span>{{ anchor.minted_utc }}</span>
+            <span>Ethereum block {{ anchor.eth_block }}</span>
+            <span>tx {{ anchor.tx_hash[:10] }}…{{ anchor.tx_hash[-8:] }}</span>
+        </div>
+        <div class="audit-actions">
+            <a href="{{ anchor.explorer_url }}" target="_blank" rel="noopener"
+               class="thread-reply-pill thread-reply-pill-primary">
+                Verify on Etherscan
+            </a>
+            <span class="thread-reply-pill">SHA {{ anchor.sha256[:12] }}…{{ anchor.sha256[-6:] }}</span>
+        </div>
+    </div>
+    {% endfor %}
+
+    {% if not anchors %}
+    <div class="audit-entry">
+        <em>No on-chain anchors loaded.</em>
+    </div>
+    {% endif %}
+</article>
+
+{# ── Runtime on-chain anchors (from epoch lifecycle) ── #}
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Runtime Anchors</h2>
+    <p class="card-body">
+        New anchors emitted by the live epoch pipeline after launch conditions are met.
+    </p>
+
+    {% if runtime_anchors %}
+    {% for ra in runtime_anchors %}
+    <div class="audit-entry audit-entry-runtime">
+        <div class="audit-entry-head">
+            <h3 class="audit-entry-title">{{ ra.summary }}</h3>
+            <span class="audit-status audit-status-verified">
+                ✓ on-chain verified
+            </span>
+        </div>
+        <div class="audit-meta-row text-mono">
+            <span>{{ ra.timestamp }}</span>
+            <span>Ethereum block {{ ra.block_number }}</span>
+            <span>epoch {{ ra.epoch_id }}</span>
+        </div>
+        {% if ra.sha256 %}
+        <div class="audit-actions">
+            <span class="thread-reply-pill">SHA {{ ra.sha256[:12] }}…{{ ra.sha256[-6:] }}</span>
+        </div>
+        {% endif %}
+        <div class="audit-actions">
+            <a href="{{ ra.explorer_url }}" target="_blank" rel="noopener"
+               class="thread-reply-pill thread-reply-pill-primary">
+                Verify on Etherscan
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div class="audit-entry">
+        <em>No runtime anchors yet in this PoC session.</em>
+    </div>
+    {% endif %}
+</article>
+
+{# ── Internal ledger events ── #}
+<article class="feed-card feed-card-mission">
+    <h2 class="card-title">Internal Ledger Events</h2>
+    <p class="card-body">
+        Service-layer records used for operational verification and incident tracing.
+    </p>
+    {% if events %}
+        {% for event in events %}
+        <div class="audit-entry audit-entry-ledger">
+            <div class="audit-entry-head">
+                <h3 class="audit-entry-title">{{ event.get('kind_label', 'Event') }}</h3>
+                <span class="audit-status audit-status-ledger">{{ event.get('group', 'System') }}</span>
+            </div>
+            <p class="audit-entry-summary">{{ event.get('summary', 'recorded') }}</p>
+            <div class="audit-meta-row text-mono">
+                <span>{{ event.get('timestamp', '—') }}</span>
+                <span>actor {{ event.get('actor_label', '—') }}</span>
+                <span>event {{ event.get('event_id_short', '—') }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="audit-entry">
+            <em>No internal events recorded yet.</em>
+        </div>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Linked Surfaces</h2>
+    <div class="card-actions">
+        <a href="/" class="btn btn-sm btn-primary">Open front page</a>
+        <a href="/missions" class="btn btn-sm">Open mission exchange</a>
+        <a href="/about" class="btn btn-sm">Read how it works</a>
+        <a href="https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE"
+           target="_blank" rel="noopener" class="btn btn-sm">
+            Wallet on Etherscan
+        </a>
+    </div>
+</article>
+{% endblock %}

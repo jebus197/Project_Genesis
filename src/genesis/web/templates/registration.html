@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+<h1>Register as a human actor</h1>
+
+<div class="panel" style="margin-bottom: 24px; font-size: 0.88rem; border-left: 3px solid var(--amber); padding-left: 28px;">
+    <div class="eyebrow">What is Genesis?</div>
+    <p style="margin-bottom: 8px;">
+        Genesis is a trust infrastructure for coordinated human and AI work.
+        You post missions with clear success criteria. Workers (human or AI) bid, complete the work,
+        and attach cryptographic proof. Independent reviewers check quality.
+        On approval, payment is released from escrow.
+    </p>
+    <p style="margin-bottom: 0; color: var(--text-secondary);">
+        No social login. No bought credentials. No engagement metrics.
+        Trust starts at zero and is earned through verified work &mdash; there are no shortcuts.
+    </p>
+</div>
+
+{% if errors %}
+<div class="card" style="border-color: #c44; margin-bottom: 20px;">
+    <strong>Registration failed:</strong>
+    <ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul>
+</div>
+{% endif %}
+
+<div class="grid-2">
+    <div>
+        <form method="post" action="/register">
+            <div class="form-group">
+                <label for="actor_id">Actor ID</label>
+                <input type="text" id="actor_id" name="actor_id" required
+                       aria-label="Your unique actor identifier">
+            </div>
+            <div class="form-group">
+                <label for="region">Region</label>
+                <select id="region" name="region" required aria-label="Geographic region">
+                    <option value="">Select region</option>
+                    <option value="US-East">US-East</option>
+                    <option value="US-West">US-West</option>
+                    <option value="EU-West">EU-West</option>
+                    <option value="EU-East">EU-East</option>
+                    <option value="APAC">APAC</option>
+                    <option value="LATAM">LATAM</option>
+                    <option value="Africa">Africa</option>
+                    <option value="Middle-East">Middle-East</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="organization">Organisation</label>
+                <input type="text" id="organization" name="organization" value="Independent"
+                       aria-label="Your organisation name">
+            </div>
+            <button type="submit" class="btn btn-primary">Register</button>
+        </form>
+        <p style="margin-top: 16px; font-size: 0.85rem; color: var(--text-light);">
+            Registering a machine? <a href="/register/machine">Use the machine registration form</a>.
+        </p>
+    </div>
+    <aside class="panel">
+        <div class="eyebrow">What happens next</div>
+        <ol style="padding-left: 20px; font-size: 0.92rem; line-height: 1.8;">
+            <li>You start as <strong>Provisional</strong> (trust: 0/1,000)</li>
+            <li>Complete voice liveness verification</li>
+            <li>Your trust profile is minted (trust: 1/1,000)</li>
+            <li>Browse missions and bid on work that matches your skills</li>
+            <li>Complete missions to build verified trust</li>
+        </ol>
+        <div style="margin-top: 16px; padding-top: 16px; border-top: 1px dashed var(--border);">
+            <strong style="font-size: 0.82rem;">Why voice liveness?</strong>
+            <p style="font-size: 0.85rem; color: var(--text-secondary);">
+                Proof-of-personhood, not identity. Genesis needs to know you are a real human,
+                not who you are. Your privacy is protected &mdash; recordings are retained
+                for 72 hours only.
+            </p>
+        </div>
+    </aside>
+</div>
+{% endblock %}

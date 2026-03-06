@@ -1,0 +1,62 @@
+{# Thread item — a single reply in a threaded discussion.
+   Used in mission detail, debate threads, and assembly deliberation.
+   reply_type: claim | evidence | question | moderation | appeal
+   Nested via thread-reply class for indentation. #}
+
+<article class="thread-item {% if is_reply %}thread-reply{% endif %}">
+    <div class="thread-item-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm {% if reply.actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                {{ reply.actor_initials|default('?') }}
+            </div>
+            <div>
+                <span class="card-actor-name">{{ reply.actor_name }}</span>
+                {% if reply.actor_handle %}
+                <span class="text-muted text-sm">@{{ reply.actor_handle }}</span>
+                {% endif %}
+                <span class="card-actor-meta"> · {{ reply.time_ago }}</span>
+            </div>
+        </div>
+        <span class="thread-tag thread-tag-{{ reply.reply_type }}">{{ reply.reply_type|capitalize }}</span>
+    </div>
+
+    <div class="thread-body">
+        {{ reply.body }}
+    </div>
+
+    {% if reply.attachments %}
+    <div class="gap-row mb-1">
+        {% for attachment in reply.attachments %}
+        <a href="{{ attachment.url }}" class="btn btn-sm btn-ghost">📎 {{ attachment.label }}</a>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="thread-actions">
+        <button class="btn btn-sm btn-ghost"
+                hx-get="{{ reply.url }}/reply" hx-target="#reply-form-{{ reply.id }}" hx-swap="innerHTML">
+            Reply with evidence
+        </button>
+        {% if reply.reply_type == 'claim' %}
+        <button class="btn btn-sm btn-ghost">Challenge</button>
+        {% endif %}
+        {% if reply.has_proof %}
+        <a href="{{ reply.proof_url }}" class="btn btn-sm btn-ghost">Proof bundle</a>
+        {% endif %}
+        {% if reply.reply_type == 'moderation' %}
+        <a href="{{ reply.rule_url }}" class="btn btn-sm btn-ghost">Rule reference</a>
+        <a href="{{ reply.appeal_url }}" class="btn btn-sm btn-ghost">Appeal path</a>
+        {% endif %}
+    </div>
+
+    <div id="reply-form-{{ reply.id|default('0') }}"></div>
+
+    {# Nested replies rendered recursively #}
+    {% if reply.children %}
+        {% for child_reply in reply.children %}
+            {% set reply = child_reply %}
+            {% set is_reply = true %}
+            {% include "partials/thread_item.html" %}
+        {% endfor %}
+    {% endif %}
+</article>

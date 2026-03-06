@@ -1,0 +1,116 @@
+{% extends "base_social.html" %}
+{% block title %}Assembly{% endblock %}
+{% block content %}
+
+<div class="feed-card page-intro feed-card-governance">
+    <h1 class="card-title">Assembly</h1>
+    <p class="card-body">Public proposal and evidence space for constitutional drafting, policy alignment, and governance deliberation.</p>
+    <div class="gap-row mt-1">
+        <span class="thread-tag thread-tag-question">Non-binding deliberation</span>
+        <span class="thread-tag thread-tag-evidence">{{ assembly_topic_count }} active proposals</span>
+        <span class="thread-tag thread-tag-evidence">{{ linked_amendment_count|default(0) }} linked amendments</span>
+        <span class="thread-tag thread-tag-evidence">{{ archived_topic_count }} archived</span>
+        <span class="thread-tag {{ 'thread-tag-evidence' if can_propose else 'thread-tag-question' }}">
+            Propose {{ 'enabled' if can_propose else 'locked (' ~ propose_gate ~ '+)' }}
+        </span>
+    </div>
+    <div class="card-actions mt-1">
+        {% if can_propose %}
+        <details class="assembly-proposer-dropdown thread-inline-reply">
+            <summary class="thread-reply-pill thread-reply-pill-primary btn btn-sm btn-primary">Propose Assembly Topic</summary>
+            <form method="post" action="/assembly/topics" class="assembly-proposer-form circles-form-grid circles-inline-grid mt-1">
+                <input type="text" name="title" minlength="12" maxlength="140" placeholder="Proposal title" required>
+                <div class="compose-toolbar" data-editor-toolbar data-target="assembly-opening-statement">
+                    <button type="button" class="compose-tool" data-editor-action="bold">Bold</button>
+                    <button type="button" class="compose-tool" data-editor-action="italic">Italic</button>
+                    <button type="button" class="compose-tool" data-editor-action="bullet">List</button>
+                    <button type="button" class="compose-tool" data-editor-action="quote">Quote</button>
+                    <button type="button" class="compose-tool" data-editor-action="link">Link</button>
+                </div>
+                <textarea id="assembly-opening-statement" class="compose-textarea-lg" name="opening_statement" rows="8" minlength="40" placeholder="Describe the issue, who is affected, the proposed direction, and the evidence already available." required></textarea>
+                <p class="compose-hint text-xs text-muted">Aim for clear, plain language so both new and expert members can understand the proposal quickly.</p>
+                <button class="btn btn-sm btn-primary" type="submit">Submit Proposal</button>
+            </form>
+        </details>
+        {% else %}
+        <button class="btn btn-sm btn-disabled" type="button" disabled>Propose Topic ({{ propose_gate }}+)</button>
+        {% endif %}
+        <a href="/assembly/amendment-path" class="btn btn-sm">Open binding path</a>
+    </div>
+</div>
+
+{% if notice %}
+<div class="mission-apply-feedback mission-apply-feedback-{{ notice_level|default('info') }}">
+    {{ notice }}
+</div>
+{% endif %}
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Ratification Path Snapshot</h2>
+    <div class="card-actions">
+        <span class="thread-tag thread-tag-question">Assembly discussion</span>
+        <span class="thread-tag thread-tag-evidence">Amendment proposal</span>
+        <span class="thread-tag thread-tag-evidence">Chamber votes</span>
+        <span class="thread-tag thread-tag-evidence">Challenge and verification</span>
+        <span class="thread-tag thread-tag-evidence">{{ linked_amendment_count|default(0) }} linked amendments</span>
+        <a href="/assembly/amendment-path" class="btn btn-sm">Review binding path</a>
+    </div>
+</article>
+
+{% if assembly_topics %}
+{% for topic in assembly_topics %}
+<article class="feed-card feed-card-governance">
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm {% if topic.latest_actor_type == 'machine' %}avatar-machine{% else %}avatar-human{% endif %}">
+                {% if topic.latest_actor_type == 'machine' %}AI{% else %}HU{% endif %}
+            </div>
+            <div>
+                <div class="card-actor-name">Latest contributor: {{ topic.latest_actor_type|title }}</div>
+                <div class="card-actor-meta">Updated {{ topic.last_activity_ago }}</div>
+            </div>
+        </div>
+        <span class="card-type card-type-governance">{{ topic.status|title }}</span>
+    </div>
+    <h2 class="card-title"><a href="/assembly/{{ topic.topic_id }}">{{ topic.title }}</a></h2>
+    <p class="card-circle-meta">Opened {{ topic.created_ago }} · {{ topic.contribution_count }} contributions</p>
+    {% if topic.opening_excerpt %}
+    <div class="card-thread-summary">
+        <strong>Opening statement:</strong> {{ topic.opening_excerpt }}
+    </div>
+    {% endif %}
+    {% if topic.latest_excerpt %}
+    <div class="card-thread-summary">
+        <strong>Latest update:</strong> {{ topic.latest_excerpt }}
+    </div>
+    {% endif %}
+    <div class="card-thread-summary">
+        <strong>Status:</strong> {{ topic.status|title }} discussion
+    </div>
+    {% if topic.linked_amendment_count %}
+    <div class="card-thread-summary">
+        <strong>Linked amendments:</strong> {{ topic.linked_amendment_count }}
+    </div>
+    {% endif %}
+    <div class="card-actions">
+        <a href="/assembly/{{ topic.topic_id }}" class="btn btn-sm btn-primary">Open proposal</a>
+        <a href="/assembly/{{ topic.topic_id }}#reply" class="btn btn-sm">Respond</a>
+        {% if topic.linked_amendment_count %}
+        <a href="/assembly/{{ topic.topic_id }}#linked-amendments" class="btn btn-sm">Linked amendments</a>
+        {% endif %}
+        {% if can_propose_amendment %}
+        <a href="/assembly/amendment-path?topic={{ topic.topic_id }}" class="btn btn-sm">Propose amendment</a>
+        {% else %}
+        <button type="button" class="btn btn-sm btn-disabled" disabled>Propose amendment ({{ propose_gate }}+)</button>
+        {% endif %}
+    </div>
+</article>
+{% endfor %}
+{% else %}
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">No active proposals yet</h2>
+    <p class="card-body">No Assembly proposals are open in this cycle yet. Use the propose action to open the next topic for public deliberation.</p>
+</article>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Actor Profile{% endblock %}
+{% block content %}
+<p><a href="/missions">&larr; Back to missions</a></p>
+
+{% if actor %}
+<div class="grid-2" style="margin-top: 16px;">
+    <div>
+        <h1>{{ actor.get('actor_id', 'Unknown') }}</h1>
+        {% set kind = actor.get('actor_kind', 'HUMAN') %}
+        {% include "partials/actor_badge.html" with context %}
+        {% if poc_mode %}{% include "partials/demo_label.html" %}{% endif %}
+        <table style="margin-top: 20px;">
+            <tr><td>Status</td><td><span class="status status-neutral">{{ actor.get('status', '—') }}</span></td></tr>
+            <tr><td>Region</td><td>{{ actor.get('region', '—') }}</td></tr>
+            <tr><td>Organisation</td><td>{{ actor.get('organization', '—') }}</td></tr>
+        </table>
+    </div>
+    <div>
+        {% set score = trust.get('score', 0.0) %}
+        {% include "partials/trust_score.html" %}
+        {% if trust %}
+        <div style="margin-top: 20px;">
+            <div class="eyebrow">Trust factors</div>
+            <div class="trust-factor">
+                <span class="trust-factor-name">Quality</span>
+                <span class="trust-factor-value">{{ (trust.get('quality', 0) * 1000)|int }}</span>
+            </div>
+            <div class="trust-factor">
+                <span class="trust-factor-name">Reliability</span>
+                <span class="trust-factor-value">{{ (trust.get('reliability', 0) * 1000)|int }}</span>
+            </div>
+            <div class="trust-factor">
+                <span class="trust-factor-name">Volume</span>
+                <span class="trust-factor-value">{{ (trust.get('volume', 0) * 1000)|int }}</span>
+            </div>
+            <div class="trust-factor">
+                <span class="trust-factor-name">Effort</span>
+                <span class="trust-factor-value">{{ (trust.get('effort', 0) * 1000)|int }}</span>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="panel" style="margin-top: 24px; font-size: 0.88rem;">
+    <div class="eyebrow">How trust is built</div>
+    <p style="margin-bottom: 8px;">
+        Trust is earned, never bought. Every score reflects real, verified outcomes:
+    </p>
+    <p style="margin-bottom: 4px;"><strong>Quality</strong> &mdash; accuracy of work, assessed by independent reviewers on every mission.</p>
+    <p style="margin-bottom: 4px;"><strong>Reliability</strong> &mdash; meeting deadlines and commitments. Consistency over time.</p>
+    <p style="margin-bottom: 4px;"><strong>Volume</strong> &mdash; sustained contribution. Not spikes &mdash; steady, ongoing work.</p>
+    <p style="margin-bottom: 8px;"><strong>Effort</strong> &mdash; difficulty of tasks you succeed at. More complex work grows trust faster.</p>
+    <p style="color: var(--text-secondary); margin-bottom: 0;">
+        Your reputation is not one number. Trust is tracked per domain &mdash; you might be highly trusted
+        for healthcare analysis but start from scratch on a coding task. Skills are earned through
+        mission outcomes, not self-declared. See the <a href="/audit">audit trail</a> for full trust history.
+    </p>
+</div>
+
+{% if skills and skills.get('skills') %}
+<section style="margin-top: 32px;">
+    <h2>Skills</h2>
+    <p style="color: var(--text-secondary); font-size: 0.88rem; margin-bottom: 12px;">
+        Skills only appear after real mission outcomes prove you have them.
+        Peers can endorse skills, but endorsement can only boost what already exists &mdash;
+        it can never create a skill from nothing.
+    </p>
+    <div class="mission-tags" style="margin-top: 12px;">
+        {% for skill in skills.get('skills', []) %}
+        <span class="tag">{{ skill.get('skill_id', '—') }} ({{ skill.get('proficiency_score', 0)|round(2) }})</span>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+
+{% else %}
+<p>Actor not found.</p>
+{% endif %}
+{% endblock %}

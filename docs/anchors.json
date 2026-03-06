@@ -1,0 +1,101 @@
+[
+  {
+    "genesis_block": 8,
+    "status": "canonical",
+    "sha256": "dde36f8dfb154ea1a3ca10c5615805fe6866b667e65a38b412ba27baf7a79390",
+    "tx_hash": "4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99",
+    "eth_block": 10300320,
+    "minted_utc": "2026-02-20T15:35:24Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "G0 Retroactive Ratification + Assembly + Organisation Registry + Domain Expert Pools + Machine Domain Clearance + Autonomous Domain Agency + Open Work Principle + design test #81 (evolutionary safety)",
+    "explorer_url": "https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99"
+  },
+  {
+    "genesis_block": 7,
+    "status": "canonical",
+    "sha256": "29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c758242dc1ed8bca",
+    "tx_hash": "efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c",
+    "eth_block": 10287422,
+    "minted_utc": "2026-02-18T18:04:12Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Narrative alignment + Technical Overview comprehensive update + docs audit. Constitution unchanged in substance from GB6.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/efd7fd2ab875773ce626b15c4b2becd6248b1c5db65012a2ed413cccdecd264c"
+  },
+  {
+    "genesis_block": 6,
+    "status": "canonical",
+    "sha256": "4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170cacd19814dcb284",
+    "tx_hash": "c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c",
+    "eth_block": 10282284,
+    "minted_utc": "2026-02-17T23:57:49Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Genesis Common Fund, harmful work prevention, three-tier justice, workflow orchestration — the constitutional infrastructure for a functioning economy.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/c8ef384a819925b9aa8909685d5d0179b1233303a9e06374b206fb067b438a8c"
+  },
+  {
+    "genesis_block": 5,
+    "status": "canonical",
+    "sha256": "f2c5381d48b3c467341997b69916aaa82d30d5f160982b69a09942f3a16865c8",
+    "tx_hash": "8d2152dc5f6f51c35d7f0b5b4624377b3e9c178c4fa4851d4eba7a650064df6d",
+    "eth_block": 10275625,
+    "minted_utc": "2026-02-17T00:02:48Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Lifecycle wiring + Genesis Block naming convention. First Light trigger, creator allocation events, founder dormancy tracking.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/8d2152dc5f6f51c35d7f0b5b4624377b3e9c178c4fa4851d4eba7a650064df6d"
+  },
+  {
+    "genesis_block": 4,
+    "status": "canonical",
+    "sha256": "1633cb2d001c230a4e752417427dc9fccf6cb6af058cb38e5cabf8cab7804f91",
+    "tx_hash": "5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac",
+    "eth_block": 10273917,
+    "minted_utc": "2026-02-16T17:59:12Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "First Light sustainability model + machine registration enforcement.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/5b8ab0e1a8925807e0b16552735adc0564b876d1c16e59b9919436eeafd65aac"
+  },
+  {
+    "genesis_block": 3,
+    "status": "canonical",
+    "sha256": "b9981e3e200665a4ce38741dd37165600dea3f504909e55f6dd7f7c0e9d45393",
+    "tx_hash": "eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896",
+    "eth_block": 10272673,
+    "minted_utc": "2026-02-16T00:00:00Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Creator provisions + 50-year founder legacy. Dormancy clause constitutionally anchored.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/eb0b0e6970c31c3c16cdc60f22431ca0e594eb754a401956303473ba4d4a4896"
+  },
+  {
+    "genesis_block": 2,
+    "status": "canonical",
+    "sha256": "e941df98b2c4d4b8bd7eafc8897d0351b80c482221e81bd211b07c543b3c8dcd",
+    "tx_hash": "fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a",
+    "eth_block": 10271157,
+    "minted_utc": "2026-02-16T08:15:36Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Compensation model. Commission formula, escrow lifecycle, and reserve fund mechanics committed on-chain.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/fde734ddf3480724ccc572330be149692d766d6ba5648dbc9d2cd2f18020c83a"
+  },
+  {
+    "genesis_block": 2,
+    "status": "superseded",
+    "sha256": "da4db9104997f86b74b1edf5130f1767aefd6a8867728acb8e52d6e5bac7fc16",
+    "tx_hash": "1d15b5e57e1395ee46b3a53aab3f1d242ba3cb2fd3be15ae7fab271189e964c7",
+    "eth_block": 10271150,
+    "minted_utc": "2026-02-16T08:14:12Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "Intermediate draft. Superseded by canonical GB2 within the same block window.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/1d15b5e57e1395ee46b3a53aab3f1d242ba3cb2fd3be15ae7fab271189e964c7"
+  },
+  {
+    "genesis_block": 1,
+    "status": "canonical",
+    "sha256": "33f2b00386aef7e166ce0e23f082a31ae484294d9ff087ddb45c702ddd324a06",
+    "tx_hash": "031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb",
+    "eth_block": 10255231,
+    "minted_utc": "2026-02-13T23:47:25Z",
+    "document": "TRUST_CONSTITUTION.md",
+    "summary": "The first constitutional anchoring. Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted.",
+    "explorer_url": "https://sepolia.etherscan.io/tx/031617e394e0aee1875102fb5ba39ad5ad18ea775e1eeb44fd452ecd9d8a3bdb"
+  }
+]

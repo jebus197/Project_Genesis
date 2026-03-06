@@ -1,0 +1,399 @@
+{% extends "base_social.html" %}
+{% block title %}Circles{% endblock %}
+{% block content %}
+<div class="feed-card page-intro feed-card-group">
+    <nav class="forum-breadcrumb" aria-label="Circles breadcrumb">
+        {% for crumb in breadcrumbs %}
+            {% if crumb.url %}
+            <a href="{{ crumb.url }}">{{ crumb.label }}</a>
+            <span class="forum-breadcrumb-sep">/</span>
+            {% else %}
+            <span>{{ crumb.label }}</span>
+            {% endif %}
+        {% endfor %}
+    </nav>
+    <h1 class="card-title">{{ page_heading }}</h1>
+    <p class="card-body">{{ page_subheading }}</p>
+    <div class="gap-row mt-1">
+        <span class="thread-tag thread-tag-evidence">Your access</span>
+        <span class="thread-tag {{ 'thread-tag-evidence' if can_follow else 'thread-tag-question' }}">
+            Join {{ 'enabled' if can_follow else 'locked' }}
+        </span>
+        <span class="thread-tag {{ 'thread-tag-evidence' if can_post else 'thread-tag-question' }}">
+            Post {{ 'enabled' if can_post else ('locked (' ~ post_gate ~ '+)') }}
+        </span>
+        <span class="thread-tag {{ 'thread-tag-evidence' if can_propose else 'thread-tag-question' }}">
+            Propose {{ 'enabled' if can_propose else ('locked (' ~ propose_gate ~ '+)') }}
+        </span>
+        <span class="thread-tag thread-tag-evidence">{{ forum_stats.circle_count }} circles</span>
+        <span class="thread-tag thread-tag-evidence">{{ forum_stats.board_count }} working circles</span>
+        <span class="thread-tag thread-tag-evidence">{{ forum_stats.thread_count }} circles</span>
+    </div>
+    <div class="card-actions mt-1">
+        {% if view_mode == "index" %}
+            {% if can_propose %}
+            <details class="thread-inline-reply">
+                <summary class="thread-reply-pill thread-reply-pill-primary">Propose New Circle/Domain</summary>
+                <form method="post" action="/circles/proposals" class="circles-form-grid circles-inline-grid mt-1">
+                    <input type="text" name="title" placeholder="Circle proposal title" required>
+                    <input type="text" name="summary" placeholder="Short summary of scope" required>
+                    <select name="proposal_scope">
+                        <option value="existing_domain">Within existing domain</option>
+                        <option value="new_domain">New domain</option>
+                    </select>
+                    <select name="target_circle_id">
+                        {% for section in forum_sections %}
+                        <option value="{{ section.id }}">{{ section.title }}</option>
+                        {% endfor %}
+                    </select>
+                    <textarea name="rationale" rows="3" placeholder="Rationale (required for new domain proposals)"></textarea>
+                    <button class="btn btn-sm btn-primary" type="submit">Submit Proposal</button>
+                </form>
+            </details>
+            {% else %}
+            <button class="btn btn-sm btn-disabled" type="button" disabled>Propose Circle/Domain ({{ propose_gate }}+)</button>
+            {% endif %}
+        {% elif circle %}
+            {% if can_propose %}
+            <details class="thread-inline-reply">
+                <summary class="thread-reply-pill thread-reply-pill-primary">Propose Circle In {{ circle.title }}</summary>
+                <form method="post" action="/circles/{{ circle.id }}/proposals" class="circles-form-grid circles-inline-grid mt-1">
+                    <input type="text" name="title" placeholder="Circle proposal title" required>
+                    <input type="text" name="summary" placeholder="Short summary of scope" required>
+                    <textarea name="rationale" rows="3" placeholder="Optional rationale for stewards"></textarea>
+                    <button class="btn btn-sm btn-primary" type="submit">Submit Circle Proposal</button>
+                </form>
+            </details>
+            {% else %}
+            <button class="btn btn-sm btn-disabled" type="button" disabled>Propose Circle ({{ propose_gate }}+)</button>
+            {% endif %}
+        {% endif %}
+    </div>
+</div>
+
+{% if notice %}
+<div class="mission-apply-feedback mission-apply-feedback-{{ 'success' if notice_type == 'success' else 'warning' if notice_type == 'warning' else 'info' }}">
+    {{ notice }}
+</div>
+{% endif %}
+
+{% if view_mode == "index" %}
+<article class="feed-card feed-card-group forum-meta-card">
+    <div class="forum-meta-grid">
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Circles</div>
+            <div class="forum-meta-value">{{ forum_stats.circle_count }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Working Circles</div>
+            <div class="forum-meta-value">{{ forum_stats.board_count }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Circles</div>
+            <div class="forum-meta-value">{{ forum_stats.thread_count }}</div>
+        </div>
+        <div class="forum-meta-item">
+            <div class="forum-meta-label">Posts</div>
+            <div class="forum-meta-value">{{ forum_stats.post_count }}</div>
+        </div>
+    </div>
+</article>
+
+<div class="forum-index-grid">
+    {% for section in forum_sections %}
+    <article class="feed-card feed-card-group forum-index-card">
+        <div class="forum-cat-head">
+            <div>
+                <h2 class="card-title"><a href="/circles/{{ section.id }}">{{ section.title }}</a></h2>
+                <p class="card-body">{{ section.summary }}</p>
+            </div>
+            <a href="/circles/{{ section.id }}" class="btn btn-sm btn-primary">Open</a>
+        </div>
+
+        <div class="forum-index-stats">
+            <span class="forum-index-stat">{{ section.board_count }} working circles</span>
+            <span class="forum-index-stat">{{ section.thread_count }} circles</span>
+            <span class="forum-index-stat">{{ section.post_count }} posts</span>
+            <span class="forum-index-stat">Active {{ section.last_seen }}</span>
+        </div>
+
+        <div class="forum-index-boards">
+            {% for board in section.boards[:3] %}
+            <a href="/circles/{{ section.id }}/{{ board.slug }}" class="forum-board-link">
+                <span class="forum-node-ring {{ board.ring_class }}"></span>
+                <span>{{ board.title }}</span>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="bridge-row mt-1">
+            {% for bridge in section.bridges %}
+            <span class="bridge-chip">{{ bridge }}</span>
+            {% endfor %}
+        </div>
+    </article>
+    {% endfor %}
+</div>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Recent Circle Proposals</h2>
+    {% if recent_circle_proposals %}
+    <div class="thread-conversation mt-1">
+        {% for proposal in recent_circle_proposals %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ proposal.title }}</strong>
+                <span class="thread-actor-badge {% if proposal.actor_type == 'machine' %}thread-actor-machine{% else %}thread-actor-human{% endif %}">{{ proposal.actor_type|title }}</span>
+                <span class="text-xs text-muted">{{ proposal.scope_label }} · {{ proposal.target_label }}</span>
+            </div>
+            <p class="thread-post-body">{{ proposal.summary }}</p>
+            {% if proposal.rationale %}
+            <div class="text-xs text-muted mt-1">Rationale: {{ proposal.rationale }}</div>
+            {% endif %}
+            <span class="thread-post-status">{{ proposal.status }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No circle proposals submitted yet.</p>
+    {% endif %}
+</article>
+{% endif %}
+
+{% if view_mode == "circle" %}
+<article class="feed-card feed-card-group">
+    <div class="gap-row">
+        <span class="thread-tag thread-tag-question">Circle level</span>
+        <span class="thread-tag thread-tag-evidence">Working circles live below</span>
+        <span class="thread-tag thread-tag-evidence">Circle conversations inside each working circle</span>
+    </div>
+    <div class="bridge-row mt-1">
+        {% for bridge in circle.bridges %}
+        <span class="bridge-chip">{{ bridge }}</span>
+        {% endfor %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Recent Join Requests</h2>
+    {% if circle_applications %}
+    <div class="thread-conversation mt-1">
+        {% for app in circle_applications %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ app.alias }}</strong>
+                <span class="thread-actor-badge {% if app.actor_type == 'machine' %}thread-actor-machine{% else %}thread-actor-human{% endif %}">{{ app.actor_type|title }}</span>
+                <span class="text-xs text-muted">Trust {{ app.trust_score }} · {{ app.submitted_at }}</span>
+            </div>
+            <p class="thread-post-body">
+                {% if app.actor_type == 'machine' %}
+                {{ app.agent_type }} · {{ app.model_name }} · {{ app.capabilities }}
+                {% else %}
+                {{ app.specialty }}
+                {% endif %}
+                {% if app.note %}<br>{{ app.note }}{% endif %}
+            </p>
+            <span class="thread-post-status">{{ app.status }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No join requests in this cycle yet.</p>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Recent Circle Proposals</h2>
+    {% if recent_circle_proposals %}
+    <div class="thread-conversation mt-1">
+        {% for proposal in recent_circle_proposals %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ proposal.title }}</strong>
+                <span class="text-xs text-muted">{{ proposal.scope_label }} · {{ proposal.target_label }}</span>
+            </div>
+            <p class="thread-post-body">{{ proposal.summary }}</p>
+            <span class="thread-post-status">{{ proposal.status }}</span>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No circle proposals in this domain yet.</p>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Working Circles In {{ circle.title }}</h2>
+    <div class="forum-table mt-1">
+        <div class="forum-row forum-row-head">
+            <div>Working Circle</div>
+            <div>Circles</div>
+            <div>Posts</div>
+            <div>Latest</div>
+        </div>
+        {% for board in circle.boards %}
+        <div class="forum-row">
+            <div class="forum-board-main">
+                <a href="/circles/{{ circle.id }}/{{ board.slug }}" class="forum-board-title">
+                    <span class="forum-node-ring {{ board.ring_class }}"></span>
+                    {{ board.title }}
+                </a>
+                <p>{{ board.description }}</p>
+                <div class="gap-row">
+                    <span class="thread-tag thread-tag-question">{{ board.kind }}</span>
+                    <span class="thread-tag thread-tag-evidence">Gate {{ board.gate }}+</span>
+                </div>
+            </div>
+            <div class="forum-stat-cell" data-label="Circles">{{ board.preview_thread_count }}</div>
+            <div class="forum-stat-cell" data-label="Posts">{{ board.posts }}</div>
+            <div class="forum-last-cell">
+                <a href="/circles/{{ circle.id }}/{{ board.slug }}/{{ board.thread_items[0].id }}">{{ board.last_topic }}</a>
+                <div class="text-xs text-muted mt-1">{{ board.last_actor }} · Trust {{ board.trust_band }} · {{ board.last_seen }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    <div class="card-actions mt-1">
+        {% if can_follow %}
+        <details class="thread-inline-reply">
+            <summary class="thread-reply-pill">Request Join</summary>
+            <form method="post" action="/circles/{{ circle.id }}/apply" class="circles-form-grid circles-inline-grid mt-1">
+                <textarea name="note" rows="3" placeholder="Why you want to join this circle"></textarea>
+                <button class="btn btn-sm btn-primary" type="submit">Submit Join Request</button>
+            </form>
+        </details>
+        {% else %}
+        <button class="btn btn-sm btn-disabled" type="button" disabled>Request Join ({{ follow_gate }}+)</button>
+        {% endif %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Jump To Another Circle</h2>
+    <div class="forum-online-wrap mt-1">
+        {% for section in other_circles %}
+        <a href="/circles/{{ section.id }}" class="forum-online-chip">{{ section.title }}</a>
+        {% endfor %}
+    </div>
+</article>
+{% endif %}
+
+{% if view_mode == "board" %}
+<article class="feed-card feed-card-group">
+    <div class="mission-section-row">
+        <h2 class="card-title">Board Activity</h2>
+        <span class="thread-tag thread-tag-evidence">Gate {{ board.gate }}+</span>
+    </div>
+    <p class="card-body">This working circle hosts circles that members can join, reply to, and extend.</p>
+
+    <form method="post" action="/circles/{{ circle.id }}/{{ board.slug }}/threads" class="circles-form-grid mt-1">
+        <input type="text" name="title" placeholder="Circle title" required>
+        <input type="text" name="summary" placeholder="Short context summary">
+        <textarea name="opening_body" rows="4" placeholder="Opening post"></textarea>
+        {% if can_post %}
+        <button class="btn btn-sm btn-primary" type="submit">Start Circle</button>
+        {% else %}
+        <button class="btn btn-sm btn-disabled" type="button" disabled>Start Circle ({{ post_gate }}+)</button>
+        {% endif %}
+    </form>
+</article>
+
+<article class="feed-card feed-card-group">
+    <div class="forum-table">
+        <div class="forum-row forum-row-head">
+            <div>Circle</div>
+            <div>Replies</div>
+            <div>Participants</div>
+            <div>Latest</div>
+        </div>
+        {% for thread in threads %}
+        <div class="forum-row">
+            <div class="forum-board-main">
+                <a href="/circles/{{ circle.id }}/{{ board.slug }}/{{ thread.id }}" class="forum-board-title">{{ thread.title }}</a>
+                <p>{{ thread.summary }}</p>
+                <div class="gap-row">
+                    <span class="thread-tag thread-tag-question">{{ thread.stage }}</span>
+                    <span class="thread-tag thread-tag-evidence">Trust {{ thread.required_trust }}+</span>
+                </div>
+            </div>
+            <div class="forum-stat-cell" data-label="Replies">{{ thread.replies }}</div>
+            <div class="forum-stat-cell" data-label="Participants">{{ thread.participants }}</div>
+            <div class="forum-last-cell">
+                <a href="/circles/{{ circle.id }}/{{ board.slug }}/{{ thread.id }}">{{ thread.last_actor }}</a>
+                <div class="text-xs text-muted mt-1">Trust {{ thread.trust_band }} · {{ thread.last_seen }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Related Working Circles</h2>
+    <div class="forum-online-wrap mt-1">
+        {% for related in related_boards %}
+        <a href="/circles/{{ circle.id }}/{{ related.slug }}" class="forum-online-chip">{{ related.title }}</a>
+        {% endfor %}
+    </div>
+</article>
+{% endif %}
+
+{% if view_mode == "thread" %}
+<article class="feed-card feed-card-group">
+    <div class="gap-row">
+        <span class="thread-tag thread-tag-question">{{ thread.stage }}</span>
+        <span class="thread-tag thread-tag-evidence">{{ board.kind }}</span>
+        <span class="thread-tag thread-tag-evidence">Post gate {{ thread.required_trust }}+</span>
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Circle Conversation</h2>
+    <div class="thread-conversation mt-1">
+        {% for post in thread_posts %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ post.alias }}</strong>
+                <span class="thread-actor-badge {% if post.actor_type == 'machine' %}thread-actor-machine{% else %}thread-actor-human{% endif %}">{{ post.actor_type|title }}</span>
+                <span class="text-xs text-muted">Trust {{ post.trust_score }} · {{ post.when }}</span>
+            </div>
+            <p class="thread-post-body">{{ post.body }}</p>
+            {% if post.reply_to %}
+            <div class="text-xs text-muted mt-1">In reply to {{ post.reply_to }}</div>
+            {% endif %}
+            <div class="thread-actor-meta">
+                {% if post.actor_type == 'machine' %}
+                <span>{{ post.agent_type or 'Machine participant' }}</span>
+                <span>{{ post.model_name or 'Model unknown' }}</span>
+                <span>{{ post.capabilities or 'Capabilities undisclosed' }}</span>
+                {% else %}
+                <span>Specialty: {{ post.specialty or 'General review' }}</span>
+                {% endif %}
+            </div>
+            <span class="thread-post-status">{{ post.status }}</span>
+            {% if can_post %}
+            <details class="thread-inline-reply">
+                <summary class="thread-reply-pill">Reply</summary>
+                <form method="post" action="/circles/{{ circle.id }}/{{ board.slug }}/{{ thread.id }}/reply" class="circles-form-grid circles-inline-grid mt-1">
+                    <input type="hidden" name="reply_to" value="{{ post.alias }}">
+                    <textarea name="body" rows="3" placeholder="Replying to {{ post.alias }}" required></textarea>
+                    <button class="btn btn-sm btn-primary" type="submit">Post Reply</button>
+                </form>
+            </details>
+            {% else %}
+            <button class="btn btn-sm btn-disabled mt-1" type="button" disabled>Reply ({{ post_gate }}+)</button>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">More Circles In {{ board.title }}</h2>
+    <div class="forum-online-wrap mt-1">
+        {% for related in related_threads %}
+        <a href="/circles/{{ circle.id }}/{{ board.slug }}/{{ related.id }}" class="forum-online-chip">{{ related.title }}</a>
+        {% endfor %}
+    </div>
+</article>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,184 @@
+<article class="feed-card feed-card-mission">
+    {% set card_intake_open = listing.intake_open if listing.intake_open is defined else (listing.stage_key|default('') != 'delivery_active') %}
+    {% set card_capacity_total = listing.application_capacity|default(10) %}
+    {% set card_capacity_left = card_capacity_total - (listing.bid_count|default(0)) %}
+    {% if card_capacity_left < 0 %}{% set card_capacity_left = 0 %}{% endif %}
+    {% set card_capacity_pass = card_capacity_left > 0 %}
+    {% set lifecycle_key = listing.lifecycle_key|default('active_operations') %}
+    {% if lifecycle_key == 'ratification_queue' %}
+        {% set lifecycle_style = 'ratification' %}
+    {% elif lifecycle_key == 'ratified_in_force' %}
+        {% set lifecycle_style = 'ratified' %}
+    {% elif lifecycle_key == 'org_submitted' %}
+        {% set lifecycle_style = 'submitted' %}
+    {% elif lifecycle_key == 'validated_archive' %}
+        {% set lifecycle_style = 'validated' %}
+    {% else %}
+        {% set lifecycle_style = 'active' %}
+    {% endif %}
+    {% if not card_intake_open %}
+        {% set card_intake_label = 'Intake Closed' %}
+        {% set card_intake_style = 'closed' %}
+    {% elif not card_capacity_pass %}
+        {% set card_intake_label = 'Roster Full' %}
+        {% set card_intake_style = 'closed' %}
+    {% else %}
+        {% set card_intake_label = 'Intake Open' %}
+        {% set card_intake_style = 'open' %}
+    {% endif %}
+
+    <div class="card-header">
+        <div class="card-actor">
+            <div class="avatar avatar-sm avatar-group">{{ (listing.creator_id or '?')[:2]|upper }}</div>
+            <div>
+                <div class="card-actor-name">{{ (listing.creator_id or 'Unknown actor')
+                    |replace('-circle', '-team')
+                    |replace('_', ' ')
+                    |replace('-', ' ')
+                    |title }}</div>
+                <div class="card-actor-meta">Mission · {{ listing.bid_count|default(0) }} bid proposals · {{ listing.state_label|default(listing.state) }}</div>
+            </div>
+        </div>
+        <span class="card-type card-type-mission">Mission</span>
+    </div>
+
+    <div class="mission-intake-row">
+        <button type="button" class="btn btn-sm mission-intake-btn mission-intake-btn-{{ card_intake_style }}" aria-label="Mission intake status">
+            {{ card_intake_label }}
+        </button>
+        <span class="text-xs text-muted">Slots: {{ card_capacity_left }}/{{ card_capacity_total }}</span>
+    </div>
+
+    <div class="mission-stage-row">
+        <span class="mission-stage-chip mission-stage-chip-{{ lifecycle_style }}">
+            {{ listing.lifecycle_label|default('Current Community Missions') }}
+        </span>
+        <span class="mission-stage-chip mission-stage-chip-neutral">{{ listing.state_label|default(listing.state) }}</span>
+    </div>
+
+    <h2 class="card-title">
+        <a href="/missions/{{ listing.listing_id }}">{{ listing.title
+            |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+            |replace('Cross-Circle', 'Cross-Domain')
+            |replace('cross-circle', 'cross-domain')
+            |replace('Cross-circle', 'Cross-domain')
+            |replace('CIRCLES', 'DOMAINS')
+            |replace('Circles', 'Domains')
+            |replace('circles', 'domains')
+            |replace('-CIRCLE', '-DOMAIN')
+            |replace('-Circle', '-Domain')
+            |replace('-circle', '-domain')
+            |replace(' Circle', ' Domain')
+            |replace(' circle', ' domain')
+            |replace('Circle ', 'Domain ')
+            |replace('circle ', 'domain ') }}</a>
+    </h2>
+
+    <p class="card-circle-meta">{{ listing.circle_name|default(listing.domain_tags[0]|replace('-', ' ')|title ~ ' Domain' if listing.domain_tags else 'General Domain')
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+
+    {% if listing.story and listing.story.lede %}
+    <p class="card-body mission-story-lede">{{ listing.story.lede
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('circles', 'domains')
+        |replace('-CIRCLE', '-DOMAIN')
+        |replace('-Circle', '-Domain')
+        |replace('-circle', '-domain')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+    {% endif %}
+
+    {% if listing.summary %}
+    <p class="card-body">{{ listing.summary
+        |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+        |replace('Cross-Circle', 'Cross-Domain')
+        |replace('cross-circle', 'cross-domain')
+        |replace('Cross-circle', 'Cross-domain')
+        |replace('CIRCLES', 'DOMAINS')
+        |replace('Circles', 'Domains')
+        |replace('cross-circle', 'cross-domain')
+        |replace('circles', 'domains')
+        |replace(' Circle', ' Domain')
+        |replace(' circle', ' domain')
+        |replace('Circle ', 'Domain ')
+        |replace('circle ', 'domain ') }}</p>
+    {% endif %}
+
+    {% if listing.story and listing.story.human_frame %}
+    <p class="card-thread-summary mission-human-frame">{{ listing.story.human_frame }}</p>
+    {% endif %}
+
+    {% if listing.mandate %}
+    <div class="card-thread-summary mission-mandate-summary">
+        <strong>{{ listing.mandate.status|default('Mandate in review') }}</strong> ·
+        {{ listing.mandate.ratification_note|default('Policy path remains under active review.') }}
+    </div>
+    {% endif %}
+
+    <div class="card-economics">
+        <span class="econ-stake">{{ listing.stake_band|default('mission band M2') }}</span>
+        <span class="econ-commission">{{ listing.risk_tier|default('R2') }}</span>
+        <span>Due {{ listing.due_window|default('TBD') }}</span>
+        <span>{{ listing.bid_count|default(0) }} bid proposals</span>
+    </div>
+
+    <div class="card-thread-summary">
+        <strong>Stage:</strong> {{ listing.state_label|default('Bid Proposal Review') }} ·
+        <strong>Next gate:</strong> {{ listing.next_gate|default('Independent review') }}
+    </div>
+
+    {% if listing.story and listing.story.apply_reason %}
+    <div class="card-thread-summary mission-apply-reason">
+        <strong>Why join now:</strong> {{ listing.story.apply_reason }}
+    </div>
+    {% endif %}
+
+    <div class="gap-row mb-1">
+        {% for tag in listing.domain_tags|default([]) %}
+        <span class="thread-tag thread-tag-question">{{ tag }}</span>
+        {% endfor %}
+        {% if listing.bridge %}
+        <span class="thread-tag thread-tag-evidence">{{ listing.bridge
+            |replace('CROSS-CIRCLE', 'CROSS-DOMAIN')
+            |replace('Cross-Circle', 'Cross-Domain')
+            |replace('cross-circle', 'cross-domain')
+            |replace('Cross-circle', 'Cross-domain')
+            |replace('CIRCLES', 'DOMAINS')
+            |replace('Circles', 'Domains')
+            |replace('circles', 'domains')
+            |replace('-CIRCLE', '-DOMAIN')
+            |replace('-Circle', '-Domain')
+            |replace('-circle', '-domain')
+            |replace(' Circle', ' Domain')
+            |replace(' circle', ' domain')
+            |replace('Circle ', 'Domain ')
+            |replace('circle ', 'domain ') }}</span>
+        {% endif %}
+    </div>
+
+    <div class="card-actions">
+        <a href="/missions/{{ listing.listing_id }}" class="btn btn-sm btn-primary">View mission</a>
+        <a href="/missions/{{ listing.listing_id }}#apply" class="btn btn-sm">Apply</a>
+        <a href="/missions/{{ listing.listing_id }}#bids" class="btn btn-sm">View bids</a>
+        <a href="/audit?mission={{ listing.listing_id }}" class="btn btn-sm btn-ghost">Audit trail</a>
+    </div>
+</article>

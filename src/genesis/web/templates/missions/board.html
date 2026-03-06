@@ -1,0 +1,65 @@
+{% extends "base_social.html" %}
+{% block title %}Missions{% endblock %}
+{% block content %}
+<div class="feed-card page-intro feed-card-mission">
+    <h1 class="card-title">Missions</h1>
+    <p class="card-body">
+        Open listings from verified members. Browse, inspect dossiers, and submit bid proposals.
+    </p>
+    <div class="card-actions" style="margin-top: 12px;">
+        <a href="/missions/create" class="btn btn-sm btn-primary">Post a mission</a>
+    </div>
+</div>
+
+{% include "partials/compose_box.html" %}
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Listings In View</h2>
+    <p class="card-body">
+        Live listings: <strong>{{ live_mission_count }}</strong> · Catalogue listings:
+        <strong>{{ mission_catalog_count }}</strong>.
+    </p>
+</article>
+
+<form class="filters circles-filter" aria-label="Mission filters"
+      hx-get="/missions" hx-target="#mission-list" hx-swap="innerHTML">
+    <input type="search" name="q" placeholder="Search domains, skills, mission types, or evidence themes" aria-label="Search" value="{{ query|default('') }}">
+    <select name="domain" aria-label="Domain filter">
+        <option value="" {% if not domain %}selected{% endif %}>All domains</option>
+        <option value="healthcare" {% if domain == 'healthcare' %}selected{% endif %}>Healthcare</option>
+        <option value="education" {% if domain == 'education' %}selected{% endif %}>Education</option>
+        <option value="transport" {% if domain == 'transport' %}selected{% endif %}>Transport</option>
+        <option value="environment" {% if domain == 'environment' %}selected{% endif %}>Environment</option>
+        <option value="audit" {% if domain == 'audit' %}selected{% endif %}>Audit</option>
+    </select>
+    <select name="sort" aria-label="Sort order">
+        <option value="fit" {% if sort == 'fit' %}selected{% endif %}>Composite fit score</option>
+        <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Newest first</option>
+        <option value="deadline" {% if sort == 'deadline' %}selected{% endif %}>Deadline soonest</option>
+    </select>
+    <button type="submit" class="btn btn-primary btn-sm">Apply</button>
+</form>
+
+<div id="mission-list">
+    {% if lifecycle_sections %}
+        {% for section in lifecycle_sections %}
+        <article class="feed-card feed-card-group mission-section-head">
+            <div class="mission-section-row">
+                <h2 class="card-title">{{ section.label }}</h2>
+                <span class="thread-tag thread-tag-evidence">{{ section.count }} missions</span>
+            </div>
+            {% if section.description %}
+            <p class="card-body mission-section-description">{{ section.description }}</p>
+            {% endif %}
+        </article>
+        {% for listing in section.missions %}
+        {% include "partials/mission_card.html" %}
+        {% endfor %}
+        {% endfor %}
+    {% else %}
+        <div class="feed-card feed-card-mission">
+            <p class="card-body">No missions match this filter. Try a broader domain query.</p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

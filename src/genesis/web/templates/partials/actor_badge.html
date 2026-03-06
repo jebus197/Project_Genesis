@@ -1,0 +1,6 @@
+{# Expects: actor_kind ('HUMAN' or 'MACHINE') #}
+{% if actor_kind == 'HUMAN' %}
+<span class="badge-human">Human</span>
+{% else %}
+<span class="badge-ai">AI</span>
+{% endif %}

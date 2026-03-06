@@ -1,0 +1,163 @@
+{% extends "base_social.html" %}
+{% block title %}Amendment Path{% endblock %}
+{% block content %}
+
+<div class="feed-card page-intro feed-card-governance">
+    <nav class="forum-breadcrumb" aria-label="Amendment path breadcrumb">
+        <a href="/assembly">Assembly</a>
+        <span class="forum-breadcrumb-sep">/</span>
+        <span>Amendment Path</span>
+    </nav>
+    <h1 class="card-title">Binding Amendment Path</h1>
+    <p class="card-body">Assembly debate is non-binding. Binding platform change begins only in the constitutional amendment workflow.</p>
+    <div class="gap-row mt-1">
+        <span class="thread-tag thread-tag-question">Non-binding source: Assembly</span>
+        <span class="thread-tag thread-tag-evidence">Binding path: Amendment chambers</span>
+    </div>
+</div>
+
+{% if notice %}
+<div class="mission-apply-feedback mission-apply-feedback-{{ notice_level|default('info') }}">
+    {{ notice }}
+</div>
+{% endif %}
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">How Decisions Become Binding</h2>
+    <div class="thread-conversation mt-1">
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>Stage 1 · Assembly Discussion</strong>
+                <span class="thread-actor-badge thread-actor-human">Non-binding</span>
+            </div>
+            <p class="thread-post-body">Open deliberation and evidence exchange. This stage informs policy, but cannot directly ratify policy.</p>
+        </div>
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>Stage 2 · Proposal + Ratification Chambers</strong>
+                <span class="thread-actor-badge thread-actor-machine">Binding</span>
+            </div>
+            <p class="thread-post-body">Formal amendment entry, chamber panel selection, proposal vote, and ratification vote under constitutional constraints.</p>
+        </div>
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>Stage 3 · Challenge / Verification</strong>
+                <span class="thread-actor-badge thread-actor-machine">Binding</span>
+            </div>
+            <p class="thread-post-body">Challenge window and chambered challenge path. Entrenched provisions continue through cooling-off and confirmation before apply.</p>
+        </div>
+    </div>
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Submit Amendment Proposal</h2>
+    <p class="card-body">Create a binding amendment proposal from this page. If opened from an Assembly topic, the proposal is linked automatically.</p>
+    {% if can_propose_amendment %}
+    <form method="post" action="/assembly/amendments" class="circles-form-grid circles-inline-grid mt-1">
+        <input type="hidden" name="topic_id" value="{{ source_topic_id }}">
+        <input type="text" name="provision_key" list="amendment-key-options" placeholder="Provision key (for example: eligibility.tau_vote)" required>
+        <datalist id="amendment-key-options">
+            {% for key in amendment_provision_options %}
+            <option value="{{ key }}"></option>
+            {% endfor %}
+        </datalist>
+        <input type="text" name="proposed_value" placeholder='Proposed value (JSON or text, for example: 0.65 or "updated")' required>
+        <div class="compose-toolbar" data-editor-toolbar data-target="assembly-amendment-justification">
+            <button type="button" class="compose-tool" data-editor-action="bold">Bold</button>
+            <button type="button" class="compose-tool" data-editor-action="italic">Italic</button>
+            <button type="button" class="compose-tool" data-editor-action="bullet">List</button>
+            <button type="button" class="compose-tool" data-editor-action="quote">Quote</button>
+            <button type="button" class="compose-tool" data-editor-action="link">Link</button>
+        </div>
+        <textarea id="assembly-amendment-justification" class="compose-textarea-lg" name="justification" rows="7" minlength="30" placeholder="Justification with concrete rationale and expected governance effect." required></textarea>
+        <button class="btn btn-sm btn-primary" type="submit">Submit Amendment Proposal</button>
+    </form>
+    {% else %}
+    <button class="btn btn-sm btn-disabled" type="button" disabled>Propose Amendment ({{ propose_gate }}+)</button>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Assembly Topic Reference</h2>
+    {% if source_topic_id %}
+    <p class="card-body">
+        Source topic:
+        <a href="/assembly/{{ source_topic_id }}">{{ source_topic_title if source_topic_title else source_topic_id }}</a>
+    </p>
+    {% if source_linked_amendments %}
+    <div class="thread-conversation mt-1">
+        {% for amendment in source_linked_amendments %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ amendment.provision_key }}</strong>
+                <span class="thread-actor-badge thread-actor-human">{{ amendment.status_label }}</span>
+                {% if amendment.is_entrenched %}
+                <span class="thread-actor-badge thread-actor-machine">Entrenched</span>
+                {% endif %}
+                <span class="text-xs text-muted">{{ amendment.created_ago }}</span>
+            </div>
+            {% if amendment.justification_excerpt %}
+            <p class="thread-post-body">{{ amendment.justification_excerpt }}</p>
+            {% endif %}
+            <div class="card-actions">
+                <span class="thread-tag thread-tag-evidence">{{ amendment.proposal_id }}</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No amendment proposals linked to this topic yet.</p>
+    {% endif %}
+    {% else %}
+    <p class="card-body">No source Assembly topic selected. Open any Assembly topic and use its <strong>Propose Amendment</strong> action.</p>
+    {% endif %}
+
+    <div class="card-actions mt-1">
+        {% if source_topic_id %}
+        <a href="/assembly/{{ source_topic_id }}" class="btn btn-sm">Back to source topic</a>
+        {% endif %}
+        <a href="/assembly" class="btn btn-sm">Back to Assembly</a>
+    </div>
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Recent Amendment Proposals</h2>
+    {% if recent_amendments %}
+    <div class="thread-conversation mt-1">
+        {% for amendment in recent_amendments %}
+        <div class="thread-post">
+            <div class="thread-post-head">
+                <strong>{{ amendment.provision_key }}</strong>
+                <span class="thread-actor-badge thread-actor-human">{{ amendment.status_label }}</span>
+                <span class="text-xs text-muted">{{ amendment.created_ago }}</span>
+            </div>
+            {% if amendment.justification_excerpt %}
+            <p class="thread-post-body">{{ amendment.justification_excerpt }}</p>
+            {% endif %}
+            <div class="card-actions">
+                <span class="thread-tag thread-tag-evidence">{{ amendment.proposal_id }}</span>
+                {% if amendment.source_topic_id %}
+                <a href="/assembly/{{ amendment.source_topic_id }}" class="btn btn-sm">Open source topic</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <p class="card-body">No amendment proposals submitted yet.</p>
+    {% endif %}
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Panel Composition and Anti-Capture Controls</h2>
+    <p class="card-body">Current PoC chamber selection enforces trust and diversity constraints. Additional composition hardening is marked <strong>FUTURE: Step 10f</strong> and is deferred until post-PoC implementation passes.</p>
+    <div class="gap-row mt-1">
+        <span class="thread-tag thread-tag-evidence">Human-only constitutional vote</span>
+        <span class="thread-tag thread-tag-evidence">No cross-chamber member overlap</span>
+        <span class="thread-tag thread-tag-evidence">Region + organisation diversity</span>
+        <span class="thread-tag thread-tag-question">FUTURE: Step 10f</span>
+    </div>
+    <p class="text-xs text-muted mt-1">Deferred hardening includes expanded composition profiles, anti-capture quotas, auditable lottery selection, and stricter quorum constraints.</p>
+</article>
+
+{% endblock %}

@@ -1,0 +1,39 @@
+{# Expects: breakdown (dict with commission fields) #}
+<table class="commission-table">
+    <thead>
+        <tr>
+            <th>Category</th>
+            <th>Amount</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if breakdown %}
+        <tr>
+            <td>Mission reward</td>
+            <td>{{ breakdown.get('reward', '—') }}</td>
+        </tr>
+        <tr>
+            <td>Commission ({{ breakdown.get('rate', '—') }})</td>
+            <td>{{ breakdown.get('commission_amount', '—') }}</td>
+        </tr>
+        <tr>
+            <td>Worker payout</td>
+            <td>{{ breakdown.get('worker_payout', '—') }}</td>
+        </tr>
+        <tr>
+            <td>GCF contribution (1%)</td>
+            <td>{{ breakdown.get('gcf_contribution', '—') }}</td>
+        </tr>
+        <tr class="creator-line">
+            <td>Creator allocation (5% employer side)</td>
+            <td>{{ breakdown.get('employer_creator_fee', '—') }}</td>
+        </tr>
+        <tr class="creator-line">
+            <td>Creator allocation (5% worker side)</td>
+            <td>{{ breakdown.get('worker_creator_fee', '—') }}</td>
+        </tr>
+        {% else %}
+        <tr><td colspan="2">No commission data available.</td></tr>
+        {% endif %}
+    </tbody>
+</table>

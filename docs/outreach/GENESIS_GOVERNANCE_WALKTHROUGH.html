@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Genesis Governance Walkthrough</title>
+  <style>
+    :root {
+      --bg: #f7f3ea;
+      --panel: #fffdf9;
+      --ink: #16263b;
+      --muted: #5e7085;
+      --line: #d7d9df;
+      --blue: #2c8aa0;
+      --blue-soft: #dff1f7;
+      --amber: #a86419;
+      --amber-soft: #f6eadb;
+      --green: #2f7d67;
+      --green-soft: #e1f4ed;
+      --red: #8e3f3f;
+      --red-soft: #f7e3e3;
+      --shadow: 0 12px 28px rgba(11, 22, 42, 0.1);
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 82% -20%, #deeff7 0%, transparent 60%),
+        radial-gradient(900px 500px at -15% 15%, #f2e7d5 0%, transparent 60%),
+        var(--bg);
+      line-height: 1.5;
+    }
+
+    .wrap {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 34px 20px 56px;
+    }
+
+    .hero {
+      background: linear-gradient(130deg, #113255, #1f6f84);
+      color: #f8fbff;
+      border-radius: 26px;
+      padding: 30px 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.5rem, 3.4vw, 2.4rem);
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+    }
+
+    .hero p {
+      margin: 12px 0 0;
+      max-width: 75ch;
+      color: #e8f2fb;
+      font-size: 1.04rem;
+    }
+
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 15px;
+    }
+
+    .chip {
+      border: 1px solid rgba(255, 255, 255, 0.26);
+      border-radius: 999px;
+      padding: 4px 11px;
+      font-size: 0.74rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      background: rgba(8, 21, 40, 0.26);
+    }
+
+    .nav {
+      margin: 16px 0 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .nav a {
+      text-decoration: none;
+      color: var(--ink);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 6px 11px;
+      font-size: 0.82rem;
+      background: #ffffff;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 18px 18px 16px;
+      margin-bottom: 14px;
+    }
+
+    .card h2 {
+      margin: 0 0 8px;
+      font-size: 1.24rem;
+    }
+
+    .sub {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 0.96rem;
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    .lane {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .lane h3 {
+      margin: 0;
+      font-size: 1.02rem;
+    }
+
+    .badge {
+      display: inline-block;
+      margin: 8px 0 10px;
+      border-radius: 999px;
+      padding: 3px 9px;
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+    }
+
+    .soft-blue { background: var(--blue-soft); color: #0e5263; }
+    .soft-amber { background: var(--amber-soft); color: #7a4812; }
+    .soft-green { background: var(--green-soft); color: #1e5b4a; }
+    .soft-red { background: var(--red-soft); color: #6e3333; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(175px, 1fr));
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    .stage {
+      border: 1px solid var(--line);
+      border-radius: 13px;
+      padding: 11px;
+      background: #fff;
+      position: relative;
+    }
+
+    .stage .k {
+      margin: 0 0 4px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .stage h4 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+      line-height: 1.25;
+    }
+
+    .stage p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .arrow {
+      text-align: center;
+      color: var(--muted);
+      margin: 8px 0;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+    }
+
+    ul {
+      margin: 8px 0 0;
+      padding-left: 19px;
+    }
+
+    li { margin: 3px 0; }
+
+    .note {
+      margin-top: 11px;
+      border-left: 3px solid var(--blue);
+      background: #f1fbff;
+      border-radius: 9px;
+      padding: 10px 11px;
+      color: #124052;
+      font-size: 0.92rem;
+    }
+
+    .small {
+      color: var(--muted);
+      font-size: 0.84rem;
+      margin-top: 8px;
+    }
+
+    .card-details {
+      padding: 0;
+      overflow: hidden;
+    }
+
+    .card-details > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 14px 18px;
+      font-size: 1.06rem;
+      font-weight: 700;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .card-details > summary::-webkit-details-marker { display: none; }
+
+    .card-details[open] > summary {
+      background: #f7fbff;
+    }
+
+    .details-body {
+      padding: 14px 18px 16px;
+    }
+
+    .details-body h3 {
+      margin: 0 0 6px;
+      font-size: 1rem;
+    }
+
+    .details-block {
+      margin-bottom: 14px;
+    }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <h1>Genesis Governance Walkthrough</h1>
+      <p>
+        This is the quick visual map: where discussion happens, where binding decisions happen,
+        and how a proposal moves from open debate to constitutional ratification.
+      </p>
+      <div class="chip-row">
+        <span class="chip">PoC explainer</span>
+        <span class="chip">Assembly + Amendment path</span>
+        <span class="chip">Human and machine participation</span>
+      </div>
+    </section>
+
+    <nav class="nav">
+      <a href="#s1">1. Two lanes</a>
+      <a href="#s2">2. Three chambers</a>
+      <a href="#s3">3. Trust gates</a>
+      <a href="#s4">4. Binding line</a>
+      <a href="#s5">5. End-to-end route</a>
+      <a href="#s6">6. Optional details</a>
+    </nav>
+
+    <section class="card" id="s1">
+      <h2>1) Two Lanes, One Platform</h2>
+      <p class="sub">Confusion disappears when we keep this split visible all the time.</p>
+      <div class="grid-2">
+        <article class="lane">
+          <h3>Assembly Lane</h3>
+          <span class="badge soft-blue">Non-binding</span>
+          <ul>
+            <li>Open topic proposal and debate</li>
+            <li>Evidence, objections, alternatives</li>
+            <li>Human + machine contributions</li>
+            <li>No final legal/platform authority here</li>
+          </ul>
+        </article>
+        <article class="lane">
+          <h3>Constitutional Amendment Lane</h3>
+          <span class="badge soft-amber">Binding</span>
+          <ul>
+            <li>Formal proposal docket</li>
+            <li>Chamber panels and votes</li>
+            <li>Challenge and cooling/confirmation rules</li>
+            <li>Final applied policy state</li>
+          </ul>
+        </article>
+      </div>
+      <div class="note">
+        Rule of thumb: Assembly explains and pressure-tests ideas; the amendment pipeline enacts them.
+      </div>
+    </section>
+
+    <section class="card" id="s2">
+      <h2>2) Three-Chamber Constitutional Flow</h2>
+      <p class="sub">This is where binding authority lives.</p>
+      <div class="flow">
+        <article class="stage">
+          <p class="k">Chamber 1</p>
+          <h4>Proposal Chamber</h4>
+          <p>First formal vote on the proposed amendment.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Chamber 2</p>
+          <h4>Ratification Chamber</h4>
+          <p>Second vote for acceptance into constitutional path.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Window</p>
+          <h4>Challenge Stage</h4>
+          <p>If challenged, enters Challenge Chamber vote path.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Finalization</p>
+          <h4>Confirm / Apply</h4>
+          <p>Entrenched provisions may require cooling + confirmation before apply.</p>
+        </article>
+      </div>
+      <p class="small">Operationally: no chamber can unilaterally decide all outcomes.</p>
+    </section>
+
+    <section class="card" id="s3">
+      <h2>3) Trust Gates By Stage</h2>
+      <p class="sub">Example thresholds for user understanding in PoC (final values remain policy-driven).</p>
+      <div class="flow">
+        <article class="stage">
+          <p class="k">Stage A</p>
+          <h4>Assembly Participation</h4>
+          <p>Contribute to debate at baseline trust gate.</p>
+          <span class="badge soft-green">Example 700+</span>
+        </article>
+        <article class="stage">
+          <p class="k">Stage B</p>
+          <h4>Open Amendment Proposal</h4>
+          <p>Higher trust gate to submit a proposed amendment.</p>
+          <span class="badge soft-green">Example 840+</span>
+        </article>
+        <article class="stage">
+          <p class="k">Stage C</p>
+          <h4>Panel Voting</h4>
+          <p>Selected high-trust human panels with diversity constraints.</p>
+          <span class="badge soft-amber">Policy + panel rules</span>
+        </article>
+      </div>
+      <div class="note">
+        Important: final chamber access should not be "top trust only" in a pure leaderboard sense.
+        It should remain threshold + panel-diversity constrained to avoid capture.
+      </div>
+    </section>
+
+    <section class="card" id="s4">
+      <h2>4) Where Binding Begins</h2>
+      <p class="sub">One simple visual line prevents most misunderstandings.</p>
+      <div class="arrow">Assembly Topic → Promoted to Amendment Docket → Binding Lifecycle</div>
+      <div class="grid-2">
+        <article class="lane">
+          <h3>Before Promotion</h3>
+          <span class="badge soft-blue">Debate only</span>
+          <p>No constitutional effect yet.</p>
+        </article>
+        <article class="lane">
+          <h3>After Promotion</h3>
+          <span class="badge soft-red">Binding candidate</span>
+          <p>Now under chamber rules, deadlines, and auditable votes.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="card" id="s5">
+      <h2>5) End-to-End Route (Human View)</h2>
+      <p class="sub">How one issue should move through Genesis in plain terms.</p>
+      <div class="flow">
+        <article class="stage">
+          <p class="k">Step 1</p>
+          <h4>Open Circle Discussion</h4>
+          <p>Collect field evidence and debate framing.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Step 2</p>
+          <h4>Assembly Deliberation</h4>
+          <p>Pressure-test the proposed rule change in public.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Step 3</p>
+          <h4>Proposed Amendment</h4>
+          <p>Submit one concrete legal/policy text for vote.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Step 4</p>
+          <h4>Chamber Voting + Challenge</h4>
+          <p>Proposal, ratification, then challenge path where invoked.</p>
+        </article>
+        <article class="stage">
+          <p class="k">Step 5</p>
+          <h4>Applied + Audited</h4>
+          <p>Policy becomes active with traceable audit references.</p>
+        </article>
+      </div>
+    </section>
+
+    <details class="card card-details" id="s6">
+      <summary>6) Optional Detail: labels, interpretation, and panel rules</summary>
+      <div class="details-body">
+        <div class="details-block">
+          <h3>Labeling Standard</h3>
+          <p class="sub">Recommended copy so users can always tell what is binding and what is not.</p>
+          <div class="grid-2">
+            <article class="lane">
+              <h3>Assembly labels</h3>
+              <ul>
+                <li><strong>Deliberation</strong></li>
+                <li><strong>Non-binding</strong></li>
+                <li><strong>Promote to Amendment Docket</strong></li>
+              </ul>
+            </article>
+            <article class="lane">
+              <h3>Amendment labels</h3>
+              <ul>
+                <li><strong>Binding Workflow</strong></li>
+                <li><strong>Proposal Chamber / Ratification Chamber / Challenge</strong></li>
+                <li><strong>Confirmed / Applied</strong></li>
+              </ul>
+            </article>
+          </div>
+        </div>
+
+        <div class="details-block">
+          <h3>Quick Interpretation Guide</h3>
+          <ul>
+            <li>If it is only in Assembly, it is not yet law/policy.</li>
+            <li>Binding starts only when promoted to amendment docket.</li>
+            <li>Three chambers govern ratification, not feed popularity.</li>
+            <li>Final authority remains constitutional and auditable.</li>
+          </ul>
+        </div>
+
+        <div class="details-block">
+          <h3>Panel Composition and Anti-Capture Controls</h3>
+          <p class="sub">Current floor is active now. Additional hardening is deferred as <strong>FUTURE: Step 10f</strong>.</p>
+          <div class="grid-2">
+            <article class="lane">
+              <h3>Current enforced floor</h3>
+              <ul>
+                <li>Human-only constitutional voting</li>
+                <li>Trust threshold gate for panel eligibility</li>
+                <li>Geographic and organisational diversity checks</li>
+                <li>No overlap between chamber panels</li>
+              </ul>
+            </article>
+            <article class="lane">
+              <h3>Future hardening (Step 10f)</h3>
+              <ul>
+                <li>Role-fit eligibility by amendment scope</li>
+                <li>Foundational-rule review constraints</li>
+                <li>Anti-capture quotas beyond geography and organisation</li>
+                <li>Fail-closed quorum checks</li>
+              </ul>
+            </article>
+          </div>
+          <div class="note">
+            Principle: high trust alone should never be sufficient for every chamber seat.
+            Competence and constitutional fit must be first-class eligibility constraints.
+          </div>
+        </div>
+      </div>
+    </details>
+  </main>
+</body>
+</html>

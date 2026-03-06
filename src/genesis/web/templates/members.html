@@ -1,0 +1,160 @@
+{% extends "base_social.html" %}
+{% block title %}Members{% endblock %}
+{% block content %}
+<div class="feed-card page-intro feed-card-group">
+    <h1 class="card-title">Member Mission Ledger</h1>
+    <p class="card-body">
+        Member dashboards show contribution flow, mission participation, trust trajectory, and public-fund allocation pathways.
+        Financial influence is excluded; transparency and provenance are central.
+    </p>
+    <div class="circle-hierarchy mt-1">
+        <span class="thread-reply-pill thread-reply-pill-primary">Bids and Status</span>
+        <span class="thread-reply-pill thread-reply-pill-primary">Completed Work</span>
+        <span class="thread-reply-pill thread-reply-pill-primary">Trust History</span>
+        <span class="thread-reply-pill thread-reply-pill-primary">GCF Allocation Flow</span>
+    </div>
+</div>
+
+<article class="feed-card feed-card-mission">
+    <h2 class="card-title">{{ member.display_name }} — Snapshot</h2>
+    <div class="members-metrics">
+        <div class="member-metric">
+            <div class="text-xs text-muted">Trust score</div>
+            <strong>{{ member.trust_score }}</strong>
+        </div>
+        <div class="member-metric">
+            <div class="text-xs text-muted">Active bids</div>
+            <strong>{{ member.active_bids }}</strong>
+        </div>
+        <div class="member-metric">
+            <div class="text-xs text-muted">Missions completed</div>
+            <strong>{{ member.missions_completed }}</strong>
+        </div>
+        <div class="member-metric">
+            <div class="text-xs text-muted">GCF epoch index</div>
+            <strong>{{ member.gcf_allocation_index }}</strong>
+        </div>
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Circles Joined</h2>
+    <div class="member-table">
+        {% if member.circles_joined %}
+            {% for circle_name in member.circles_joined %}
+            <div class="member-row">
+                <div><strong>{{ circle_name|replace(' Circle', '') }}</strong></div>
+                <div class="text-sm text-secondary">Active participation lane</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="member-row">
+                <div class="text-sm text-secondary">No circles joined yet in this cycle.</div>
+                <div></div>
+            </div>
+        {% endif %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-mission">
+    <h2 class="card-title">Mission Bids and Bid Status</h2>
+    <div class="member-table">
+        {% if member.bid_rows %}
+            {% for row in member.bid_rows %}
+            <div class="member-row">
+                <div>
+                    <strong><a href="/missions/{{ row.mission_id }}">{{ row.mission_title }}</a></strong>
+                    <div class="text-sm text-secondary">{{ row.circle_name|replace(' Circle', '') }}</div>
+                </div>
+                <div class="text-sm"><strong>{{ row.bid_status }}</strong></div>
+                <div class="text-sm text-secondary">{{ row.next_gate }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="member-row">
+                <div class="text-sm text-secondary">No mission bids submitted yet.</div>
+                <div></div>
+                <div></div>
+            </div>
+        {% endif %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-milestone">
+    <h2 class="card-title">Missions Completed</h2>
+    <div class="member-table">
+        {% if member.completed_rows %}
+            {% for row in member.completed_rows %}
+            <div class="member-row">
+                <div>
+                    <strong>{{ row.mission_title }}</strong>
+                    <div class="text-sm text-secondary">{{ row.circle_name|replace(' Circle', '') }}</div>
+                </div>
+                <div class="text-sm">{{ row.completion_note }}</div>
+                <div class="text-xs text-mono text-muted">{{ row.evidence_ref }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="member-row">
+                <div class="text-sm text-secondary">No completed missions recorded yet.</div>
+                <div></div>
+                <div></div>
+            </div>
+        {% endif %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-debate">
+    <h2 class="card-title">Rewards Flow (Non-Monetary Breakdown)</h2>
+    <p class="card-body">Shows where contribution-derived reward share came from. No personal currency values are displayed.</p>
+    {% for item in member.reward_flow %}
+    <div class="allocation-row">
+        <div class="allocation-head">
+            <strong>{{ item.channel }}</strong>
+            <span>{% if item.share is not none %}{{ item.share }}%{% else %}N/A{% endif %}</span>
+        </div>
+        <div class="allocation-track"><span style="width: {% if item.share is not none %}{{ item.share }}{% else %}0{% endif %}%; opacity: {% if item.share is not none %}1{% else %}0.35{% endif %};"></span></div>
+        <div class="text-sm text-secondary">{{ item.note }}</div>
+    </div>
+    {% endfor %}
+</article>
+
+<article class="feed-card feed-card-governance">
+    <h2 class="card-title">Trust Score History</h2>
+    <div class="member-table">
+        {% if member.trust_history %}
+            {% for point in member.trust_history %}
+            <div class="member-row">
+                <div><strong>{{ point.period }}</strong></div>
+                <div><strong>{{ point.score }}</strong></div>
+                <div class="text-sm text-secondary">{{ point.reason }}</div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="member-row">
+                <div class="text-sm text-secondary">Trust history is not available yet for this member.</div>
+                <div></div>
+                <div></div>
+            </div>
+        {% endif %}
+    </div>
+</article>
+
+<article class="feed-card feed-card-group">
+    <h2 class="card-title">Genesis Common Fund (GCF) Allocation — {{ member.gcf_epoch }}</h2>
+    <p class="card-body">
+        This section shows collective allocation destinations and share percentages.
+        It describes where GCF resources went and overall allocation composition, not personal monetary holdings.
+    </p>
+    {% for channel in member.gcf_allocation %}
+    <div class="allocation-row">
+        <div class="allocation-head">
+            <strong>{{ channel.channel }}</strong>
+            <span>{% if channel.share is not none %}{{ channel.share }}%{% else %}N/A{% endif %}</span>
+        </div>
+        <div class="allocation-track"><span style="width: {% if channel.share is not none %}{{ channel.share }}{% else %}0{% endif %}%; opacity: {% if channel.share is not none %}1{% else %}0.35{% endif %};"></span></div>
+        <div class="text-sm text-secondary">{{ channel.purpose }}</div>
+    </div>
+    {% endfor %}
+</article>
+{% endblock %}

@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Genesis{% endblock %} — Genesis</title>
+    <link rel="stylesheet" href="{{ url_for('static', path='css/meridian.css') }}">
+    <script src="https://unpkg.com/htmx.org@2.0.4" defer></script>
+</head>
+<body>
+    {% include "partials/poc_banner.html" %}
+    {% include "partials/nav.html" %}
+    <main class="wrap">
+        {% block content %}{% endblock %}
+    </main>
+    {% include "partials/footer.html" %}
+</body>
+</html>

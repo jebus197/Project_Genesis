@@ -3,6 +3,12 @@
 .env.*
 !.env.example
 
+# OS junk
+.DS_Store
+
+# Claude Code local workspace
+.claude/
+
 # Python
 __pycache__/
 *.pyc
@@ -12,7 +18,18 @@ __pycache__/
 # Runtime state (persisted by CLI/service — not source code)
 data/
 
+# Open Brain (separate project)
+open_brain/
+
 # Local-only chat export archives (not project source)
 Google Gemini.pdf
 Project Assessment and Implications*.pdf
 Project Full Assessment and Implications*.pdf
+
+# Transient IM / Open Brain state
+cw_handoff/im_state.json
+cw_handoff/im_state.json.lock
+cw_handoff/ob_outbox/
+
+# UX design files (CW workspace — not source code)
+ux/

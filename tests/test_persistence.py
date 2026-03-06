@@ -164,6 +164,32 @@ class TestEventLog:
         recent = log.events_since("2026-02-14T12:00:00Z")
         assert len(recent) == 2
 
+    def test_recent_events_window(self) -> None:
+        log = EventLog()
+        for idx in range(1, 6):
+            log.append(
+                EventRecord.create(
+                    f"E-{idx}",
+                    EventKind.MISSION_CREATED,
+                    "actor",
+                    {"idx": idx},
+                )
+            )
+
+        recent = log.recent_events(limit=2)
+        assert [e.event_id for e in recent] == ["E-4", "E-5"]
+
+    def test_recent_events_by_kind(self) -> None:
+        log = EventLog()
+        log.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {}))
+        log.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "a", {}))
+        log.append(EventRecord.create("E-3", EventKind.MISSION_CREATED, "a", {}))
+        log.append(EventRecord.create("E-4", EventKind.TRUST_UPDATED, "a", {}))
+        log.append(EventRecord.create("E-5", EventKind.MISSION_CREATED, "a", {}))
+
+        recent_missions = log.recent_events(limit=2, kind=EventKind.MISSION_CREATED)
+        assert [e.event_id for e in recent_missions] == ["E-3", "E-5"]
+
 
 # =====================================================================
 # StateStore Tests
