@@ -17,7 +17,7 @@ from genesis.models.mission import (
     RiskTier,
 )
 from genesis.models.trust import ActorKind, TrustRecord
-from genesis.persistence.event_log import EventLog, EventKind, EventRecord
+from genesis.persistence.event_log import EventLog, EventKind, EventRecord, GENESIS_HASH
 from genesis.persistence.state_store import StateStore
 from genesis.review.roster import ActorRoster, ActorStatus, RosterEntry
 from genesis.crypto.epoch_service import GENESIS_PREVIOUS_HASH
@@ -189,6 +189,102 @@ class TestEventLog:
 
         recent_missions = log.recent_events(limit=2, kind=EventKind.MISSION_CREATED)
         assert [e.event_id for e in recent_missions] == ["E-3", "E-5"]
+
+    # ------------------------------------------------------------------
+    # Hash chain tests (P2 fix)
+    # ------------------------------------------------------------------
+
+    def test_first_event_links_to_genesis(self) -> None:
+        """First event in the log has previous_hash = GENESIS_HASH."""
+        log = EventLog()
+        event = EventRecord.create("E-1", EventKind.MISSION_CREATED, "alice", {})
+        log.append(event)
+        assert log.events()[0].previous_hash == GENESIS_HASH
+
+    def test_chain_links_propagate(self) -> None:
+        """Each event's previous_hash is the preceding event's event_hash."""
+        log = EventLog()
+        log.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {}))
+        log.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "b", {}))
+        log.append(EventRecord.create("E-3", EventKind.MISSION_CREATED, "c", {}))
+        events = log.events()
+        assert events[0].previous_hash == GENESIS_HASH
+        assert events[1].previous_hash == events[0].event_hash
+        assert events[2].previous_hash == events[1].event_hash
+
+    def test_chain_head_tracks_latest(self) -> None:
+        """chain_head returns the most recent event's hash."""
+        log = EventLog()
+        assert log.chain_head == GENESIS_HASH
+        log.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {}))
+        assert log.chain_head == log.events()[0].event_hash
+        log.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "b", {}))
+        assert log.chain_head == log.events()[1].event_hash
+
+    def test_chain_persists_and_loads(self, tmp_path: Path) -> None:
+        """Hash chain survives persistence and reload."""
+        log_path = tmp_path / "chain.jsonl"
+        log1 = EventLog(storage_path=log_path)
+        log1.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {}))
+        log1.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "b", {}))
+
+        # Reload
+        log2 = EventLog(storage_path=log_path)
+        events = log2.events()
+        assert events[0].previous_hash == GENESIS_HASH
+        assert events[1].previous_hash == events[0].event_hash
+
+    def test_broken_chain_rejected_on_load(self, tmp_path: Path) -> None:
+        """Deleted event in persisted log detected on reload.
+
+        Falsification target: can an event be deleted from the middle
+        of the log without detection? If yes, reject design.
+        """
+        import json
+        log_path = tmp_path / "broken_chain.jsonl"
+
+        # Write 3 valid chained events
+        log1 = EventLog(storage_path=log_path)
+        log1.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {}))
+        log1.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "b", {}))
+        log1.append(EventRecord.create("E-3", EventKind.MISSION_CREATED, "c", {}))
+
+        # Delete the middle event from the file
+        lines = log_path.read_text().strip().split("\n")
+        assert len(lines) == 3
+        # Keep only first and last events (delete middle)
+        log_path.write_text(lines[0] + "\n" + lines[2] + "\n")
+
+        # Loading should detect the broken chain
+        with pytest.raises(ValueError, match="Hash chain broken"):
+            EventLog(storage_path=log_path)
+
+    def test_legacy_events_without_previous_hash(self, tmp_path: Path) -> None:
+        """Legacy events (no previous_hash) load without chain error.
+
+        Backward compatibility: existing JSONL files written before
+        the hash chain upgrade don't have previous_hash fields.
+        """
+        import json
+        log_path = tmp_path / "legacy.jsonl"
+
+        # Write a legacy event (no previous_hash field)
+        event = EventRecord.create("E-1", EventKind.MISSION_CREATED, "alice", {"x": 1})
+        record = {
+            "event_id": event.event_id,
+            "event_kind": event.event_kind.value,
+            "timestamp_utc": event.timestamp_utc,
+            "actor_id": event.actor_id,
+            "payload": event.payload,
+            "event_hash": event.event_hash,
+            # No previous_hash field
+        }
+        log_path.write_text(json.dumps(record, sort_keys=True) + "\n")
+
+        # Should load without error
+        log2 = EventLog(storage_path=log_path)
+        assert log2.count == 1
+        assert log2.events()[0].event_id == "E-1"
 
 
 # =====================================================================

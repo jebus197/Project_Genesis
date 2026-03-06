@@ -181,20 +181,30 @@ class EventKind(str, enum.Enum):
     TIER3_PROCEDURAL_GRANTED = "tier3_procedural_granted"
 
 
+GENESIS_HASH = "sha256:genesis"
+
+
 @dataclass(frozen=True)
 class EventRecord:
     """A single immutable event in the governance log.
 
-    Once created, an event cannot be modified. The event_hash is
-    computed at creation time and serves as the leaf hash for
-    Merkle tree inclusion.
+    Once created, an event cannot be modified. Two integrity layers:
+    1. event_hash: SHA-256 of the event's own content (content integrity).
+    2. previous_hash: the event_hash of the preceding event (chain integrity).
+
+    Together these form a hash chain: deletion or insertion of any event
+    between epoch anchors is detectable by verifying that each event's
+    previous_hash matches the preceding event's event_hash.
+
+    The first event in the log has previous_hash = GENESIS_HASH (sentinel).
     """
     event_id: str
     event_kind: EventKind
     timestamp_utc: str
     actor_id: str
     payload: dict[str, Any]
-    event_hash: str  # SHA-256 of canonical JSON
+    event_hash: str  # SHA-256 of canonical JSON (content integrity)
+    previous_hash: str = GENESIS_HASH  # Hash chain link (ordering integrity)
 
     @staticmethod
     def create(
@@ -203,12 +213,19 @@ class EventRecord:
         actor_id: str,
         payload: dict[str, Any],
         timestamp_utc: Optional[datetime] = None,
+        previous_hash: str = GENESIS_HASH,
     ) -> EventRecord:
-        """Create a new event record with computed hash."""
+        """Create a new event record with computed hash and chain link.
+
+        The event_hash is computed from the event's own content only
+        (backward compatible). The previous_hash links to the preceding
+        event for chain integrity verification.
+        """
         ts = timestamp_utc or datetime.now(timezone.utc)
         ts_str = ts.strftime("%Y-%m-%dT%H:%M:%SZ")
 
-        # Compute canonical hash
+        # Compute canonical hash (content only — does not include previous_hash
+        # to maintain backward compatibility with existing event hashes)
         canonical = json.dumps(
             {
                 "event_id": event_id,
@@ -229,6 +246,7 @@ class EventRecord:
             actor_id=actor_id,
             payload=payload,
             event_hash=f"sha256:{digest}",
+            previous_hash=previous_hash,
         )
 
 
@@ -249,18 +267,40 @@ class EventLog:
             self._load_from_file(storage_path)
 
     def append(self, event: EventRecord) -> None:
-        """Append an event to the log.
+        """Append an event to the log with automatic chain linking.
+
+        The previous_hash is set automatically by the log — callers do not
+        need to manage chain state. Since previous_hash is NOT part of
+        event_hash (content integrity and chain integrity are separate layers),
+        this replacement is safe and does not invalidate the content hash.
 
         Raises ValueError if event_id is a duplicate (replay protection).
         """
         if event.event_id in self._event_ids:
             raise ValueError(f"Duplicate event ID: {event.event_id}")
 
-        self._events.append(event)
-        self._event_ids.add(event.event_id)
+        # Automatic chain linking: set previous_hash to the chain head
+        expected_prev = (
+            self._events[-1].event_hash if self._events else GENESIS_HASH
+        )
+        # Replace previous_hash on the frozen dataclass (safe because
+        # previous_hash is not part of event_hash computation)
+        from dataclasses import replace
+        chained_event = replace(event, previous_hash=expected_prev)
+
+        self._events.append(chained_event)
+        self._event_ids.add(chained_event.event_id)
 
         if self._storage_path:
-            self._append_to_file(event)
+            self._append_to_file(chained_event)
+
+    @property
+    def chain_head(self) -> str:
+        """Return the hash of the most recent event (chain head).
+
+        Returns GENESIS_HASH if log is empty.
+        """
+        return self._events[-1].event_hash if self._events else GENESIS_HASH
 
     def events(self, kind: Optional[EventKind] = None) -> list[EventRecord]:
         """Return events, optionally filtered by kind."""
@@ -326,6 +366,7 @@ class EventLog:
             "actor_id": event.actor_id,
             "payload": event.payload,
             "event_hash": event.event_hash,
+            "previous_hash": event.previous_hash,
         }
         with self._storage_path.open("a", encoding="utf-8") as f:
             f.write(json.dumps(record, sort_keys=True, ensure_ascii=False) + "\n")
@@ -333,8 +374,12 @@ class EventLog:
     def _load_from_file(self, path: Path) -> None:
         """Load events from a JSONL file with integrity verification.
 
-        Fail-closed: rejects tampered records (hash mismatch) and
-        duplicate event IDs (replay protection on recovery).
+        Fail-closed: rejects tampered records (hash mismatch),
+        duplicate event IDs (replay protection on recovery), and
+        broken hash chains (deletion/insertion detection).
+
+        Legacy events without previous_hash are accepted but the chain
+        link is not verified for that event (backward compatibility).
         """
         with path.open("r", encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
@@ -351,7 +396,7 @@ class EventLog:
                         f"Duplicate event ID on recovery (line {line_num}): {event_id}"
                     )
 
-                # Recompute canonical hash to verify integrity
+                # Recompute canonical hash to verify content integrity
                 canonical = json.dumps(
                     {
                         "event_id": data["event_id"],
@@ -371,6 +416,21 @@ class EventLog:
                         f"stored hash {data['event_hash']} != computed {expected_hash}"
                     )
 
+                # Chain integrity: verify previous_hash links to preceding event
+                stored_prev = data.get("previous_hash")
+                if stored_prev is not None:
+                    expected_prev = (
+                        self._events[-1].event_hash
+                        if self._events
+                        else GENESIS_HASH
+                    )
+                    if stored_prev != expected_prev:
+                        raise ValueError(
+                            f"Hash chain broken on recovery (line {line_num}): "
+                            f"event {event_id} has previous_hash={stored_prev} "
+                            f"but expected {expected_prev}"
+                        )
+
                 event = EventRecord(
                     event_id=data["event_id"],
                     event_kind=EventKind(data["event_kind"]),
@@ -378,6 +438,7 @@ class EventLog:
                     actor_id=data["actor_id"],
                     payload=data["payload"],
                     event_hash=data["event_hash"],
+                    previous_hash=stored_prev or GENESIS_HASH,
                 )
                 self._events.append(event)
                 self._event_ids.add(event.event_id)
