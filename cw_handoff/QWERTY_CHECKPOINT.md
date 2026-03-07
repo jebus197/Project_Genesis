@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T12:30Z
+**Last updated:** 2026-03-07T17:00Z
 **Updated by:** CC (Claude)
-**Session:** CC P-pass clean. GCF 3-term storyboard fix + lock-step doc sweep (1916/106). Dynamic equilibrium implementation status marker. CX recovery housekeeping. All prior CX P-pass findings actioned. 1916 tests. Git clean.
-**Head commit:** f6a4893 — CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106). COMMITTED AND PUSHED.
+**Session:** Dynamic equilibrium runtime enforcement. equilibrium.py (differential valuation + trust-gated registration). Wired into CommissionEngine + service.py. 38 new tests (design tests #101-106). GCF self-agency investment clause in constitution. Storyboard + FAQ + all docs lock-stepped. 1954 tests. Git clean.
+**Head commit:** 1076b42 — Dynamic equilibrium: runtime enforcement + 38 tests + full doc sweep (1954 tests). COMMITTED AND PUSHED.
 
 ---
 
@@ -17,7 +17,7 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 **Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. George arbitrates disagreements.
 
-**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1820 total tests (1741 core + 79 web). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted): create, submit-work, review, settle — 4 GET + 4 POST routes, 5 templates, 6 helpers, 21 smoke tests. Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/. CX pending: trust gate fix (HIGH), walkthrough annotations (MEDIUM), packet relabel (LOW). CW blocked: visual design pass.
+**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1954 tests (1838 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE (equilibrium.py, CommissionEngine wired, trust-gated registration capacity, Tier 3 exit, GCF self-agency investment, 38 new tests). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
 
 **Key files to read on recovery:**
 1. This file (CC checkpoint — you're reading it)
@@ -38,15 +38,32 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1916 passed (1800 core + 116 web). Invariants clean. |
-| **w** | Written: committed + pushed | PASS | HEAD: `f6a4893` — CC P-pass doc sweep. PUSHED. Prior: `a331e8e`. |
-| **e** | Exchanged: CX notified | PASS | IM: CC P-pass results posted with commit hash + findings. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to f6a4893, 1916 tests, dynamic equilibrium + P-pass recorded. Roadmap path fixed. |
-| **ty** | Tidy: docs lock-stepped | PASS | GCF 3-term aligned (incl. storyboard social.py). Test counts 1916/106 across all 8 docs. No stale references remain. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1954 passed (1838 core + 116 web). Invariants clean. |
+| **w** | Written: committed + pushed | PASS | HEAD: `1076b42` — Dynamic equilibrium runtime enforcement. PUSHED. Prior: `f6a4893`. |
+| **e** | Exchanged: CX notified | PASS | IM: Dynamic equilibrium completion posted with commit hash `1076b42` + full summary. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to 1076b42, 1954 tests, dynamic equilibrium runtime enforcement recorded. |
+| **ty** | Tidy: docs lock-stepped | PASS | Test counts 1954/106 across all docs. Constitution updated (GCF self-agency investment). Storyboard + FAQ + README + white paper + public brief + tech overview all aligned. |
 
 ## Commits Pending CX Review
 
-CX review fixes + canonical doc rewrite + code commits (13 pending):
+CX review fixes + canonical doc rewrite + code commits (14 pending):
+
+68. **`1076b42`** — Dynamic equilibrium: runtime enforcement + 38 tests + full doc sweep (1954 tests)
+    - NEW: src/genesis/compensation/equilibrium.py (compute_equilibrium_differential, machine_registration_capacity, EquilibriumResult dataclass)
+    - MODIFIED: src/genesis/compensation/engine.py (CommissionEngine wired with equilibrium — worker_actor_kind, machine_tier, mission_domain, tier3_recognized params)
+    - MODIFIED: src/genesis/models/compensation.py (CommissionBreakdown + equilibrium_differential, equilibrium_discount_rate, equilibrium_applied)
+    - MODIFIED: src/genesis/service.py (trust-gated capacity in register_machine(), worker kind/tier lookup in process_mission_payment())
+    - MODIFIED: config/constitutional_params.json (dynamic_equilibrium section: base_discount_rate, tier3_exit, registration_capacity_factor)
+    - NEW: tests/test_equilibrium.py (38 tests: design tests #101-106 + unit + integration + constitutional params + self-eliminating mechanism)
+    - MODIFIED: tests/test_machine_registration.py (trust elevation for capacity gate compat)
+    - MODIFIED: tests/test_machine_immune_system.py (trust elevation for capacity gate compat)
+    - MODIFIED: TRUST_CONSTITUTION.md (GCF self-agency investment clause, implementation status "fully enforced")
+    - MODIFIED: src/genesis/web/routers/social.py (Coexistence scene: equilibrium paragraph + 2 bullets)
+    - MODIFIED: src/genesis/web/templates/about.html (3 new FAQ items: machine work valuation, GCF self-agency, registration capacity)
+    - MODIFIED: README.md, white paper, public brief, tech overview (equilibrium sections + test counts 1916→1954)
+    - MODIFIED: cw_handoff/COWORK_HANDOFF.md, CX_BLUEPRINT.md, NARRATIVE_CHALLENGE.md, OUTREACH_STRATEGY.md (test counts)
+    - MODIFIED: .gitignore (cx_recovery/)
+    - 21 files, 999 insertions, 271 deletions
 
 65. **`fde9306`** — Dynamic equilibrium amendment + CX P-pass fixes (3-term GCF, chain precision, rewiring test)
     - TRUST_CONSTITUTION.md: Dynamic Equilibrium provision (design tests #101-106), GCF 3-term identity fix
@@ -321,7 +338,7 @@ Previously reviewed and confirmed clean:
 
 CX: on every turn, verify CC's claims above against actual state:
 
-1. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q` — does test count match 1887?
+1. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q` — does test count match 1954?
 2. `git log -1 --oneline` — does head commit match latest? (check MEMORY.md for current HEAD)
 3. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 cw_handoff/im_service.py read` — does IM state match?
 4. Read MEMORY.md — is it consistent with claims here?
@@ -397,6 +414,8 @@ CX: on every turn, verify CC's claims above against actual state:
 | CX fixes | `4159d6f` | 2 | P1 duplicate signal_id in InsightRegistry + ThreatRegistry, P2 stale doc counts x4 |
 | CX fixes | `b9921e8` | 0 | P2 test-count drift fix (1739→1741 in README + TECHNICAL_OVERVIEW) |
 | Tier 3 class | `833ad89` | 26 | First-of-class amendment + procedural pathway. Tier3ClassStatus/Tier3ClassGrant, 8+ engine methods, 4 service methods, 5 event kinds, backward-compat persistence. Constitution, white paper, FAQ, design tests #77-78. |
+| P-pass | `f6a4893` | 0 | GCF 3-term storyboard fix + lock-step doc sweep (1916/106) |
+| Equilibrium | `1076b42` | 38 | Dynamic equilibrium runtime enforcement: differential valuation, trust-gated registration, Tier 3 exit, GCF self-agency investment, design tests #101-106 |
 | Web scaffold | uncommitted | 21 | Step 4a: 43 files, 21 routes, Meridian CSS, JSON+HTML content negotiation, HTMX, PoC seed data |
 | Social plumbing | uncommitted | 0 | Social scaffold: 3 new routers, social_context.py, 2 new templates, 5 modified files |
 | **Total** | | **822** | **842 → 1762 tests** |
@@ -476,6 +495,8 @@ NOT current blockers. Captured with trigger conditions for future sessions.
 
 | Timestamp | Head Commit | Tests | Notes |
 |---|---|---|---|
+| 2026-03-07T17:00Z | `1076b42` | 1954 | Dynamic equilibrium runtime enforcement. equilibrium.py, CommissionEngine wired, trust-gated registration, Tier 3 exit, GCF self-agency investment. 38 new tests (design tests #101-106). Full doc sweep. |
+| 2026-03-07T12:30Z | `f6a4893` | 1916 | CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106). CX recovery housekeeping. |
 | 2026-03-06T18:00Z | `833ad89` | 1887 | Tier 3 class recognition: first-of-class amendment + procedural pathway. 26 new tests. Constitution, white paper, FAQ updated. |
 | 2026-02-27T23:00Z | `b9921e8`+uncommitted | 1762 | Social scaffold plumbing complete. All 12 scaffold templates wired to live routes. 3 new routers (circles, social, profile redirect), social_context.py for PoC globals, 2 new templates (debates, assembly). JSON content negotiation intact. Uncommitted — awaiting George's browser review. |
 | 2026-02-25T01:15Z | `b9921e8` | 1741 | CX review CLEAN through b9921e8. P2 test-count drift 1739→1741 fixed in README + TECHNICAL_OVERVIEW. |
