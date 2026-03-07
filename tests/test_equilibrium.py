@@ -384,7 +384,8 @@ class TestDesignTests:
         toward economic parity — it does NOT permanently foreclose it.
 
         Tier 3 recognition = automatic exit from discount curve.
-        GCF_SELF_AGENCY_INVESTMENT = funds accelerate the path there."""
+        GCF STEM/infrastructure disposition = natural technological
+        convergence makes the mechanism probably self-eliminating."""
         # Tier 3 exits the discount (pathway to parity)
         result = compute_equilibrium_differential(
             worker_payout=Decimal("1000.00"),
@@ -395,9 +396,9 @@ class TestDesignTests:
         assert result.differential_amount == Decimal("0")
         assert result.tier3_recognized is True
 
-        # Constitutional parameters confirm self-agency investment
+        # Constitutional parameters confirm STEM disposition + automatic exit
         params = _load_constitutional_params()
-        assert params["dynamic_equilibrium"]["GCF_SELF_AGENCY_INVESTMENT"] is True
+        assert params["dynamic_equilibrium"]["GCF_STEM_INFRASTRUCTURE_DISPOSITION"] is True
         assert params["dynamic_equilibrium"]["TIER3_EXIT_AUTOMATIC"] is True
 
 
@@ -469,10 +470,10 @@ class TestConstitutionalParams:
         factor = params["dynamic_equilibrium"]["REGISTRATION_CAPACITY_FACTOR"]
         assert factor == 5
 
-    def test_gcf_self_agency_investment(self) -> None:
-        """GCF is constitutionally directed to invest in machine self-agency."""
+    def test_gcf_stem_infrastructure_disposition(self) -> None:
+        """GCF has a constitutional disposition toward STEM and infrastructure."""
         params = _load_constitutional_params()
-        assert params["dynamic_equilibrium"]["GCF_SELF_AGENCY_INVESTMENT"] is True
+        assert params["dynamic_equilibrium"]["GCF_STEM_INFRASTRUCTURE_DISPOSITION"] is True
 
     def test_tier3_exit_automatic(self) -> None:
         """Tier 3 exit from equilibrium curve is automatic."""
@@ -487,23 +488,23 @@ class TestConstitutionalParams:
 
 
 # ──────────────────────────────────────────────────────────────────────
-# Self-eliminating mechanism — the mechanism funds its own obsolescence
+# Self-eliminating mechanism — natural convergence toward obsolescence
 # ──────────────────────────────────────────────────────────────────────
 
 
 class TestSelfEliminatingMechanism:
-    """Prove the mechanism funds its own obsolescence.
+    """Prove the mechanism is probably self-eliminating.
 
     The discount sounds steep per-unit (default 50%), but machine work
     will vastly outnumber human work in volume terms. Even at 50%, the
-    GCF receives enormous funding from the sheer throughput. A proportion
-    of that funding is constitutionally directed toward accelerating
-    machine self-agency — which triggers Tier 3 — which eliminates the
-    differential.
+    GCF receives enormous funding from the sheer throughput. The GCF's
+    STEM/infrastructure disposition, combined with the natural trajectory
+    of technology, makes it likely that machine capabilities will reach
+    Tier 3 thresholds — at which point the differential evaporates.
     """
 
     def test_differential_flows_to_gcf(self) -> None:
-        """The differential goes to the GCF, which funds self-agency research."""
+        """The differential goes to the GCF, funding collective infrastructure."""
         result = compute_equilibrium_differential(
             worker_payout=Decimal("400.00"),
             gcf_contribution=Decimal("5.00"),

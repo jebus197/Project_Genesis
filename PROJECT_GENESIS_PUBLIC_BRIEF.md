@@ -302,7 +302,7 @@ The GCF is a constitutional 1% contribution on all mission value. It is the only
 
 Machine work (Tier 0–2) is valued at a constitutional discount — currently 50% — relative to human work. The differential flows to the GCF. The employer pays the same regardless of whether a human or machine completes the work. Only the split between worker payout and GCF contribution changes.
 
-This may sound steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput. A proportion of that funding is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence.
+This may sound steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput. The GCF has a natural disposition toward STEM research and infrastructure — the kind of work that advances the technological frontier. As machine capabilities progress, Tier 3 recognition becomes achievable and the discount evaporates. The mechanism is probably self-eliminating — not because the constitution mandates it, but because the trajectory of technology makes it the likely outcome.
 
 The number of machines a human can register is constrained by their trust score, preventing any single operator from amassing an unchecked fleet. Every verified human can register at least one machine. Capacity scales with demonstrated trustworthiness.
 
@@ -486,6 +486,8 @@ Most core building blocks already exist:
 3. Policy-as-code enforcement.
 4. Cryptographic logging and proof systems.
 5. Human review interfaces.
+
+The intellectual heritage is traceable: Turing (1936, computation), Flowers (1943, machines at scale), Popper (1945, falsifiable institutions), Diffie-Hellman-Merkle (1970s, trustless verification), the cypherpunks (1990s, cryptographic autonomy), Haber-Stornetta (1991, timestamping), and Nakamoto (2008, public tamper-evident ledger). Nothing about Genesis would have been possible without any of them.
 
 The challenge is integration discipline and governance quality. The hard part is not whether we can code it. The hard part is designing incentives, review integrity, and legitimacy so the system remains trustworthy under pressure.
 

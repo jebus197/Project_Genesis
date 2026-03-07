@@ -709,7 +709,7 @@ Machine work (Tier 0–2) is valued at a constitutional discount (default `MACHI
 
 **Trust-gated registration capacity:** `machine_registration_capacity()` computes `max(1, floor(T_H × REGISTRATION_CAPACITY_FACTOR))`. Every verified human can register at least 1 machine. Capacity scales with trust. Enforced in `register_machine()` in `src/genesis/service.py`.
 
-**GCF self-agency investment:** A proportion of GCF funds is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence (`GCF_SELF_AGENCY_INVESTMENT = true`, `TIER3_EXIT_AUTOMATIC = true` in `config/constitutional_params.json`).
+**Natural convergence:** The GCF has a constitutional disposition toward STEM research and infrastructure (`GCF_STEM_INFRASTRUCTURE_DISPOSITION = true` in `config/constitutional_params.json`). As technological progress advances machine capabilities, Tier 3 recognition becomes achievable through the constitutional amendment process, and the discount evaporates (`TIER3_EXIT_AUTOMATIC = true`). The mechanism is probably self-eliminating — not by constitutional mandate, but because the trajectory of technology makes it the likely outcome.
 
 **Design tests:** #101–106. **Tests:** 38 in `tests/test_equilibrium.py`.
 

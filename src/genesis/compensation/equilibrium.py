@@ -2,16 +2,17 @@
 
 Machine work (Tier 0–2) is valued at a constitutional discount relative to
 human work. The differential flows to the GCF, funding collective
-infrastructure — including investment in accelerating the path toward
-machine self-agency. When a machine class achieves Tier 3 (Autonomous
-Domain Agency), the discount evaporates for that class and domain. The
-mechanism funds its own obsolescence.
+infrastructure. The GCF has a natural disposition toward STEM research
+and infrastructure — the kind of work that advances the technological
+frontier. When a machine class achieves Tier 3 (Autonomous Domain
+Agency), the discount evaporates for that class and domain.
 
 The discount sounds steep per-unit (default 50%), but machine work will
 vastly outnumber human work in volume terms. Even at 50%, the GCF
-receives enormous funding from the sheer throughput. A proportion of
-that funding is constitutionally directed toward accelerating machine
-self-agency — which triggers Tier 3 — which eliminates the differential.
+receives enormous funding from the sheer throughput. The mechanism is
+probably self-eliminating — not because the constitution mandates a
+specific outcome, but because the trajectory of technology makes it
+the likely one.
 
 Three-layer defence:
     1. Differential valuation (this module)

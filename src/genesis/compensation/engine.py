@@ -223,8 +223,8 @@ class CommissionEngine:
         #
         # Machine workers (Tier 0–2) have their payout discounted.
         # The differential flows to the GCF — funding collective
-        # infrastructure, including investment in accelerating machine
-        # self-agency. The mechanism funds its own obsolescence.
+        # infrastructure. The mechanism is probably self-eliminating:
+        # technological progress + GCF STEM disposition → Tier 3 → no discount.
         #
         # Tier 3+ machines: no discount (economic parity).
         # Human workers: no discount.

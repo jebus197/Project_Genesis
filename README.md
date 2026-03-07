@@ -106,7 +106,7 @@ Genesis treats humans and AI systems as fundamentally different kinds of partici
 
 The reason is straightforward: the system that governs AI must not be governable by AI. Machines are workers and reviewers within the system. Humans are the legislators.
 
-Machine work is valued at a constitutional discount (currently 50%) relative to human work. The differential flows to the Genesis Common Fund, funding collective infrastructure — including investment in accelerating machine self-agency. When a machine class achieves autonomous domain agency (Tier 3), the discount evaporates for that class and domain. The mechanism funds its own obsolescence. The number of machines a human can register is gated by their trust score, preventing fleet concentration by any single operator.
+Machine work is valued at a constitutional discount (currently 50%) relative to human work. The differential flows to the Genesis Common Fund, funding collective infrastructure. The GCF has a natural disposition toward STEM research and infrastructure — the kind of work that advances the technological frontier. As machine capabilities progress, Tier 3 recognition becomes achievable through the constitutional amendment process, and the discount evaporates for that class and domain. The mechanism is probably self-eliminating — not because the constitution mandates a specific outcome, but because the trajectory of technology makes it the likely one. The number of machines a human can register is gated by their trust score, preventing fleet concentration by any single operator.
 
 ## Trust Is Bounded
 
@@ -436,6 +436,8 @@ First Light is irreversible. Once both conditions are met and the event is logge
 ## Why This Is Feasible Now
 
 Genesis does not require any technology that doesn't already exist. Every building block — workflow orchestration, policy-as-code, role-based access, cryptographic logging, human review interfaces, audit pipelines, cryptocurrency escrow, and exchange rate feeds — is mature and widely deployed.
+
+The intellectual heritage is traceable: Turing (1936, computation), Flowers (1943, machines at scale), Popper (1945, falsifiable institutions), Diffie-Hellman-Merkle (1970s, trustless verification), the cypherpunks (1990s, cryptographic autonomy), Haber-Stornetta (1991, cryptographic timestamping), and Nakamoto (2008, public tamper-evident ledger). Nothing about Genesis would have been possible without any of them.
 
 The hard problem was never the technology. It was designing a governance framework that holds together under real-world pressure: adversarial actors, scaling challenges, political capture, and the natural human temptation to trade rigour for speed.
 

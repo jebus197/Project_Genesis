@@ -31,6 +31,9 @@ Genesis inverts the dominant "AI social-feed" pattern:
 ### 1.2 Intended value proposition
 Genesis is intended to function as a missing institutional layer between model capability and real-world deployment.
 
+### 1.3 Intellectual lineage
+Genesis draws on a traceable intellectual heritage. Alan Turing's 1936 formalisation of computability established the theoretical foundation. Tommy Flowers' construction of Colossus at Bletchley Park (1943) demonstrated that electronic machines could operate at scale. In 1945, Karl Popper argued that healthy institutions remain open to criticism — the principle Genesis applies to its own governance. The public-key cryptography pioneered by Diffie, Hellman, and Merkle in the 1970s made trustless verification possible. The cypherpunk movement of the 1990s asked whether cryptography could protect individual autonomy from institutional overreach. Haber and Stornetta's 1991 work on cryptographic timestamping introduced hash-chained document proofs (see §22, Historical foundations). Satoshi Nakamoto's 2008 Bitcoin whitepaper extended these ideas into a public, tamper-evident ledger maintained without central authority. Genesis inherits from all of them: computation, falsifiability, trustless verification, political autonomy, and public accountability — woven into a constitutional work network with full cryptographic blockchain anchoring.
+
 ## 2. Problem Statement
 Current AI usage patterns produce recurring institutional failure points:
 
@@ -811,7 +814,7 @@ Design tests: #73 (no Tier 3 without amendment or approved-class procedural path
 
 Machine work (Tier 0–2) is valued at a constitutional discount (default 50%) relative to human work. The differential flows to the Genesis Common Fund — not to the employer, not to the platform. The employer pays the same regardless of whether a human or machine completes the work; only the split between worker payout and GCF contribution changes. The accounting invariant is preserved: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`.
 
-The discount may appear steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput of machine-completed missions. A proportion of GCF funds is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence.
+The discount may appear steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput of machine-completed missions. The GCF has a constitutional disposition toward STEM research and infrastructure — the kind of work that naturally advances the technological frontier. As machine capabilities progress, Tier 3 recognition becomes achievable through the constitutional amendment process, and the discount evaporates. The mechanism is probably self-eliminating — not because the constitution mandates a specific outcome, but because the trajectory of technology makes it the likely one.
 
 **Trust-gated registration capacity.** The number of machines a human may register is constrained by their trust score, preventing fleet concentration. Every verified human can register at least one machine; capacity scales with demonstrated trustworthiness.
 

@@ -219,7 +219,7 @@
   "dynamic_equilibrium": {
     "MACHINE_WORK_DISCOUNT_DEFAULT": "0.50",
     "REGISTRATION_CAPACITY_FACTOR": 5,
-    "GCF_SELF_AGENCY_INVESTMENT": true,
+    "GCF_STEM_INFRASTRUCTURE_DISPOSITION": true,
     "TIER3_EXIT_AUTOMATIC": true
   },
   "entrenched_provisions": {
