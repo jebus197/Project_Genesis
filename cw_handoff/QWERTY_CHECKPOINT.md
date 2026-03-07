@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T21:30Z
+**Last updated:** 2026-03-07T22:00Z
 **Updated by:** CC (Claude)
-**Session:** Founder continuity (structural succession) — design tests #107-110. If founder inactive 180d, authority dissolves automatically. No successor, no ballot, no override. Constitution, config, white paper, public brief, tech overview, FAQ, outreach updated. 11 new tests (1965 total). Dark Forest design principle.
-**Head commit:** cc4e184 — Founder continuity: structural succession provision (design tests #107-110). COMMITTED AND PUSHED.
+**Session:** Founder continuity provision complete + storyboard scene added. Constitution, config, white paper, public brief, tech overview, FAQ, outreach, storyboard all updated. 1965 tests. 19 storyboard scenes (was 18).
+**Head commit:** ae24859 — Storyboard: add founder continuity scene + update test count. COMMITTED AND PUSHED.
 
 ---
 
@@ -38,15 +38,20 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1965 passed (1849 core + 116 web). 11 new founder continuity tests. |
-| **w** | Written: committed + pushed | PASS | HEAD: `cc4e184` — founder continuity provision. PUSHED. Prior: `fa993c1`. |
-| **e** | Exchanged: CX notified | PASS | IM: founder continuity posted with commit hash `cc4e184`. |
-| **r** | Recorded: MEMORY.md updated | PASS | Founder continuity added to Philosophical Decisions, test count 1965, HEAD updated. |
-| **ty** | Tidy: docs lock-stepped | PASS | Design test count 110 across all docs (white paper ×3, public brief ×2, outreach ×3). FAQ updated with succession Q&A. Tech overview updated. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1965 passed. Zero failures. |
+| **w** | Written: committed + pushed | PASS | HEAD: `ae24859` — storyboard scene + test count update. PUSHED. Prior: `cc4e184`. |
+| **e** | Exchanged: CX notified | PASS | IM: both commits posted (`cc4e184` + `ae24859`). |
+| **r** | Recorded: MEMORY.md updated | PASS | Founder continuity in Philosophical Decisions, test count 1965. |
+| **ty** | Tidy: docs lock-stepped | PASS | 110 design tests across all docs. 19 storyboard scenes. FAQ has succession Q&A. Smoke tests updated for 19-scene count. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (15 pending):
+
+72. **`ae24859`** — Storyboard: add founder continuity scene + update test count
+    - New scene 13 "What If The Founder Disappears" in Road Ahead track (19 scenes total, was 18)
+    - Test count updated to "Nearly 2,000" in "It Is Real" scene
+    - Smoke tests updated for 19-scene storyboard (step numbers, bounds, deep links)
 
 71. **`cc4e184`** — Founder continuity: structural succession provision (design tests #107-110)
     - Constitution: new "Founder continuity (structural succession)" section — 6-point provision, falsifiability note, 4 design tests
