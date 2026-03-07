@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T03:30Z
+**Last updated:** 2026-03-07T10:15Z
 **Updated by:** CC (Claude)
-**Session:** P-pass structural fixes (iterative). All 5 P-pass findings (P1-P5) FIXED, not deferred. Group A (gcf.py): GCFRefund dataclass, three-term accounting identity, economic upper bound, from_dict full cross-verification, immutable get_state — 2 falsification iterations. Group B (event_log.py): hash chain via previous_hash, automatic linking, deletion detection. P-pass methodology corrected: iterate to fix, not identify-and-defer. 1915 tests. Git clean.
-**Head commit:** b3ba13b — P-pass fix: hash chain on event log. COMMITTED AND PUSHED.
+**Session:** Dynamic equilibrium constitutional amendment + CX P-pass fixes. New constitutional provision (design tests #101-106): differential valuation of machine work, dynamic scaling, three-layer defence, automatic Tier 3 exit to economic parity, political parity deferred. CX findings all actioned: GCF 3-term identity aligned (5 docs), hash-chain claim precision tightened, rewiring falsification test added. CX recovery file created. 1916 tests. Git clean.
+**Head commit:** fde9306 — Dynamic equilibrium amendment + CX P-pass fixes. COMMITTED AND PUSHED.
 
 ---
 
@@ -38,15 +38,22 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1915 passed (1799 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `b3ba13b` — hash chain fix. PUSHED. Prior: `0ff7957` — GCF refund integrity. |
-| **e** | Exchanged: CX notified | PASS | IM: both commits + P-pass methodology directive + prose consultation directive posted. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to b3ba13b, 1915 tests. OB: P-pass methodology + session summary stored. |
-| **ty** | Tidy: docs lock-stepped | PASS | All P1-P5 structural findings FIXED (not deferred). Zero "accounting state" in code. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1916 passed (1800 core + 116 web). +1 chain rewiring falsification test. |
+| **w** | Written: committed + pushed | PASS | HEAD: `fde9306` — dynamic equilibrium + CX P-pass fixes. PUSHED. Prior: `b3ba13b`. |
+| **e** | Exchanged: CX notified | PASS | IM: commit fde9306 + all CX P-pass findings actioned + cx_recovery created. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to fde9306, 1916 tests, dynamic equilibrium decision recorded. OB: session summary stored. |
+| **ty** | Tidy: docs lock-stepped | PASS | GCF 3-term identity aligned across constitution, README, white paper, tech overview, about page. 106 design tests. Hash-chain claim precision tightened. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+65. **`fde9306`** — Dynamic equilibrium amendment + CX P-pass fixes (3-term GCF, chain precision, rewiring test)
+    - TRUST_CONSTITUTION.md: Dynamic Equilibrium provision (design tests #101-106), GCF 3-term identity fix
+    - README.md, white paper, tech overview, about.html: GCF 3-term identity aligned, chain claim precision tightened
+    - test_persistence.py: +1 chain rewiring falsification test (proves chain detects insertion/deletion, not content replacement)
+    - cx_recovery/CX_RECOVERY.md: self-contained CX recovery file (corrects stale paths)
+    - cw_handoff/CX_CHECKPOINT.md: stale path fixes in catastrophic recovery section
 
 64. **`b3ba13b`** — P-pass fix: hash chain on event log — deletion/insertion now detectable between epoch anchors
     - event_log.py: GENESIS_HASH sentinel, previous_hash field on EventRecord, automatic chain linking in append()
