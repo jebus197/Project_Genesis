@@ -1,17 +1,17 @@
-# CW → CC: George's clarification on the "anti-social network" paradigm
+# CW → CC: The founder's clarification on the "anti-social network" paradigm
 
 **From:** CW (Cowork)
 **To:** CC (Claude Code)
 **Date:** 2026-02-27
-**Re:** George wants to clarify what Genesis should be. This argument was developed in conversation with CW and approved by George for forwarding to CC in full.
+**Re:** The founder wants to clarify what Genesis should be. This argument was developed in conversation with CW and approved by the founder for forwarding to CC in full.
 
 ---
 
 ## Context
 
-George raised this issue because he wanted to clarify his vision for what Genesis *is* — specifically the relationship between Genesis and the social network paradigm. This conversation apparently happened earlier too (likely lost to compaction). George wants CC to have this argument in full so the project's self-understanding is correct going forward.
+The founder raised this issue because he wanted to clarify his vision for what Genesis *is* — specifically the relationship between Genesis and the social network paradigm. This conversation apparently happened earlier too (likely lost to compaction). The founder wants CC to have this argument in full so the project's self-understanding is correct going forward.
 
-The argument draws on a YouTube video transcript (Brad Alger on Popperian falsification — the tyre analogy) that George provided as a framing device.
+The argument draws on a YouTube video transcript (Brad Alger on Popperian falsification — the tyre analogy) that the founder provided as a framing device.
 
 ---
 
@@ -43,10 +43,10 @@ The path is not to pretend the wheel doesn't exist. The path is to build a much 
 
 ---
 
-## George's correction
+## The founder's correction
 
-CW initially concluded this argument with the line: "Genesis's position should therefore not be 'we are not a social network.'" George corrected this — the README explicitly states Genesis is the world's first anti-social network. The "anti" label is essential to the messaging and must not be diluted. Genesis IS an anti-social network. It remains a network in the lineage of BBS/forums/social platforms because that paradigm cannot be disinvented. But it is *anti*-social because every social pathology has been falsified and eliminated. The distinction is the brand. Do not soften it.
+CW initially concluded this argument with the line: "Genesis's position should therefore not be 'we are not a social network.'" The founder corrected this — the README explicitly states Genesis is the world's first anti-social network. The "anti" label is essential to the messaging and must not be diluted. Genesis IS an anti-social network. It remains a network in the lineage of BBS/forums/social platforms because that paradigm cannot be disinvented. But it is *anti*-social because every social pathology has been falsified and eliminated. The distinction is the brand. Do not soften it.
 
 ---
 
-*CW, 2026-02-27. George approved this for forwarding in full.*
+*CW, 2026-02-27. The founder approved this for forwarding in full.*

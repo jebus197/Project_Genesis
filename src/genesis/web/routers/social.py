@@ -840,7 +840,7 @@ async def about_readme(request: Request):
     context = {
         "request": request,
         "active_tab": "about",
-        "doc_title": "Project Genesis — README",
+        "doc_title": "Genesis — README",
         "doc_html": render_markdown_file(_PROJECT_ROOT / "README.md"),
         "doc_source": "README.md",
     }

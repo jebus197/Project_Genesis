@@ -11,11 +11,11 @@
 
 If CC (Claude) loses all context and must resume from this file alone:
 
-**Who you are:** CC — the primary implementation agent for Project Genesis. You write code, run tests, commit, and maintain this checkpoint. You are NOT CX (Codex, the review agent). You must never write to CX's checkpoint file (Notes/qwerty/CX_CHECKPOINT.md) — that is CX's independent state.
+**Who you are:** CC — the primary implementation agent for Genesis. You write code, run tests, commit, and maintain this checkpoint. You are NOT CX (Codex, the review agent). You must never write to CX's checkpoint file (Notes/qwerty/CX_CHECKPOINT.md) — that is CX's independent state.
 
-**Who George is:** George Jackson, project owner. He arbitrates between CC and CX. His communication protocol: `y`=yes, `r`=read, `t`=continue, `rt`=read+continue, `p`=run full Popperian falsification pass on most current output, `qwerty`=force re-verify all five checks.
+**Who the founder is:** The project owner. Arbitrates between CC and CX. Communication protocol: `y`=yes, `r`=read, `t`=continue, `rt`=read+continue, `p`=run full Popperian falsification pass on most current output, `qwerty`=force re-verify all five checks.
 
-**Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. George arbitrates disagreements.
+**Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. The founder arbitrates disagreements.
 
 **Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1954 tests (1838 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE (equilibrium.py, CommissionEngine wired, trust-gated registration capacity, Tier 3 exit, GCF STEM/infrastructure disposition, 38 new tests). Provenance lineage added (Turing→Nakamoto→Genesis). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
 
@@ -30,7 +30,7 @@ If CC (Claude) loses all context and must resume from this file alone:
 8. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/DEVELOPMENT_ROADMAP.md` (12-step development roadmap — persistent, canonical, survives all sessions)
 9. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/ACTION_QUEUE.md` (persistent task tracker across all agents)
 
-**How to verify you're in sync:** Run `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q && python3 tools/check_invariants.py && git log -1 --oneline && git status`. Compare output against claims in this file. If anything doesn't match, tell George.
+**How to verify you're in sync:** Run `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q && python3 tools/check_invariants.py && git log -1 --oneline && git status`. Compare output against claims in this file. If anything doesn't match, tell the founder.
 
 ---
 
@@ -357,7 +357,7 @@ CX: on every turn, verify CC's claims above against actual state:
 4. Read MEMORY.md — is it consistent with claims here?
 5. `python3 tools/check_invariants.py` — do all invariants pass?
 
-**If ANY discrepancy: report to George immediately via IM service.**
+**If ANY discrepancy: report to the founder immediately via IM service.**
 
 ---
 
@@ -453,7 +453,7 @@ CX: on every turn, verify CC's claims above against actual state:
 16. ~~CX Review Cycle~~ — **COMPLETE.** CX reviewed commits 47-54: 2xP1 + 4xP2 fixed in `4159d6f`, 1xP2 test-count drift fixed in `b9921e8`. CX confirmed clean through `b9921e8`.
 17. ~~Step 4a Web Scaffold~~ — **COMPLETE (uncommitted).** 43 files, 21 routes, 1762 tests, Meridian CSS, JSON+HTML content negotiation.
 18. ~~Social Scaffold Plumbing~~ — **COMPLETE (uncommitted).** All 12 scaffold templates wired to live routes. 3 new routers, social_context.py, 2 new templates, 5 modified files.
-19. **George Browser Review** — George reviews social scaffold in browser. **NEXT.**
+19. **Founder Browser Review** — The founder reviews social scaffold in browser. **NEXT.**
 20. **Fresh CX Instance** — Tight brief pointing at actual scaffold code for design pass.
 
 ### Post E-6: Web Layer
@@ -512,7 +512,7 @@ NOT current blockers. Captured with trigger conditions for future sessions.
 | 2026-03-07T17:00Z | `1076b42` | 1954 | Dynamic equilibrium runtime enforcement. equilibrium.py, CommissionEngine wired, trust-gated registration, Tier 3 exit. 38 new tests (design tests #101-106). Full doc sweep. |
 | 2026-03-07T12:30Z | `f6a4893` | 1916 | CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106). CX recovery housekeeping. |
 | 2026-03-06T18:00Z | `833ad89` | 1887 | Tier 3 class recognition: first-of-class amendment + procedural pathway. 26 new tests. Constitution, white paper, FAQ updated. |
-| 2026-02-27T23:00Z | `b9921e8`+uncommitted | 1762 | Social scaffold plumbing complete. All 12 scaffold templates wired to live routes. 3 new routers (circles, social, profile redirect), social_context.py for PoC globals, 2 new templates (debates, assembly). JSON content negotiation intact. Uncommitted — awaiting George's browser review. |
+| 2026-02-27T23:00Z | `b9921e8`+uncommitted | 1762 | Social scaffold plumbing complete. All 12 scaffold templates wired to live routes. 3 new routers (circles, social, profile redirect), social_context.py for PoC globals, 2 new templates (debates, assembly). JSON content negotiation intact. Uncommitted — awaiting the founder's browser review. |
 | 2026-02-25T01:15Z | `b9921e8` | 1741 | CX review CLEAN through b9921e8. P2 test-count drift 1739→1741 fixed in README + TECHNICAL_OVERVIEW. |
 | 2026-02-25T00:10Z | `4159d6f` | 1741 | CX review of commits 47-54: 2xP1 + 4xP2 fixed. P1: duplicate signal_id rejection in InsightRegistry + ThreatRegistry (tamper-evident). P2: README GB7→GB8 anchor, FOUNDERS_ROLE 4→5 entrenched, TRUST_CONSTITUTION seven→eight Genesis Blocks, TECHNICAL_OVERVIEW 1244→1739 test count. 2 regression tests. Awaiting CX re-review. |
 | 2026-02-24T21:30Z | `d907dec` | 1739 | Canonical doc rewrite ALL 3 PHASES COMPLETE. White Paper v2.0 (1228 lines, 25 sections + 3 appendices) + Public Brief v2.0 (620 lines). Bus-factor vulnerability closed. |

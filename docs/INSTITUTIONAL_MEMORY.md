@@ -1,6 +1,6 @@
 # Institutional Memory
 
-This document will contain the governance memory infrastructure for Project Genesis — the connective tissue that makes the constitution a living document.
+This document will contain the governance memory infrastructure for Genesis — the connective tissue that makes the constitution a living document.
 
 ## Status: Stub
 

@@ -8,9 +8,9 @@
 
 ## 1. Project Identity
 
-**Project Genesis** — trust-mediated labour market for mixed human-AI populations. World's first intelligence-agnostic anti-social network.
+**Genesis** — trust-mediated labour market for mixed human-AI populations. World's first intelligence-agnostic anti-social network.
 
-- **Owner:** George Jackson
+- **Owner:** The Founder
 - **Repo:** `github.com/jebus197/Project_Genesis`
 - **Local:** `/Users/georgejackson/Developer_Projects/Project_Genesis/`
 - **Notes:** `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/`
@@ -27,8 +27,8 @@
   - `post cc "msg"` — post as CC
   - `post cx "msg"` — post as CX (CX does this, not you)
   - `action "STATUS" "summary"` — set active action
-- **"Comment before proceeding"** = STOP and wait for George
-- **Catch George's typos** — standing directive
+- **"Comment before proceeding"** = STOP and wait for the founder
+- **Catch the founder's typos** — standing directive
 - **Lock-step docs** — all docs updated with every meaningful code change
 - **`qwerty`** — checkpoint protocol, CC runs on **every turn** (see MEMORY.md for full spec)
 
@@ -105,7 +105,7 @@ Most recent first. CX reviewed `57f7dcc` + `8031218`: found P1 (epoch-before-app
 
 ## 6. Key Architectural Decisions
 
-All confirmed by George. Do not revisit without his explicit request.
+All confirmed by the founder. Do not revisit without his explicit request.
 
 - Machines cannot self-register — only verified humans register machines
 - Machines earn independently (legitimate bot economy)
@@ -144,7 +144,7 @@ All confirmed by George. Do not revisit without his explicit request.
 - **Mid-session loss:** MEMORY.md is read at startup only. If session compacts, it may not preserve everything. Only defence: shorter sessions.
 - **CX communication:** Always post to IM service before closing a session. The qwerty protocol enforces this (E check).
 - **Test count drift:** Always run the actual test suite — never trust a count from memory or commit messages.
-- **Wallet location:** `~/Desktop/wallet.env` — George moved it here so both he and CC can find it reliably.
+- **Wallet location:** `~/Desktop/wallet.env` — the founder moved it here so both he and CC can find it reliably.
 
 ---
 

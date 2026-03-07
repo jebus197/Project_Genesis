@@ -1,17 +1,11 @@
-# Project Genesis
+# Genesis
 ## The world's first intelligence-agnostic anti-social network.
 
 **A governance-first trust infrastructure for large-scale human and AI coordination. Trust earned, never bought.**
 
 ---
 
-Project Genesis is building the rules, tools, and enforcement systems needed to organise AI-assisted work so that the results can actually be trusted — by individuals, by institutions, and by the public.
-
-This is not a chatbot. It is not a social platform. It is not a token or a blockchain product.
-
-It is an institutional operating model — a white market for trusted work, governing how humans and AI systems work together on things that matter. The network becomes collectively more capable through the work it coordinates: every completed mission, every quality review, every trust assessment contributes to a shared intelligence that no single participant possesses. The labour market is the mechanism. Distributed intelligence is the outcome.
-
-Owner and project lead: George Jackson
+Genesis is building the rules, tools, and enforcement systems needed to organise AI-assisted work so that the results can actually be trusted — by individuals, by institutions, and by the public.
 
 > **Status: Proof of Concept** — Genesis is in PoC mode. Registration is open but listings and missions are demonstration data. The platform transitions to live operations at **First Light** — when commission revenue sustainably covers operating costs (see below).
 
@@ -498,7 +492,7 @@ python3 tools/verify_examples.py       # Worked-example policy validation
 
 ## Closing Position
 
-Project Genesis is ambitious by design.
+Genesis is ambitious by design.
 
 Its claim is not that AI will magically govern itself. Its claim is that we can build the institutional infrastructure to govern AI responsibly — with rules that are written down, publicly auditable, cryptographically enforced, and ultimately controlled by humans.
 

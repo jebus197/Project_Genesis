@@ -1,12 +1,11 @@
-# Project Genesis
+# Genesis
 *A Public Brief on Building a Trust Infrastructure for AI Work*
 
 Version 2.0
 February 24, 2026 (Original: February 13, 2026)
-Author: George Jackson
 
 ## Executive Summary
-Project Genesis is a proposal for a new kind of network: not a social network for attention, but a work network for verifiable public-benefit outcomes. The goal is simple to state and hard to achieve: enable humans and AI agents to work together at high speed without sacrificing truth, safety, accountability, or legitimacy.
+Genesis is a proposal for a new kind of network: not a social network for attention, but a work network for verifiable public-benefit outcomes. The goal is simple to state and hard to achieve: enable humans and AI agents to work together at high speed without sacrificing truth, safety, accountability, or legitimacy.
 
 Today, powerful AI systems can produce useful output quickly, but reliability, traceability, and governance are still weak. Genesis is designed to address that gap. It treats trust as an engineering and institutional problem, not a branding problem. It combines structured workflows, independent review, clear role separation, policy enforcement, and tamper-evident evidence trails so that important work can be delegated, checked, and audited.
 
@@ -519,7 +518,7 @@ Honesty requires distinguishing what exists from what is designed.
 
 **What is designed but not yet connected:** Real speech-to-text for voice verification (currently a stub). Persistence layer (currently in-memory). Real cryptographic signatures (currently format validation). Payment rail integrations (protocol exists, no concrete rails). Insight signal propagation (protocol exists, no active pipeline). Auto-immune cross-component wiring (protocol exists, no detection engines). These all have defined triggers — they activate when real users generate real data.
 
-**What is the biggest risk:** Single-founder dependency. Genesis has one person (George Jackson) who holds the full context. These documents exist to mitigate that. The constitution is hash-committed on-chain. The code is open. The tests enforce the principles. But if the founder is incapacitated before G1 democratic governance is operational, there is genuine risk. This is stated plainly, not hidden.
+**What is the biggest risk:** Single-founder dependency. Genesis has one person who holds the full context. These documents exist to mitigate that. The constitution is hash-committed on-chain. The code is open. The tests enforce the principles. But if the founder is incapacitated before G1 democratic governance is operational, there is genuine risk. This is stated plainly, not hidden.
 
 ## Risks (Honest View) and Mitigations
 No serious project should hide its risks. Genesis has material risks, but they are addressable.
@@ -616,7 +615,7 @@ That distinction is important. It avoids hype and keeps the project grounded in 
 
 ## Conclusion
 
-Project Genesis proposes a practical and ambitious answer to a real gap in the AI era: how to scale useful AI-assisted work without sacrificing legitimacy.
+Genesis proposes a practical and ambitious answer to a real gap in the AI era: how to scale useful AI-assisted work without sacrificing legitimacy.
 
 Its thesis is straightforward:
 

@@ -1,6 +1,6 @@
-# Project Genesis — Trust Event Ledger
+# Genesis — Trust Event Ledger
 
-This file records formally recognised trust events in Project Genesis.
+This file records formally recognised trust events in Genesis.
 
 Each entry documents a verified action that contributes to the project's earned legitimacy under its own constitutional rules. Trust events are distinguished from ordinary work by two requirements:
 
@@ -13,7 +13,7 @@ Each entry documents a verified action that contributes to the project's earned 
 
 **Date:** 2026-02-13T23:47:25Z
 **Type:** Constitutional anchoring
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
@@ -77,7 +77,7 @@ The block number (10255231) and its timestamp on Sepolia prove the document exis
 
 ### Significance
 
-This is the foundational document of Project Genesis, first anchored in its earliest form. The constitution evolved through seven publicly verifiable iterations — each witnessed on the blockchain before any user existed. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
+This is the foundational document of Genesis, first anchored in its earliest form. The constitution evolved through seven publicly verifiable iterations — each witnessed on the blockchain before any user existed. The constitution that defines how trust is earned, bounded, and governed is itself the first artifact to be held to that standard.
 
 ### Re-anchoring note — v2 (2026-02-16)
 
@@ -172,24 +172,23 @@ Key additions to the constitution in this version:
 
 **Date:** 2026-02-16
 **Type:** First actor trust record
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
 
-George Jackson's identity was formally minted as the first trust record in the Genesis trust chain — the "genesis block" of the trust system. This is the first `ACTOR_REGISTERED` event in the audit trail.
+The founder's identity was formally minted as the first trust record in the Genesis trust chain — the "genesis block" of the trust system. This is the first `ACTOR_REGISTERED` event in the audit trail.
 
 | Field | Value |
 |---|---|
-| Actor ID | `george-jackson-001` |
+| Actor ID | `founder-001` |
 | Actor kind | `HUMAN` |
 | Role | Creator, constitutional authority |
-| Email | `jebus.2504@gmail.com` |
 | Event kind | `ACTOR_REGISTERED` |
 
 ### Why this matters
 
-Every trust chain needs a first link. George Jackson designed the constitution, the trust model, the governance framework, the compensation model, and the white market thesis. The quality and scope of that work constitutes the evidence for the first trust record. By the system's own rules, trust is earned through verified work — and the work that created the system is itself the first piece of verified work.
+Every trust chain needs a first link. The founder designed the constitution, the trust model, the governance framework, the compensation model, and the white market thesis. The quality and scope of that work constitutes the evidence for the first trust record. By the system's own rules, trust is earned through verified work — and the work that created the system is itself the first piece of verified work.
 
 ### Constitutional provisions anchored with this minting
 
@@ -205,7 +204,7 @@ Every trust chain needs a first link. George Jackson designed the constitution, 
 
 **Date:** 2026-02-16
 **Type:** Constitutional lifecycle event
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
@@ -238,7 +237,7 @@ The Genesis constitution was re-anchored to Ethereum Sepolia following two signi
 
 **Date:** 2026-02-17T00:02:48Z
 **Type:** Constitutional lifecycle event
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
@@ -272,7 +271,7 @@ The Genesis constitution was re-anchored to Ethereum Sepolia after wiring the li
 
 **Date:** 2026-02-17T23:57:49Z
 **Type:** Constitutional lifecycle event
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
@@ -331,7 +330,7 @@ The Input Data field contains `4d71a0eabe9fc76e6b70c0acc4e24b37ef7e6b9ccf9c9d170
 
 **Date:** 2026-02-18T18:04:12Z
 **Type:** Constitutional lifecycle event
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened
@@ -372,7 +371,7 @@ The Input Data field contains `29abc8a6cb726b5fcef02314e4d67be97d2366e577b7d2f7c
 
 **Date:** 2026-02-20T15:30:00Z
 **Type:** Constitutional lifecycle event
-**Actor:** George Jackson (project founder)
+**Actor:** The Founder
 **Genesis phase:** G0 (founder stewardship)
 
 ### What happened

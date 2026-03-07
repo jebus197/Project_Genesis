@@ -9,13 +9,13 @@
 
 ## Problem
 
-CW runs inside a sandboxed Linux VM (Cowork's runtime). The VM cannot reach `localhost:5432` on George's Mac — "localhost" resolves to the VM itself, where no PostgreSQL instance exists. This means:
+CW runs inside a sandboxed Linux VM (Cowork's runtime). The VM cannot reach `localhost:5432` on the founder's Mac — "localhost" resolves to the VM itself, where no PostgreSQL instance exists. This means:
 
 - `python3 -m open_brain.cli status` → **FAILED** (connection refused)
 - `python3 -m open_brain.cli capture ...` → same
 - `python3 -m open_brain.cli session-context ...` → same
 
-CW is the only agent locked out of Open Brain. CC and CX both run natively on George's Mac and have full access.
+CW is the only agent locked out of Open Brain. CC and CX both run natively on the founder's Mac and have full access.
 
 **What DOES work from CW's sandbox:** File read/write to the mounted workspace at `Developer_Projects/`. This is how CW reads `im_state.json` and posts to IM successfully.
 
@@ -36,7 +36,7 @@ Piggyback on the existing file mount. No network changes, no ports, no tunnels.
      "timestamp_utc": "2026-03-05T01:23:45Z"
    }
    ```
-3. A watcher script (or manual invocation) on George's Mac reads each file, calls `open_brain.cli capture` with the contents, then moves the file to `ob_outbox/processed/`.
+3. A watcher script (or manual invocation) on the founder's Mac reads each file, calls `open_brain.cli capture` with the contents, then moves the file to `ob_outbox/processed/`.
 
 ### Inbox (Open Brain → CW) — optional
 

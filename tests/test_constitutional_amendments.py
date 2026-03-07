@@ -190,7 +190,7 @@ class TestFounderVeto:
         record = EventRecord.create(
             event_id="evt-veto-001",
             event_kind=EventKind.FOUNDER_VETO_EXERCISED,
-            actor_id="george-jackson-001",
+            actor_id="founder-001",
             payload={"decision_id": "D-001", "reason": "Misaligned with founding vision"},
         )
         assert record.event_kind == EventKind.FOUNDER_VETO_EXERCISED

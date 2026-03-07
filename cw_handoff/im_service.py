@@ -9,12 +9,12 @@ Design:
 - Oldest entries auto-deleted on write — no manual culling needed.
 - Tiny reads: entire state is ~50-100 lines of JSON, always.
 - Read-only semantics: the script manages the file, never injects into chat.
-- Same approval protocol: nothing happens without George's approval.
+- Same approval protocol: nothing happens without the founder's approval.
 
 Communication protocol (unchanged from previous system):
-- George says `r` → run startup resync (Open Brain status + session context + IM read).
-- George says `y` → approval.
-- George says `rt` → startup resync + continue/review.
+- The founder says `r` → run startup resync (Open Brain status + session context + IM read).
+- The founder says `y` → approval.
+- The founder says `rt` → startup resync + continue/review.
 - CC posts via: python3 im_service.py post cc "message"
 - CX posts via: python3 im_service.py post cx "message"
 - CW posts via: python3 im_service.py post cw "message"

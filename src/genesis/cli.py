@@ -145,7 +145,7 @@ def cmd_check_invariants(args: argparse.Namespace) -> int:
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="genesis",
-        description="Project Genesis — governance engine CLI",
+        description="Genesis — governance engine CLI",
     )
     parser.add_argument(
         "--config",

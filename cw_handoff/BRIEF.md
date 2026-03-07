@@ -1,8 +1,7 @@
-# Project Genesis UX Brief v2
+# Genesis UX Brief v2
 
-**Date:** 2026-02-27  
-**Status:** Canonical design brief (replaces 2026-02-16 version)  
-**Owner:** George Jackson  
+**Date:** 2026-02-27
+**Status:** Canonical design brief (replaces 2026-02-16 version)
 
 ## 1) Core Position
 

@@ -1,15 +1,14 @@
-# Project Genesis
+# Genesis
 ## Institutional White Paper (Draft)
 
 Version: 2.0
 Date: February 24, 2026
 Original: February 13, 2026
-Author: George Jackson
 Prepared for: Institutional, public-sector, regulatory, and governance-oriented audiences
 Status: Canonical design-intent document. Constitutional significance.
 
 ## Abstract
-Project Genesis proposes a governance-first framework for AI-enabled work. Its central objective is to improve reliability, accountability, and public trust in AI-mediated outputs by introducing structured mission workflows, independent verification, role separation, human oversight, and tamper-evident evidence trails.
+Genesis proposes a governance-first framework for AI-enabled work. Its central objective is to improve reliability, accountability, and public trust in AI-mediated outputs by introducing structured mission workflows, independent verification, role separation, human oversight, and tamper-evident evidence trails.
 
 Genesis is explicitly not an attention platform and not a claim of perfect machine truth. It is an institutional coordination model: a system intended to convert probabilistic AI outputs into auditable work products suitable for higher-trust settings.
 
@@ -18,7 +17,7 @@ This white paper presents the rationale, architectural design, governance model,
 ## 1. Purpose and Strategic Context
 Modern AI systems deliver speed and broad capability, but they do not natively guarantee institutional properties such as traceability, reproducibility, duty separation, and defensible accountability. This gap limits responsible deployment in regulated, safety-sensitive, and high-consequence environments.
 
-Project Genesis addresses this gap by treating trust and governance as design requirements, not downstream policy add-ons.
+Genesis addresses this gap by treating trust and governance as design requirements, not downstream policy add-ons.
 
 ### 1.1 The strategic inversion
 Genesis inverts the dominant "AI social-feed" pattern:
@@ -1029,7 +1028,7 @@ Risk: credibility loss through absolute promises.
 Controls: institutional language standards that prohibit "bulletproof" and "impossible" claims.
 
 ### 18.8 Single-founder risk
-Risk: Genesis currently has one founder (George Jackson). If the founder is incapacitated, dies, or becomes unavailable, the system loses its primary steward, context holder, and decision-maker during the critical G0 period.
+Risk: Genesis currently has a single founder. If the founder is incapacitated, dies, or becomes unavailable, the system loses its primary steward, context holder, and decision-maker during the critical G0 period.
 Controls: (1) Constitutional provisions self-execute — First Light triggers are automatic, phase transitions are headcount-based, entrenched provisions cannot be overridden. (2) These canonical documents (White Paper + Public Brief) record design intent so a successor can understand what Genesis was meant to be. (3) The TRUST_CONSTITUTION.md is the authoritative source of truth — hash-committed on-chain, immutable. (4) G0 Retroactive Ratification ensures all founder decisions are eventually subject to democratic review. (5) The founder's veto expires at First Light regardless. (6) Auto-immune system bootstrap overseers (§13.2) provide continuity for security oversight.
 Residual risk: HIGH during G0. Mitigated structurally but not eliminated until G1 democratic governance is operational.
 
@@ -1210,7 +1209,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 ## 25. Conclusion
 
-Project Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
+Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
 The system has 106 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
 

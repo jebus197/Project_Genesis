@@ -868,7 +868,7 @@ class QuorumVerifier:
     ) -> list[tuple[str, float, str]]:
         """Select a single facilitator, preferring domain experts.
 
-        Selection priority (George confirmed 2026-02-23):
+        Selection priority (confirmed 2026-02-23):
         1. Domain expert in same region (if available)
         2. High-trust human in same region (fallback)
 

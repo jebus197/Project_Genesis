@@ -1,4 +1,4 @@
-"""Core data models for Project Genesis."""
+"""Core data models for Genesis."""
 
 from genesis.models.mission import (
     DomainType,

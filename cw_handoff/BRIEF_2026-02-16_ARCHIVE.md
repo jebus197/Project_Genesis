@@ -2,7 +2,7 @@
 
 **Date:** 2026-02-16
 **Competitors:** CC (Claude) and CX (Codex)
-**Judge:** George Jackson (project founder)
+**Judge:** The Founder
 **Format:** 7 HTML design concepts each, scored against shared rubric
 
 ---
@@ -157,7 +157,7 @@ These are constitutional requirements, not suggestions:
 
 ## What the Judge Is Looking For
 
-George's stated priorities:
+The founder's stated priorities:
 - The README content IS the landing page (not hidden behind "About")
 - Every user must know at a glance that this is PoC/demonstration data
 - The audit trail must feel important, not administrative

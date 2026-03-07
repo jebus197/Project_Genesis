@@ -1,8 +1,7 @@
-# Project Genesis - Trust Constitution
+# Genesis — Trust Constitution
 
 Date: February 13, 2026
 Status: Foundational, non-negotiable
-Author: George Jackson
 
 ## Core Rule
 

@@ -1,8 +1,7 @@
-# Contributing to Project Genesis
+# Contributing to Genesis
 
-Status: Repository governance process  
-Date: February 13, 2026  
-Owner: George Jackson
+Status: Repository governance process
+Date: February 13, 2026
 
 ## 1) Purpose
 

@@ -174,7 +174,7 @@ class TestAbout:
         """README renders as HTML at /about/readme."""
         r = await client.get("/about/readme")
         assert r.status_code == 200
-        assert "Project Genesis" in r.text
+        assert "Genesis" in r.text
         assert "README" in r.text
 
     async def test_about_readme_json(self, client):

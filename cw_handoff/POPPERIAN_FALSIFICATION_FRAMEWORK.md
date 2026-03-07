@@ -1,7 +1,7 @@
 # Popperian Falsification as Genesis Design Standard
 
 **Source:** Brad Alger, "The Wonderful World of the Scientific Hypothesis" — [YouTube](https://www.youtube.com/watch?v=ABxG92dqXu8)
-**Applied by:** George Jackson, as the design standard for Genesis
+**Applied by:** The Founder, as the design standard for Genesis
 **Date:** 2026-02-27
 
 ---

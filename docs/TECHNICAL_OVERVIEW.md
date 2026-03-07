@@ -1,6 +1,6 @@
-# Project Genesis — Technical Overview
+# Genesis — Technical Overview
 
-This document covers the full technical architecture of Project Genesis. It is intended for engineers, researchers, auditors, and anyone who wants to understand how the system actually works beneath the governance principles described in the [README](../README.md).
+This document covers the full technical architecture of Genesis. It is intended for engineers, researchers, auditors, and anyone who wants to understand how the system actually works beneath the governance principles described in the [README](../README.md).
 
 The [Trust Constitution](../TRUST_CONSTITUTION.md) is the canonical source for all parameter values. This document explains the reasoning behind them.
 

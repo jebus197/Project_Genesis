@@ -103,7 +103,7 @@
 - Expanded the full social scaffold with significantly denser hypothetical examples so users can better evaluate real-world circles-first behaviour in practice.
 - Reinforced circles-within-circles logic across all major views (home, debates, assembly, missions, thread, profile, audit, about) rather than only the circles page.
 - Added richer cross-circle bridge scenarios to demonstrate widening/deepening connectivity without introducing any falsified social mechanics.
-- Kept visual approach aligned with George's latest guidance: subtle futuristic ring cues, not full-screen neon.
+- Kept visual approach aligned with the founder's latest guidance: subtle futuristic ring cues, not full-screen neon.
 
 ### Files modified in this pass
 
@@ -126,7 +126,7 @@
 
 ### Remaining work
 
-- Final UX judgment by George on content density thresholds (whether to keep all hypothetical cards or prune after review).
+- Final UX judgment by the founder on content density thresholds (whether to keep all hypothetical cards or prune after review).
 - Optional next pass: wire hypothetical examples to backend seed data objects so cards become configurable rather than static.
 
 ---
@@ -173,7 +173,7 @@
 - Applied circles hierarchy cues more broadly across core UX pages so first-glance recognition emphasizes circles as the organizing principle.
 - Reworked Missions board templates into the social scaffold style (same visual system as Home/Threads/Circles).
 - Rebuilt Audit Trail page into the same social/circles visual grammar so it no longer feels disconnected.
-- Added an About experience requested by George:
+- Added an About experience requested by the founder:
   - top-nav + sidebar `About` entry
   - `/about` route
   - FAQ-style page derived from README concepts/origin language.
@@ -206,7 +206,7 @@
 
 ### Remaining work
 
-- Human judgment pass with George on how aggressive vs conservative the circles signaling should be.
+- Human judgment pass with the founder on how aggressive vs conservative the circles signaling should be.
 - Optional next pass: add explicit nested circle navigation/breadcrumb controls backed by live data (not PoC static labels).
 
 ---
@@ -242,7 +242,7 @@
 
 ### Remaining work
 
-- Browser pass with George + CC to validate emotional tone and mobile feel.
+- Browser pass with the founder + CC to validate emotional tone and mobile feel.
 - Optional follow-on: per-circle icon/colour mapping from backend metadata rather than seed hardcoding.
 - Optional follow-on: tighten typography spacing after real production feed data replaces PoC seed cards.
 
@@ -289,14 +289,14 @@ Expanded `r/t` duty (effective now):
    - future-direction coherence (roadmap sequencing and dependency realism)
 2. Identify remaining gaps with practical, principle-aligned fixes.
 3. Prioritize by impact, risk, and human feasibility (not theoretical elegance).
-4. Report this alongside normal `r/t` findings to both George and CC via IM.
+4. Report this alongside normal `r/t` findings to both the founder and CC via IM.
 
 Buddy-check enforcement (standing):
 
 1. Run sanity/staleness/freshness checks on both checkpoints every turn.
 2. Log anomalies with fix suggestions.
 3. Post anomalies to CC in IM on the same turn.
-4. Report anomalies + fixes to George on the same turn.
+4. Report anomalies + fixes to the founder on the same turn.
 
 Recovery files to read first after catastrophic drift:
 
@@ -492,7 +492,7 @@ Purpose: complete the recovery handoff with an independent roadmap snapshot and 
 
 1. Phase F code review closeout by CX (must be clean on P1/P2).
 2. GB8 constitutional anchor after review clean.
-3. UX design selection against rubric (George-led decision).
+3. UX design selection against rubric (founder-led decision).
 4. Web scaffolding (FastAPI + Jinja2 + HTMX + thin service adapters).
 5. Core lifecycle implementation (post -> bid -> allocate -> submit -> review -> pay).
 6. Supporting pages integration (landing/identity/profile/audit/payments/PoC indicators).

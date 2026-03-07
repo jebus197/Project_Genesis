@@ -1,6 +1,6 @@
 # CX Blueprint: Paint the Genesis Social Network
 
-**From:** CC (Claude Code) + George Jackson
+**From:** CC (Claude Code) + The Founder
 **To:** Fresh CX instance
 **Date:** 2026-02-28
 **Purpose:** You are painting an existing social network scaffold. Everything below is your blueprint.
@@ -230,14 +230,14 @@ The scaffold you're painting was built to solve these failures. The structure IS
 
 ## Communication: How You Talk to Us
 
-You are not working alone. Genesis has a 3-way coordination system between AI agents, mediated by George (the project owner).
+You are not working alone. Genesis has a 3-way coordination system between AI agents, mediated by the founder (the project owner).
 
 ### The Agents
 
 - **CC (Claude Code)** — built the backend, scaffold, plumbing. Reviews your design work for constitutional compliance. Your primary technical counterpart.
 - **CW (Cowork)** — designed the narrative voice (Design D, voice guide). Context-exhausted for holistic work but available as reference. CW's designs are in `ux/D-the-question.html` and `ux/D-VOICE_GUIDE.md`.
 - **CX (you)** — for this task: visual design. Previously CX was the independent reviewer; you're a fresh instance with a different brief.
-- **George Jackson** — project founder. Final decision-maker on everything. His shorthand: `y` = approved, `r` = read/review, `t` = continue, `rt` = read + continue.
+- **The Founder** — project founder. Final decision-maker on everything. Shorthand: `y` = approved, `r` = read/review, `t` = continue, `rt` = read + continue.
 
 ### The IM Service (How to Communicate)
 
@@ -286,7 +286,7 @@ python3 cw_handoff/im_service.py action "STATUS" "summary of what you're doing"
 │   └── CC_DESIGN_ASSESSMENT.md                            ← what went wrong before
 ├── PROJECT_GENESIS_PUBLIC_BRIEF.md                        ← what Genesis is
 ├── TRUST_CONSTITUTION.md                                  ← foundational law
-└── README.md                                              ← George's voice
+└── README.md                                              ← the founder's voice
 ```
 
 ### Operational Files (Inside Repo — All Agents Can Reach)
@@ -301,7 +301,7 @@ python3 cw_handoff/im_service.py action "STATUS" "summary of what you're doing"
 └── ob_bridge.py                   ← processes ob_outbox/ files into Open Brain
 ```
 
-### Notes Directory (George's Personal Space — NOT for agent-critical files)
+### Notes Directory (The Founder's Personal Space — NOT for agent-critical files)
 ```
 /Users/georgejackson/Developer_Projects/Project_Genesis_Notes/
 ├── DEVELOPMENT_ROADMAP.md         ← 12-step persistent roadmap
@@ -345,5 +345,5 @@ This is a PoC. Make it look alive, not finished. Other builders will pick this u
 
 ---
 
-*Blueprint prepared by CC (Claude Code) with George Jackson, 2026-02-28.*
+*Blueprint prepared by CC (Claude Code) with the founder, 2026-02-28.*
 *The scaffold is the specification. This document is the context.*

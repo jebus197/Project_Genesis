@@ -1,1 +1,1 @@
-"""Project Genesis test suite."""
+"""Genesis test suite."""

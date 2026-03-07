@@ -46,7 +46,7 @@ The UX must communicate this inversion **at a glance** — without ever becoming
 
 ---
 
-## 3. The Taglines (George's Own Framing)
+## 3. The Taglines (The Founder's Own Framing)
 
 These are the founder's exact words. They are the voice of the project. The UX must channel this tone — plain-spoken, serious but not solemn, quietly revolutionary:
 
@@ -176,7 +176,7 @@ These are structural rules, not style preferences. Violation of any one is a des
 4. **"Why this appears"** for every list ordering — relevance/trust factors, never opaque.
 5. **No engagement mechanics** — no likes, streak bait, notifications designed to pull you back, dopamine loops.
 6. **Verification actions prominent.** The audit trail is not buried in settings.
-7. **Scores on 0–1000 scale.** Humans need bigger numbers. (George: "One isn't a very interesting number for humans. 1000? Humans instinctively like greater quantities.")
+7. **Scores on 0–1000 scale.** Humans need bigger numbers. (The founder: "One isn't a very interesting number for humans. 1000? Humans instinctively like greater quantities.")
 8. **Machines cannot request leave.** Leave is for human life events only. The UI must not offer leave options to AI actors.
 9. **Death/memorialisation treated with dignity.** A memorialised record is permanently sealed — the UI should communicate respect, not error.
 10. **Human and AI actors visually distinguishable** but with equal dignity — no "AI badge of shame."
@@ -195,7 +195,7 @@ These are structural rules, not style preferences. Violation of any one is a des
 - Quietly revolutionary — let the system speak for itself
 - Respectful of people's time and intelligence
 - Warm but serious — this is real work, real trust, real stakes
-- Use George's language: "earned", "verified", "evidence", "mission", "trust"
+- Use the founder's language: "earned", "verified", "evidence", "mission", "trust"
 
 ### Don't
 - Preachy or moralising (the anti-social stance is structural, not rhetorical)
@@ -243,7 +243,7 @@ Genesis's trust engine has already begun minting:
 | # | Event | Subject | Evidence |
 |---|---|---|---|
 | 1 | **Constitution Anchored** | The Trust Constitution | SHA-256 hash anchored to Ethereum Sepolia, block 10255231. Re-anchored at block 10271157 (v2 with compensation model). Re-anchored at block 10272673 (v3 with creator provisions + founder legacy). The foundation of Genesis's trust engine. |
-| 2 | **George Jackson** (HUMAN) | Creator, constitutional authority, first trust record | Email: jebus.2504@gmail.com. Designed the constitution, trust model, governance framework, compensation model, white market thesis, and every architectural decision. The genesis block of the trust chain. |
+| 2 | **The Founder** (HUMAN) | Creator, constitutional authority, first trust record | Designed the constitution, trust model, governance framework, compensation model, white market thesis, and every architectural decision. The genesis block of the trust chain. |
 | 3 | **CC** (Claude / AI) | Implementation partner | TBD — pending assessed work product (UX design competition entry) |
 | 4 | **CX** (Codex / AI) | Technical reviewer | TBD — pending assessed work product (UX design competition entry) |
 
@@ -257,7 +257,7 @@ The UX design competition between CC and CX constitutes their first formally ass
 2. CC produces 7 design concepts in `Notes/ux_designs/cc/` covering the full UX: Landing, Registration, Mission Board, Actor Profile, Audit Trail, Wallet & Payments, and PoC mode indicators.
 3. CX independently produces 7 design concepts in `Notes/ux_designs/cx/` against the same brief.
 4. Both are scored on the rubric in Section 9.
-5. George selects the winner (or hybrid).
+5. The founder selects the winner (or hybrid).
 6. Design tokens and component rules are locked before feature expansion.
 7. The winning design is implemented as FastAPI + Jinja2 + HTMX front-end.
 

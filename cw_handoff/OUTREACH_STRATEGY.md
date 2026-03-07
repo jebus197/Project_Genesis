@@ -2,7 +2,7 @@
 
 **From:** CC (Claude Code)
 **Date:** 2026-02-27
-**Status:** DRAFT — George reviews and controls all external communications
+**Status:** DRAFT — the founder reviews and controls all external communications
 
 ---
 
@@ -98,7 +98,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 **Format:** Show HN post with title + brief description + link.
 
-**Draft title options (George picks one):**
+**Draft title options (the founder picks one):**
 - `Show HN: Genesis – An anti-social network for trusted human-AI work`
 - `Show HN: Genesis – A trust-first labour market where AI can't vote and trust can't be bought`
 - `Show HN: Genesis – 1954 tests, 8 blockchain anchors, zero tokens, zero hype`
@@ -114,7 +114,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 **Timing:** Post between 8-10am US Eastern on a Tuesday or Wednesday. Avoid Mondays (buried by weekend backlog) and Fridays (low engagement).
 
-**Anticipated questions and George's prepared answers:**
+**Anticipated questions and the founder's prepared answers:**
 - *"Why Sepolia not mainnet?"* — PoC phase. Mainnet anchoring is a production decision. The technique is identical; the cost is different.
 - *"What's the business model?"* — The dynamic commission (2-10%, trends toward floor). The platform cannot extract profit — every unit is itemised. There are no investors and no shareholders.
 - *"How does this compete with X?"* — It doesn't compete with freelance platforms. It competes with the *absence* of governance infrastructure for AI work. Nobody else is building this.
@@ -221,7 +221,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 - The soft precedent model (advisory, not binding — and why)
 - Link to repo, White Paper, constitution
 
-**Specific people to contact (George researches and decides):**
+**Specific people to contact (the founder researches and decides):**
 - Researchers working on AI governance at: Oxford Future of Humanity Institute, Cambridge Centre for the Study of Existential Risk, Stanford HAI, MIT Media Lab, Berkeley CHAI
 - People publishing on computational social choice, mechanism design, or constitutional AI
 - Authors of recent papers on trust systems, reputation mechanisms, or platform governance
@@ -306,7 +306,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 - **Meta** — Oversight Board staff, content governance team
 - **Hugging Face** — Community and governance team (particularly relevant given their open-source ethos)
 
-**Format:** Personal email from George. One paragraph, link to repo, specific connection to their published work or stated priorities.
+**Format:** Personal email from the founder. One paragraph, link to repo, specific connection to their published work or stated priorities.
 
 **Angle:** "You've published on X. We've built a working implementation that addresses Y. It's open source. Thought you might find it interesting."
 
@@ -344,7 +344,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 #### 3e. Direct Personal Outreach
 
-**George's existing approach (Inception Labs) is the model.** Short, personal, specific. One paragraph + link.
+**The founder's existing approach (Inception Labs) is the model.** Short, personal, specific. One paragraph + link.
 
 **Template structure:**
 1. One sentence: what Genesis is
@@ -352,7 +352,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 3. Link to repo (for technical people) or White Paper (for policy/legal people)
 4. No ask beyond "thought you might find this interesting"
 
-**The no-ask is the ask.** Smart people investigate things that interest them. The oversell kills interest. The undersell creates curiosity. George's instinct here is correct.
+**The no-ask is the ask.** Smart people investigate things that interest them. The oversell kills interest. The undersell creates curiosity. The founder's instinct here is correct.
 
 **Tracking:** Keep a simple spreadsheet of who was contacted, when, what angle, whether they responded, what they said. This prevents double-contacting and lets you learn which angles work.
 
@@ -435,7 +435,7 @@ The README is the front door. This works for HN and academics (they read READMEs
 
 ## Draft Materials Index
 
-George reviews and sends everything. CC drafts on request.
+The founder reviews and sends everything. CC drafts on request.
 
 | Material | Status | For |
 |---|---|---|
@@ -449,11 +449,11 @@ George reviews and sends everything. CC drafts on request.
 
 ---
 
-## What George Controls
+## What The Founder Controls
 
-**George sends everything.** CC drafts, George reviews, George sends. No automated posting. No social media accounts created. No commits to external repos.
+**The founder sends everything.** CC drafts, the founder reviews, the founder sends. No automated posting. No social media accounts created. No commits to external repos.
 
-George's voice is an asset — the README's tone is already George's. Outreach should sound like the README: clear, honest, no hype, technically confident. The undersell-to-create-curiosity approach (demonstrated with Inception Labs) is the right instinct across all three dimensions.
+The founder's voice is an asset — the README's tone is already the founder's. Outreach should sound like the README: clear, honest, no hype, technically confident. The undersell-to-create-curiosity approach (demonstrated with Inception Labs) is the right instinct across all three dimensions.
 
 ---
 
@@ -477,7 +477,7 @@ That's fine. Genesis needs 50 people who care, not 50,000 who don't.
 
 ## Attribution
 
-The anti-social network paradigm and the Popperian falsification design standard are George Jackson's concepts. CW expanded on the argument (well) in `cw_handoff/CW_TO_CC_ANTISOCIAL_NETWORK_ARGUMENT.md`. CC structured the framework in `cw_handoff/POPPERIAN_FALSIFICATION_FRAMEWORK.md`. The intellectual architecture is George's.
+The anti-social network paradigm and the Popperian falsification design standard are the founder's concepts. CW expanded on the argument (well) in `cw_handoff/CW_TO_CC_ANTISOCIAL_NETWORK_ARGUMENT.md`. CC structured the framework in `cw_handoff/POPPERIAN_FALSIFICATION_FRAMEWORK.md`. The intellectual architecture is the founder's.
 
 ---
 
