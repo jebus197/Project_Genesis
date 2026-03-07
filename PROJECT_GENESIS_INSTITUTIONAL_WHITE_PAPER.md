@@ -1029,8 +1029,8 @@ Controls: institutional language standards that prohibit "bulletproof" and "impo
 
 ### 18.8 Single-founder risk
 Risk: Genesis currently has a single founder. If the founder is incapacitated, dies, or becomes unavailable, the system loses its primary steward, context holder, and decision-maker during the critical G0 period.
-Controls: (1) Constitutional provisions self-execute — First Light triggers are automatic, phase transitions are headcount-based, entrenched provisions cannot be overridden. (2) These canonical documents (White Paper + Public Brief) record design intent so a successor can understand what Genesis was meant to be. (3) The TRUST_CONSTITUTION.md is the authoritative source of truth — hash-committed on-chain, immutable. (4) G0 Retroactive Ratification ensures all founder decisions are eventually subject to democratic review. (5) The founder's veto expires at First Light regardless. (6) Auto-immune system bootstrap overseers (§13.2) provide continuity for security oversight.
-Residual risk: HIGH during G0. Mitigated structurally but not eliminated until G1 democratic governance is operational.
+Controls: (1) **Founder continuity provision** — if the founder's verified Genesis identity shows no cryptographically signed activity for `FOUNDER_INACTIVITY_THRESHOLD_DAYS` (default 180), the founder's constitutional authority dissolves automatically. No individual inherits it. Governance reverts to the distributed authority mechanisms already defined in the constitution at whatever phase applies. The mechanism is structural, automatic, and cannot be overridden by any party. (2) Constitutional provisions self-execute — First Light triggers are automatic, phase transitions are headcount-based, entrenched provisions cannot be overridden. (3) These canonical documents (White Paper + Public Brief) record design intent so any participant can understand what Genesis was meant to be. (4) The TRUST_CONSTITUTION.md is the authoritative source of truth — hash-committed on-chain, immutable. (5) G0 Retroactive Ratification ensures all founder decisions are eventually subject to democratic review. (6) The founder's veto expires at First Light regardless. (7) Auto-immune system bootstrap overseers (§13.2) provide continuity for security oversight. (8) Genesis is falsifiable by its own adoption metrics — if the network cannot attract enough participants to sustain governance, no succession mechanism can or should rescue it.
+Residual risk: MEDIUM during G0. The founder continuity provision ensures authority distributes rather than concentrating or vanishing. The residual risk is operational (infrastructure, deployment keys), not constitutional.
 
 ### 18.9 Auto-immune coverage gaps
 Risk: the auto-immune system (§13.2) has a defined protocol and registry but cross-component wiring (collusion detection, behavioural drift analysis, forensic feedback loops) requires real actor data that does not yet exist.
@@ -1154,7 +1154,7 @@ This section provides an honest accounting of what exists, what is designed but 
 
 ### 24.1 What is built and tested
 
-As of March 2026, 1954 automated tests pass across 106 design tests. The following subsystems are implemented:
+As of March 2026, 1954 automated tests pass across 110 design tests. The following subsystems are implemented:
 
 | Subsystem | Tests | Key files |
 |-----------|-------|-----------|
@@ -1211,9 +1211,9 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
-The system has 106 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
+The system has 110 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
 
-The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle. The single-founder risk (§18.8) is the most significant vulnerability during the G0 period. These canonical documents exist to mitigate that risk.
+The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle. The single-founder risk (§18.8) is mitigated by the founder continuity provision: if the founder's identity becomes permanently inactive, authority dissolves into distributed governance rather than concentrating or vanishing. These canonical documents — anchored on-chain, open source, and encoded in executable tests — exist to ensure the system outlives any individual.
 
 ## Appendix A: Canonical Trust Statement
 Trust cannot be bought, sold, exchanged, delegated, rented, inherited, or gifted.

@@ -105,6 +105,7 @@
     },
     "founder_veto_active": true,
     "founder_veto_expiry": "first_light",
+    "FOUNDER_INACTIVITY_THRESHOLD_DAYS": 180,
     "founder_veto_allowed_statuses": [
       "proposed",
       "proposal_chamber_voting",

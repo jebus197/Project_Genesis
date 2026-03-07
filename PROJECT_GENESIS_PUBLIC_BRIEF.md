@@ -514,11 +514,11 @@ When regulation intersects with Genesis: (1) Is it compatible with entrenched pr
 
 Honesty requires distinguishing what exists from what is designed.
 
-**What exists today:** 1954 automated tests across 106 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
+**What exists today:** 1954 automated tests across 110 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
 
 **What is designed but not yet connected:** Real speech-to-text for voice verification (currently a stub). Persistence layer (currently in-memory). Real cryptographic signatures (currently format validation). Payment rail integrations (protocol exists, no concrete rails). Insight signal propagation (protocol exists, no active pipeline). Auto-immune cross-component wiring (protocol exists, no detection engines). These all have defined triggers — they activate when real users generate real data.
 
-**What is the biggest risk:** Single-founder dependency. Genesis has one person who holds the full context. These documents exist to mitigate that. The constitution is hash-committed on-chain. The code is open. The tests enforce the principles. But if the founder is incapacitated before G1 democratic governance is operational, there is genuine risk. This is stated plainly, not hidden.
+**What is the biggest risk:** Single-founder dependency. Genesis has one person who holds the full context. The constitution includes a structural succession provision: if the founder's verified identity shows no signed activity for 180 days, the founder's authority dissolves automatically — it distributes among existing members under the same governance mechanisms the constitution already defines. No successor is appointed. No one inherits. The system does what it was always designed to do. The constitution is hash-committed on-chain. The code is open. The tests enforce the principles. This is stated plainly, not hidden.
 
 ## Risks (Honest View) and Mitigations
 No serious project should hide its risks. Genesis has material risks, but they are addressable.
@@ -545,7 +545,7 @@ Mitigation: structural separation of policy proposal, policy approval, policy en
 Mitigation: avoid “bulletproof” and “impossible” language; frame outcomes as measurable risk reduction.
 
 8. Single-founder risk
-Mitigation: constitutional self-execution (First Light triggers automatically, phase transitions are headcount-based), canonical design-intent documents (this brief + White Paper), on-chain constitutional hash commitment, G0 retroactive ratification ensures all founder decisions face democratic review. Residual risk: HIGH during G0.
+Mitigation: founder continuity provision — 180-day inactivity triggers automatic dissolution of founder authority into distributed governance. Constitutional self-execution (First Light triggers automatically, phase transitions are headcount-based). Canonical design-intent documents. On-chain constitutional hash commitment. G0 retroactive ratification ensures all founder decisions face democratic review. Genesis is falsifiable by its own adoption metrics — if the network cannot sustain governance, no succession mechanism rescues it. Residual risk: MEDIUM during G0.
 
 ## Threat Modelling (Why It Is Required)
 Threat modelling means defining what must be protected, who can cause harm, how harm could happen, and which controls prevent or contain that harm.
@@ -624,7 +624,7 @@ Its thesis is straightforward:
 3. Institutions encoded in software can outperform ad hoc coordination.
 4. Public-benefit systems require accountability by design, not by promise.
 
-What makes Genesis different from other proposals: the governance is tested (106 design tests, 1954 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
+What makes Genesis different from other proposals: the governance is tested (110 design tests, 1954 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
 
 Genesis is not a finished product. It is a foundation — constitutional, architectural, and economic — upon which a self-governing, intelligence-agnostic work network can be built. Its long-term value will be determined not by how quickly it grows, but by whether it remains trustworthy as it scales.
 

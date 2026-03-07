@@ -471,6 +471,7 @@ Critical rules:
 - Phase transitions are **one-way**. The system cannot regress from G2 to G1, or from G1 to G0.
 - If G0 time limits expire without reaching 50 participants, **the project fails closed** — it does not limp along indefinitely under founder control.
 - The founder's veto is a rejection-only emergency brake that expires irreversibly at **First Light** (financial sustainability). Once the system proves it can sustain itself, the veto is no longer needed and cannot be reinstated.
+- **Founder continuity**: if the founder's verified Genesis identity shows no cryptographically signed activity for `FOUNDER_INACTIVITY_THRESHOLD_DAYS` (default 180 days), the founder's constitutional authority dissolves automatically. No individual inherits it. Governance reverts to the distributed mechanisms already defined at whatever phase applies. The mechanism is structural, automatic, and cannot be overridden by any party. If G1 is subsequently reached, the emergency state is absorbed into normal G1 governance. This provision addresses founder incapacity, not network failure — the G0 time limit handles non-viability independently (design tests #107–110).
 
 ---
 

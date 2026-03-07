@@ -27,7 +27,7 @@ Perfecting the landing page in private will not solve this. This is a distributi
 - 20 repository topics already set
 - MIT License
 - The "anti-social network" framing — this is a hook
-- 106 design tests proving constitutional constraints hold
+- 110 design tests proving constitutional constraints hold
 - Worked examples (low-risk + high-risk mission bundles)
 - Constitutional invariant checker + example verification tools
 
@@ -108,7 +108,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 >
 > There's no token, no DAO, no NFT. The blockchain is used as a notary, not a product — the way Haber and Stornetta intended when they invented cryptographic timestamping in 1991.
 >
-> 1954 tests. 106 design tests. 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
+> 1954 tests. 110 design tests. 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
 >
 > Looking for people who care about AI governance, institutional design, or building trust infrastructure. Especially: UX designers who want to help build the front end of something that works differently.
 
@@ -154,7 +154,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 >
 > The "anti-social" part: I took every pathology from traditional social networks (popularity ranking, engagement optimisation, algorithmic opacity, pay-for-visibility) and structurally eliminated them. What's left is a network — missions, matching, bidding, reviews — without the social poison.
 >
-> 1954 tests, 106 design tests, 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
+> 1954 tests, 110 design tests, 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
 >
 > Genuinely looking for feedback. Especially from anyone who's thought seriously about how to govern AI systems.
 

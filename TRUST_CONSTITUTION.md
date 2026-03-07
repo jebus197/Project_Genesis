@@ -1108,6 +1108,27 @@ The active genesis phase is determined by:
 Time-limit overrides:
 - If G0 duration exceeds `G0_MAX_DAYS + G0_EXTENSION_DAYS` and `N_H < 50`, the network must be publicly declared non-viable and shut down or restructured with a new genesis.
 
+### Founder continuity (structural succession)
+
+If the founder's verified Genesis identity shows no cryptographically signed activity for `FOUNDER_INACTIVITY_THRESHOLD_DAYS` consecutive days (default: 180), the following transition activates automatically:
+
+1. The founder's constitutional authority (including the Founder's Veto) is **dissolved**, not transferred. No individual inherits it.
+2. All governance decisions revert to the distributed authority mechanisms already defined in this constitution — the same chamber structures, voting rules, and amendment processes that apply at the current genesis phase. The founder's role simply ceases to exist as a distinct constitutional position.
+3. Existing members govern collectively under whatever phase rules apply at the time of activation. If governance structures cannot be fully staffed at the current membership level, this is not a constitutional crisis — it is evidence that Genesis has not yet achieved viability, and the G0 time-limit override (above) applies on its own terms.
+4. Any signed action from the founder's verified Genesis identity resets the inactivity counter. The threshold is measured by the same on-chain activity verification used for the dormancy clause.
+5. If G1 is subsequently achieved through normal headcount growth, the emergency succession state is absorbed into standard G1 governance. No additional transition is required — the distributed authority was always the destination.
+6. This provision is structural and automatic. It requires no ballot, no quorum, and no governance action to activate. It cannot be overridden, extended, or deferred by any party, including the founder.
+
+This mechanism exists because the founder's authority is a single point of failure during G0. The constitution is anchored on-chain, the code is open source, and the design principles are encoded in executable tests — but constitutional authority during G0 is vested in one identity. This provision ensures that if that identity becomes permanently inactive, authority distributes rather than concentrating or vanishing. The system's integrity is preserved through the same mechanisms of distributed governance that Genesis was founded on.
+
+**Falsifiability note.** Genesis is falsifiable by its own adoption metrics. If the network cannot attract and retain enough verified human participants to sustain governance, it has disproven its own thesis. No succession mechanism can rescue a non-viable network, nor should it attempt to. This provision addresses founder incapacity, not network failure — the two are structurally distinct.
+
+**Founder continuity design tests:**
+107. If the founder becomes permanently inactive, does any single individual inherit the founder's constitutional authority? If yes, reject design.
+108. Does the founder continuity mechanism require any human decision, vote, or governance action to activate? If yes, reject design.
+109. Can the founder continuity mechanism be overridden, deferred, or extended by any party including the founder? If yes, reject design.
+110. Does the mechanism attempt to preserve governance viability for arbitrarily small membership numbers, or does it correctly defer to the G0 time-limit override for non-viable networks? If it attempts to preserve viability at any size, reject design — that is over-engineering.
+
 ### First Light
 
 "First Light" is the named transition event marking Genesis's passage from Proof of Concept to live operations. First Light is a **financial sustainability trigger**, not a headcount counter. It fires when BOTH conditions are met:
