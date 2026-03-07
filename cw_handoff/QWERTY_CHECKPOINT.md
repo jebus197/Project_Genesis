@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T20:00Z
+**Last updated:** 2026-03-07T21:30Z
 **Updated by:** CC (Claude)
-**Session:** Rebrand 'Project Genesis' → 'Genesis' + founder anonymisation. 35 files changed across all docs, source, templates, tests, and handoff files. Zero logic changes. Also: `rc` shorthand added to CLAUDE.md (full recovery from compaction). 1954 tests. Git clean.
-**Head commit:** fa993c1 — Rebrand: 'Project Genesis' → 'Genesis' + founder anonymisation. COMMITTED AND PUSHED.
+**Session:** Founder continuity (structural succession) — design tests #107-110. If founder inactive 180d, authority dissolves automatically. No successor, no ballot, no override. Constitution, config, white paper, public brief, tech overview, FAQ, outreach updated. 11 new tests (1965 total). Dark Forest design principle.
+**Head commit:** cc4e184 — Founder continuity: structural succession provision (design tests #107-110). COMMITTED AND PUSHED.
 
 ---
 
@@ -17,7 +17,7 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 **Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. The founder arbitrates disagreements.
 
-**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1954 tests (1838 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE (equilibrium.py, CommissionEngine wired, trust-gated registration capacity, Tier 3 exit, GCF STEM/infrastructure disposition, 38 new tests). Provenance lineage added (Turing→Nakamoto→Genesis). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
+**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1965 tests (1849 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE. Founder continuity provision COMPLETE (design tests #107-110). Provenance lineage added (Turing→Nakamoto→Genesis). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
 
 **Key files to read on recovery:**
 1. This file (CC checkpoint — you're reading it)
@@ -38,15 +38,25 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1954 passed (1838 core + 116 web). Zero logic changes. |
-| **w** | Written: committed + pushed | PASS | HEAD: `fa993c1` — rebrand + founder anonymisation. PUSHED. Prior: `8afb987`. |
-| **e** | Exchanged: CX notified | PASS | IM: rebrand posted with commit hash `fa993c1`. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated, `rc` shorthand added, founder name references removed. |
-| **ty** | Tidy: docs lock-stepped | PASS | Zero 'Project Genesis' or 'George' references in .py/.md/.html/.toml (except immutable im_state.json history). |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1965 passed (1849 core + 116 web). 11 new founder continuity tests. |
+| **w** | Written: committed + pushed | PASS | HEAD: `cc4e184` — founder continuity provision. PUSHED. Prior: `fa993c1`. |
+| **e** | Exchanged: CX notified | PASS | IM: founder continuity posted with commit hash `cc4e184`. |
+| **r** | Recorded: MEMORY.md updated | PASS | Founder continuity added to Philosophical Decisions, test count 1965, HEAD updated. |
+| **ty** | Tidy: docs lock-stepped | PASS | Design test count 110 across all docs (white paper ×3, public brief ×2, outreach ×3). FAQ updated with succession Q&A. Tech overview updated. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (15 pending):
+
+71. **`cc4e184`** — Founder continuity: structural succession provision (design tests #107-110)
+    - Constitution: new "Founder continuity (structural succession)" section — 6-point provision, falsifiability note, 4 design tests
+    - Config: `FOUNDER_INACTIVITY_THRESHOLD_DAYS: 180` in genesis section
+    - White paper: §18.8 rewritten (controls, falsifiability, residual risk HIGH→MEDIUM), conclusion updated (110 tests, succession language)
+    - Public brief: risk section rewritten, design test count 106→110
+    - Tech overview: founder continuity paragraph in bootstrap section
+    - FAQ: new "What happens if the founder disappears?" entry
+    - Outreach: design test count 106→110
+    - Tests: 11 new tests in test_founder_continuity.py (1965 total)
 
 70. **`fa993c1`** — Rebrand: 'Project Genesis' → 'Genesis' + founder anonymisation
     - Replaced all 'Project Genesis' references with 'Genesis' across 20+ files
