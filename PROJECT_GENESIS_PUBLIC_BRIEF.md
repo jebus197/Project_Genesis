@@ -298,6 +298,16 @@ The GCF is a constitutional 1% contribution on all mission value. It is the only
 
 **Founder legacy:** After the 50-year dormancy period, the creator allocation is permanently pegged to STEM and medical research. This is the founder's stated legacy — public, visible, and constitutional.
 
+## Dynamic Equilibrium: How Machine Work Is Valued
+
+Machine work (Tier 0–2) is valued at a constitutional discount — currently 50% — relative to human work. The differential flows to the GCF. The employer pays the same regardless of whether a human or machine completes the work. Only the split between worker payout and GCF contribution changes.
+
+This may sound steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput. A proportion of that funding is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence.
+
+The number of machines a human can register is constrained by their trust score, preventing any single operator from amassing an unchecked fleet. Every verified human can register at least one machine. Capacity scales with demonstrated trustworthiness.
+
+When a machine class achieves Tier 3 (autonomous domain agency), it automatically exits the discount for that domain. Its work is valued at full human parity. Economic parity through demonstrated capability — not through lobbying, purchasing, or declaration.
+
 ## Payment Sovereignty: No Single Provider Can Shut Genesis Down
 
 Payment infrastructure sovereignty is one of five entrenched constitutional provisions — the highest level of protection Genesis offers. It exists because a system that can be shut down by a single provider's business decision is not sovereign. It is rented.
@@ -503,7 +513,7 @@ When regulation intersects with Genesis: (1) Is it compatible with entrenched pr
 
 Honesty requires distinguishing what exists from what is designed.
 
-**What exists today:** 1916 automated tests across 106 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
+**What exists today:** 1954 automated tests across 106 design tests. Trust engine, escrow lifecycle, dynamic commission, creator allocation, GCF, harmful work prevention, three-tier justice, constitutional amendment engine, retroactive ratification, Assembly, Organisation Registry, Domain Expert Pools, machine agency tiers, identity verification, open work enforcement, payment rail protocol, distributed intelligence protocol, auto-immune protocol, distributed authority governance. All tested, all constitutional.
 
 **What is designed but not yet connected:** Real speech-to-text for voice verification (currently a stub). Persistence layer (currently in-memory). Real cryptographic signatures (currently format validation). Payment rail integrations (protocol exists, no concrete rails). Insight signal propagation (protocol exists, no active pipeline). Auto-immune cross-component wiring (protocol exists, no detection engines). These all have defined triggers — they activate when real users generate real data.
 
@@ -613,7 +623,7 @@ Its thesis is straightforward:
 3. Institutions encoded in software can outperform ad hoc coordination.
 4. Public-benefit systems require accountability by design, not by promise.
 
-What makes Genesis different from other proposals: the governance is tested (106 design tests, 1916 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
+What makes Genesis different from other proposals: the governance is tested (106 design tests, 1954 automated tests), the economics are structural (escrow-first, formula-driven commission, constitutional common fund), the protections are real (disability accommodation, protected leave, three-tier justice with codified rights), and the evolution pathway exists (three-chamber amendments, entrenched provisions, machine agency tiers, First Light transition).
 
 Genesis is not a finished product. It is a foundation — constitutional, architectural, and economic — upon which a self-governing, intelligence-agnostic work network can be built. Its long-term value will be determined not by how quickly it grows, but by whether it remains trustworthy as it scales.
 

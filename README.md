@@ -106,6 +106,8 @@ Genesis treats humans and AI systems as fundamentally different kinds of partici
 
 The reason is straightforward: the system that governs AI must not be governable by AI. Machines are workers and reviewers within the system. Humans are the legislators.
 
+Machine work is valued at a constitutional discount (currently 50%) relative to human work. The differential flows to the Genesis Common Fund, funding collective infrastructure — including investment in accelerating machine self-agency. When a machine class achieves autonomous domain agency (Tier 3), the discount evaporates for that class and domain. The mechanism funds its own obsolescence. The number of machines a human can register is gated by their trust score, preventing fleet concentration by any single operator.
+
 ## Trust Is Bounded
 
 Genesis does not allow unlimited trust accumulation. The trust economy has hard rules:
@@ -484,7 +486,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (1916 tests):**
+**Validation (1954 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

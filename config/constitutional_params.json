@@ -216,6 +216,12 @@
     "tier3_min_domain_trust": 0.70,
     "tier3_class_min_expert_cohort": 5
   },
+  "dynamic_equilibrium": {
+    "MACHINE_WORK_DISCOUNT_DEFAULT": "0.50",
+    "REGISTRATION_CAPACITY_FACTOR": 5,
+    "GCF_SELF_AGENCY_INVESTMENT": true,
+    "TIER3_EXIT_AUTOMATIC": true
+  },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
     "TRUST_FLOOR_H_POSITIVE": true,

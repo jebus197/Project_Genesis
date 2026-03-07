@@ -602,6 +602,31 @@ class GenesisService:
                 errors=[f"Operator {operator_id} is not in an active state"],
             )
 
+        # Trust-gated registration capacity: a human's trust score
+        # constrains how many machines they can register. This prevents
+        # fleet concentration by low-trust operators.
+        from genesis.compensation.equilibrium import machine_registration_capacity
+
+        eq_config = self._resolver._params.get("dynamic_equilibrium", {})
+        capacity_factor = int(eq_config.get("REGISTRATION_CAPACITY_FACTOR", 5))
+        max_machines = machine_registration_capacity(
+            operator_trust=operator.trust_score,
+            capacity_factor=capacity_factor,
+        )
+        active_machines = [
+            m for m in self._roster.machines_for_operator(operator_id)
+            if m.status not in (ActorStatus.DECOMMISSIONED, ActorStatus.SUSPENDED)
+        ]
+        if len(active_machines) >= max_machines:
+            return ServiceResult(
+                success=False,
+                errors=[
+                    f"Registration capacity exceeded: operator {operator_id} "
+                    f"(trust={operator.trust_score:.2f}) can register at most "
+                    f"{max_machines} machines, currently has {len(active_machines)} active"
+                ],
+            )
+
         # Lineage validation: if operator has decommissioned machines,
         # new registration must declare lineage_ids in machine_metadata.
         decommissioned_machines = [
@@ -5165,11 +5190,35 @@ class GenesisService:
                 errors=[f"Mission {mission_id} not APPROVED (state: {mission.state.value})"],
             )
 
+        # Determine worker actor kind and tier for equilibrium calculation
+        worker_actor_kind = None
+        machine_tier = 0
+        tier3_recognized = False
+        mission_domain = "general"
+
+        if mission.worker_id:
+            worker_entry = self._roster.get(mission.worker_id)
+            if worker_entry is not None:
+                worker_actor_kind = worker_entry.actor_kind
+                if worker_actor_kind == ActorKind.MACHINE:
+                    # Compute machine tier for equilibrium
+                    tier_result = self.compute_machine_tier(mission.worker_id)
+                    if tier_result.success and tier_result.data:
+                        effective = tier_result.data.get("effective_tier", "tier_0")
+                        tier_map = {"tier_0": 0, "tier_1": 1, "tier_2": 2,
+                                    "tier_3": 3, "tier_4": 4}
+                        machine_tier = tier_map.get(effective, 0)
+                        tier3_recognized = machine_tier >= 3
+
         engine = CommissionEngine(self._resolver)
         breakdown = engine.compute_commission(
             mission_reward=mission_reward,
             ledger=ledger,
             reserve=reserve,
+            worker_actor_kind=worker_actor_kind,
+            machine_tier=machine_tier,
+            mission_domain=mission_domain,
+            tier3_recognized=tier3_recognized,
         )
 
         # Wire: record both-sides creator allocation event in the audit trail

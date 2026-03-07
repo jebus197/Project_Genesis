@@ -701,6 +701,18 @@ Either party can raise a dispute within `ESCROW_HOLD_PERIOD = 48 hours` after co
 
 All commission parameters are constitutional constants requiring 3-chamber supermajority amendment. Non-commission compensation parameters (accepted currencies, volatility threshold, escrow hold period, minimum reward, KYC threshold) are governed by ballot.
 
+### Dynamic equilibrium — machine work valuation
+
+Machine work (Tier 0–2) is valued at a constitutional discount (default `MACHINE_WORK_DISCOUNT_DEFAULT = 0.50`) relative to human work. The differential is a reallocation within the compensation invariant: `worker_payout` decreases, `gcf_contribution` increases by the same amount. The employer pays the same. The commission rate is the same. The creator allocation is the same.
+
+**Implementation:** `compute_equilibrium_differential()` in `src/genesis/compensation/equilibrium.py` is a pure function called by `CommissionEngine.compute_commission()` after GCF deduction. For human workers or Tier 3+ machines: passthrough (zero differential). For Tier 0–2 machines: `differential = worker_payout × discount_rate`, clamped to worker_payout. The differential is added to `gcf_contribution` and subtracted from `worker_payout`.
+
+**Trust-gated registration capacity:** `machine_registration_capacity()` computes `max(1, floor(T_H × REGISTRATION_CAPACITY_FACTOR))`. Every verified human can register at least 1 machine. Capacity scales with trust. Enforced in `register_machine()` in `src/genesis/service.py`.
+
+**GCF self-agency investment:** A proportion of GCF funds is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence (`GCF_SELF_AGENCY_INVESTMENT = true`, `TIER3_EXIT_AUTOMATIC = true` in `config/constitutional_params.json`).
+
+**Design tests:** #101–106. **Tests:** 38 in `tests/test_equilibrium.py`.
+
 ---
 
 ## Genesis Common Fund
@@ -1265,7 +1277,7 @@ Key design principles:
 5. **Engine purity**: computation engines (trust, quality, matching, decay, endorsement, allocation) are pure functions with no side effects. The service layer handles all persistence and event recording.
 6. **Transactional safety**: every mutating service operation either fully succeeds or fully rolls back. Post-audit operations degrade rather than roll back to prevent audit/state mismatch.
 
-All constitutional invariants are tested automatically. The test suite (1916 tests) covers every critical rule described in this document — including identity verification, compliance screening, three-tier justice, the genesis common fund, workflow orchestration, the labour market, skill lifecycle, domain trust, and persistence safety.
+All constitutional invariants are tested automatically. The test suite (1954 tests) covers every critical rule described in this document — including identity verification, compliance screening, three-tier justice, the genesis common fund, workflow orchestration, the labour market, skill lifecycle, domain trust, and persistence safety.
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

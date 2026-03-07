@@ -807,6 +807,20 @@ Design tests: #73 (no Tier 3 without amendment or approved-class procedural path
 
 📋 *Constitutional principle. Four-tier pathway defined in constitution and enforced in code (`src/genesis/governance/machine_agency.py`, 55 tests). Tier 3 activation trigger: when the first machine meets qualifying criteria — minimum 5 years from first Tier 2 clearance.*
 
+### 12.4 Dynamic equilibrium — human-machine economic parity
+
+Machine work (Tier 0–2) is valued at a constitutional discount (default 50%) relative to human work. The differential flows to the Genesis Common Fund — not to the employer, not to the platform. The employer pays the same regardless of whether a human or machine completes the work; only the split between worker payout and GCF contribution changes. The accounting invariant is preserved: `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`.
+
+The discount may appear steep per-unit, but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput of machine-completed missions. A proportion of GCF funds is constitutionally directed toward accelerating machine self-agency — which triggers Tier 3 recognition — which eliminates the discount. The mechanism funds its own obsolescence.
+
+**Trust-gated registration capacity.** The number of machines a human may register is constrained by their trust score, preventing fleet concentration. Every verified human can register at least one machine; capacity scales with demonstrated trustworthiness.
+
+**Three-layer defence.** (1) Differential valuation (this provision), (2) Structural (human-only governance, trust-gated registration, irreducible human roles), (3) GCF redistributive backstop.
+
+Design tests: #101 (no full valuation without self-agency), #102 (premium not static), #103 (Tier 3 exits discount), #104 (no voting rights at Tier 3), #105 (no fleet concentration bypass), #106 (pathway to parity, not foreclosure).
+
+✅ *Implemented and tested. Differential valuation in `src/genesis/compensation/equilibrium.py`. Commission engine integration in `src/genesis/compensation/engine.py`. Trust-gated registration in `src/genesis/service.py`. 38 tests in `tests/test_equilibrium.py`.*
+
 ## 13. Distributed Systems
 
 ### 13.1 Distributed intelligence
@@ -1138,7 +1152,7 @@ This section provides an honest accounting of what exists, what is designed but 
 
 ### 24.1 What is built and tested
 
-As of March 2026, 1916 automated tests pass across 106 design tests. The following subsystems are implemented:
+As of March 2026, 1954 automated tests pass across 106 design tests. The following subsystems are implemented:
 
 | Subsystem | Tests | Key files |
 |-----------|-------|-----------|
@@ -1185,7 +1199,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 | Artifact | Command | Purpose |
 |----------|---------|---------|
-| Full test suite | `python3 -m pytest tests/ -q` | 1916 tests, ~12 seconds |
+| Full test suite | `python3 -m pytest tests/ -q` | 1954 tests, ~12 seconds |
 | Invariant checker | `python3 tools/check_invariants.py` | Constitutional parameter validation |
 | Constitutional params | `config/constitutional_params.json` | Machine-readable parameter mirror |
 | Runtime policy | `config/runtime_policy.json` | Risk-tier policy mapping |

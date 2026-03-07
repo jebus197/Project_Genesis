@@ -516,6 +516,11 @@ class TestMachineImmuneSystem:
         svc = _make_service()
         _setup_machine_scenario(svc)
 
+        # Elevate operator trust so capacity allows a second machine
+        # (trust 0.50 × factor 5 = capacity 2; OP-001 already has BOT-001)
+        op_entry = svc.get_actor("OP-001")
+        op_entry.trust_score = 0.50
+
         result = svc.register_machine(
             actor_id="BOT-002",
             operator_id="OP-001",

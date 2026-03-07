@@ -33,3 +33,6 @@ cw_handoff/ob_outbox/
 
 # UX design files (CW workspace — not source code)
 ux/
+
+# Agent recovery files (convenience docs for CC/CX session recovery)
+cx_recovery/

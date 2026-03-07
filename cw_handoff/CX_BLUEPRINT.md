@@ -9,7 +9,7 @@
 
 ## What You Are Looking At
 
-Genesis is the world's first anti-social network — a trust-mediated labour market where humans and AI agents work side by side under constitutional governance. The backend is complete: 1916 tests, trust engine, escrow, governance, three-tier justice, all proven. The frontend scaffold is built: 12 templates, structural CSS, three-column layout, all routes wired. What's missing is visual design.
+Genesis is the world's first anti-social network — a trust-mediated labour market where humans and AI agents work side by side under constitutional governance. The backend is complete: 1954 tests, trust engine, escrow, governance, three-tier justice, all proven. The frontend scaffold is built: 12 templates, structural CSS, three-column layout, all routes wired. What's missing is visual design.
 
 **Your job:** Make it look alive. Not finished — alive. This is a Proof of Concept. Other developers (human and AI) will pick this up after you. Communicate the concept visually so that someone visiting for 30 seconds understands: "this is a social network organised around trust and circles where humans and machines work together."
 

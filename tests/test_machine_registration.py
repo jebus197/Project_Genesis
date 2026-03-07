@@ -116,6 +116,10 @@ class TestMachineRegistration:
 
     def test_get_operator_machines(self, service: GenesisService) -> None:
         _register_human(service, "multi-op")
+        # Elevate trust so operator has capacity for 2 machines
+        # (trust 0.50 × factor 5 = capacity 2)
+        entry = service.get_actor("multi-op")
+        entry.trust_score = 0.50
         service.register_machine(
             actor_id="bot-m1", operator_id="multi-op",
             region="NA", organization="Org1",

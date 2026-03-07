@@ -120,6 +120,13 @@ class CommissionBreakdown:
     - commission_amount + creator_allocation + worker_payout + gcf_contribution == mission_reward
     - total_escrow == mission_reward + employer_creator_fee
     - On cancel/refund: full escrow (including employer fee) returned
+
+    Dynamic equilibrium fields (machine workers only):
+    - equilibrium_differential: amount redirected from worker to GCF
+    - equilibrium_discount_rate: discount rate applied (0 for humans/Tier 3)
+    - equilibrium_applied: whether equilibrium adjustment was applied
+    When equilibrium_applied is True, worker_payout and gcf_contribution
+    already reflect the adjustment. The invariant still holds.
     """
     rate: Decimal
     raw_rate: Decimal
@@ -135,6 +142,9 @@ class CommissionBreakdown:
     reserve_contribution: Decimal
     safety_margin: Decimal
     gcf_contribution: Decimal = Decimal("0")
+    equilibrium_differential: Decimal = Decimal("0")
+    equilibrium_discount_rate: Decimal = Decimal("0")
+    equilibrium_applied: bool = False
 
     @property
     def total_escrow(self) -> Decimal:

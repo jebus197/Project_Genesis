@@ -30,6 +30,7 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
 
+from genesis.compensation.equilibrium import compute_equilibrium_differential
 from genesis.compensation.ledger import OperationalLedger
 from genesis.models.compensation import (
     CommissionBreakdown,
@@ -37,6 +38,7 @@ from genesis.models.compensation import (
     ReserveFundState,
     WindowStats,
 )
+from genesis.models.trust import ActorKind
 from genesis.policy.resolver import PolicyResolver
 
 
@@ -61,6 +63,10 @@ class CommissionEngine:
         ledger: OperationalLedger,
         reserve: ReserveFundState,
         now: Optional[datetime] = None,
+        worker_actor_kind: Optional[ActorKind] = None,
+        machine_tier: int = 0,
+        mission_domain: str = "general",
+        tier3_recognized: bool = False,
     ) -> CommissionBreakdown:
         """Compute the full commission breakdown for a mission payout.
 
@@ -69,6 +75,11 @@ class CommissionEngine:
             ledger: The operational ledger with historical data.
             reserve: Current reserve fund state.
             now: Current time (defaults to UTC now).
+            worker_actor_kind: ActorKind.HUMAN or ActorKind.MACHINE.
+                If MACHINE, dynamic equilibrium discount applies (Tier 0-2).
+            machine_tier: Machine tier (0-4). Only used when worker is MACHINE.
+            mission_domain: Mission domain for per-class, per-domain scoping.
+            tier3_recognized: Whether this machine class has Tier 3 in domain.
 
         Returns:
             A frozen CommissionBreakdown with rate, amounts, and full
@@ -208,6 +219,39 @@ class CommissionEngine:
         # Deduct GCF from worker payout
         worker_payout = worker_payout - gcf_contribution
 
+        # --- Dynamic Equilibrium (constitutional) ---
+        #
+        # Machine workers (Tier 0–2) have their payout discounted.
+        # The differential flows to the GCF — funding collective
+        # infrastructure, including investment in accelerating machine
+        # self-agency. The mechanism funds its own obsolescence.
+        #
+        # Tier 3+ machines: no discount (economic parity).
+        # Human workers: no discount.
+        #
+        # Invariant preserved: commission + creator + worker + gcf == mission_reward
+        # (the differential is a reallocation from worker to gcf)
+
+        worker_is_machine = (worker_actor_kind == ActorKind.MACHINE)
+
+        equilibrium_discount_rate_param = params.get(
+            "equilibrium_discount_rate", None,
+        )
+        eq_result = compute_equilibrium_differential(
+            worker_payout=worker_payout,
+            gcf_contribution=gcf_contribution,
+            worker_is_machine=worker_is_machine,
+            machine_tier=machine_tier,
+            domain=mission_domain,
+            tier3_recognized=tier3_recognized,
+            discount_rate=equilibrium_discount_rate_param,
+        )
+
+        equilibrium_differential = eq_result.differential_amount
+        equilibrium_applied = eq_result.differential_amount > Decimal("0")
+        worker_payout = eq_result.adjusted_worker_payout
+        gcf_contribution = eq_result.adjusted_gcf_contribution
+
         # Build cost breakdown by category
         cost_breakdown = self._build_cost_breakdown(window_costs, reserve_contribution)
         if creator_amount > Decimal("0"):
@@ -232,6 +276,9 @@ class CommissionEngine:
             reserve_contribution=reserve_contribution,
             safety_margin=safety_margin,
             gcf_contribution=gcf_contribution,
+            equilibrium_differential=equilibrium_differential,
+            equilibrium_discount_rate=eq_result.discount_rate,
+            equilibrium_applied=equilibrium_applied,
         )
 
     def _reserve_contribution(
