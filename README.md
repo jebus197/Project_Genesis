@@ -158,7 +158,7 @@ The first document anchored in Genesis is its own constitution — the foundatio
 | Transaction | [`4f2863f9...`](https://sepolia.etherscan.io/tx/4f2863f95f173b44ec6402bb70b8366e262c233bf0e17c4be3a56637c5019f99) |
 | Anchored | 2026-02-20T15:35:24Z |
 
-This anchor captures: all prior constitutional substance (Genesis Blocks 1-7) plus G0 Retroactive Ratification, The Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #83 (evolutionary safety). 1887 tests. Independently reviewed.
+This anchor captures: all prior constitutional substance (Genesis Blocks 1-7) plus G0 Retroactive Ratification, The Assembly, Organisation Registry, Domain Expert Pools, Machine Domain Clearance, Autonomous Domain Agency, Open Work Principle, and design test #83 (evolutionary safety). 1916 tests. Independently reviewed.
 
 The complete anchoring history — all eight Genesis Blocks from the first draft to the current version — is maintained in the [Trust Mint Log](docs/ANCHORS.md). Every iteration is independently verifiable. The [wallet's full transaction history](https://sepolia.etherscan.io/address/0xC3676587a06b33A07a9101eB9F30Af9Fb988F7CE) is public. Nothing can be hidden — from day one, not even by the founder themselves.
 
@@ -484,7 +484,7 @@ Genesis aims for **measurable risk reduction**, not perfection. If the metrics i
 | `tools/check_invariants.py` | Automated constitutional and runtime invariant checks. |
 | `tools/verify_examples.py` | Worked-example policy validation. |
 
-**Validation (1887 tests):**
+**Validation (1916 tests):**
 
 ```bash
 python3 -m pytest tests/ -q            # Run full test suite

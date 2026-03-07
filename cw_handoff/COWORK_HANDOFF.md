@@ -32,7 +32,7 @@ The project's deeper purpose: **protecting human spirit, human individuality, an
 CC (Claude Code) built a complete web scaffold:
 - **43 files** — FastAPI app, 7 router groups, Jinja2 templates, partials, CSS
 - **21 routes** — all returning 200, serving both JSON and HTML
-- **1762 tests** — all passing
+- **1916 tests** — all passing
 - **Meridian CSS design system** — navy/amber/off-white, Georgia serif headings, institutional feel
 - **HTMX** progressive enhancement
 - **Demo seed data** — actors, missions, bids, completed work with escrow

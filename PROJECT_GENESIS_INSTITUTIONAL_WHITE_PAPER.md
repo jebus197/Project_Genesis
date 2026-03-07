@@ -1138,7 +1138,7 @@ This section provides an honest accounting of what exists, what is designed but 
 
 ### 24.1 What is built and tested
 
-As of March 2026, 1887 automated tests pass across 100 design tests. The following subsystems are implemented:
+As of March 2026, 1916 automated tests pass across 106 design tests. The following subsystems are implemented:
 
 | Subsystem | Tests | Key files |
 |-----------|-------|-----------|
@@ -1185,7 +1185,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 | Artifact | Command | Purpose |
 |----------|---------|---------|
-| Full test suite | `python3 -m pytest tests/ -q` | 1887 tests, ~12 seconds |
+| Full test suite | `python3 -m pytest tests/ -q` | 1916 tests, ~12 seconds |
 | Invariant checker | `python3 tools/check_invariants.py` | Constitutional parameter validation |
 | Constitutional params | `config/constitutional_params.json` | Machine-readable parameter mirror |
 | Runtime policy | `config/runtime_policy.json` | Risk-tier policy mapping |
@@ -1195,7 +1195,7 @@ These have defined protocols, registries, or constitutional provisions but requi
 
 Project Genesis is an institutional coordination model for AI-enabled work. Its significance lies not in claiming a new intelligence breakthrough, but in constructing the governance, verification, and economic substrate that makes existing intelligence systems usable in trust-sensitive environments.
 
-The system has 100 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
+The system has 106 design tests, 5 entrenched provisions, a three-chamber amendment engine, a three-tier justice system, an escrow-first economy, a constitutional common fund, payment infrastructure sovereignty, distributed intelligence protocols, a distributed immune system, four governance bodies, a four-tier machine agency pathway, disability accommodation, protected leave, and open work as a structural property. These are not aspirational — they are tested in code and enforced by constitutional constraint.
 
 The project is feasible with current technology. Its success will depend on disciplined governance design, evidence integrity, and faithful adherence to its constitutional trust principle. The single-founder risk (§18.8) is the most significant vulnerability during the G0 period. These canonical documents exist to mitigate that risk.
 

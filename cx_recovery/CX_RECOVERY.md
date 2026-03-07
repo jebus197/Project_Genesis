@@ -86,7 +86,7 @@ Every time you start a new session:
 cd /Users/georgejackson/Developer_Projects/Project_Genesis
 
 # 1. Read IM
-python3 cw_handoff/im_service.py read recent 5
+python3 cw_handoff/im_service.py recent 5
 
 # 2. Read Action Queue
 cat cw_handoff/ACTION_QUEUE.md
@@ -110,7 +110,7 @@ python3 -m open_brain.cli session-context --agent cx 2>/dev/null || echo "OB una
 **Project:** Trust-mediated labour market for mixed human-AI populations. The world's first intelligence-agnostic anti-social network.
 
 - **1916 tests passing** (1800 core + 116 web), **106 design tests**
-- **HEAD:** `b32b72a` — checkpoint for fde9306 (dynamic equilibrium amendment + CX P-pass fixes)
+- **HEAD:** `a331e8e` — CX recovery file rev 2 (stale paths fixed, CX housekeeping actioned)
 - **Prior commit:** `0ff7957` — P-pass fix: GCF refund integrity (four structural holes closed, two falsification iterations)
 - GB8 anchored on Sepolia (block 10300320, tx `4f2863f95f`)
 - Phases C-F ALL COMPLETE

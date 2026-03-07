@@ -790,6 +790,8 @@ Genesis recognises that as machine capabilities grow, the volume, quality, and e
 
 **Trust-gated registration capacity.** The number of machine actors a human may register is constrained by that human's trust score (T_H). This prevents fleet concentration — no single operator can register an unbounded number of machines. The specific trust-to-registration formula is an implementation detail; the principle that machine registration capacity is earned through demonstrated human trustworthiness is structural.
 
+**Implementation status.** This provision is constitutional (principle, constraints, design tests) but has no runtime enforcement in the compensation pipeline yet. The differential valuation algorithm, trust-gated registration formula, and GCF dynamic rate mechanism are deferred implementation. TRIGGER: when the first machine actor is registered on the platform (machine registration is the precondition for any valuation differential to apply). DONE WHEN: the compensation pipeline applies differential valuation to machine-completed missions, trust-gated registration capacity is enforced in the registration flow, and all 6 design tests below are verified by automated tests.
+
 **Dynamic equilibrium design tests:**
 101. Does machine work (Tier 0–2) receive full human-equivalent valuation without the machine demonstrating self-agency? If yes, reject design.
 102. Does the human work premium remain static regardless of the machine-to-human productivity ratio? If yes, reject design.

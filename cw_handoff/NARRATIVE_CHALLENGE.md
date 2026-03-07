@@ -9,7 +9,7 @@
 
 ## A — What Went Wrong (Two Rounds of Failure)
 
-CC built a working web layer: 43 files, 21 routes, 1762 tests passing, Meridian CSS design system, JSON + HTML content negotiation, HTMX progressive enhancement. Everything renders. Everything works.
+CC built a working web layer: 43 files, 21 routes, 1916 tests passing, Meridian CSS design system, JSON + HTML content negotiation, HTMX progressive enhancement. Everything renders. Everything works.
 
 **And it's lifeless.**
 
@@ -101,7 +101,7 @@ CC built a working web layer that the winning narrative design will be implement
 
 - **43 files** across `src/genesis/web/` — app factory, 7 router groups, Jinja2 templates, partials, Meridian CSS
 - **21 routes** — all returning 200, all serving both JSON and HTML (content negotiation)
-- **1762 tests** — all passing, including 21 web smoke tests
+- **1916 tests** — all passing, including 21 web smoke tests
 - **Meridian CSS** (599 lines) — navy (#1a2332), amber (#d4a574), off-white (#f8f6f3), Georgia serif headings, 4px radius, institutional feel
 - **HTMX** progressive enhancement — partial page updates, every page works without JavaScript
 - **Service layer** facade — 154 public methods, all returning `ServiceResult(success, errors, data)`
@@ -165,7 +165,7 @@ Existing CSS classes: `.panel`, `.card`, `.eyebrow`, `.grid-2`, `.grid-3`, `.btn
 2. Must preserve all **15 design constraints** from BRIEF.md (no engagement bait, no prestige hierarchy, etc.)
 3. Must work with the existing **Meridian design tokens** (can extend, not replace)
 4. Must keep the existing **route structure** (can ADD pages/routes, not remove working ones)
-5. Must pass the existing **1762 tests** (smoke tests verify status codes, not content)
+5. Must pass the existing **1916 tests** (smoke tests verify status codes, not content)
 6. **PoC banner** on every page — users must always know they're viewing demonstration data
 7. **Creator allocation** visible as named line item in every breakdown
 8. **"Why this appears"** on every list ordering

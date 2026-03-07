@@ -8,7 +8,7 @@
 
 ## The Problem
 
-1 star. 0 forks. 0 watchers. Zero community. The UX is unfinished. The product works (1741 tests, 8 blockchain anchors, full governance stack). Nobody knows it exists.
+1 star. 0 forks. 0 watchers. Zero community. The UX is unfinished. The product works (1916 tests, 8 blockchain anchors, full governance stack). Nobody knows it exists.
 
 Perfecting the landing page in private will not solve this. This is a distribution problem.
 
@@ -27,7 +27,7 @@ Perfecting the landing page in private will not solve this. This is a distributi
 - 20 repository topics already set
 - MIT License
 - The "anti-social network" framing — this is a hook
-- 95 design tests proving constitutional constraints hold
+- 106 design tests proving constitutional constraints hold
 - Worked examples (low-risk + high-risk mission bundles)
 - Constitutional invariant checker + example verification tools
 
@@ -51,7 +51,7 @@ Before any outreach, fix these low-effort high-impact items:
 MIT License exists. Consider adding a badge to the top of the README.
 
 ### 2. Create a GitHub Release (v0.1.0-poc)
-Tag `b9921e8` as `v0.1.0-poc`. This signals that the project is real and milestone-tracked. Pre-release flag on. Release notes should reference: 1741 tests, 8 blockchain anchors, full governance stack.
+Tag `b9921e8` as `v0.1.0-poc`. This signals that the project is real and milestone-tracked. Pre-release flag on. Release notes should reference: 1916 tests, 8 blockchain anchors, full governance stack.
 
 ### 3. Add a "Quick Start" section to README
 Right after the status banner. Something like:
@@ -60,7 +60,7 @@ Right after the status banner. Something like:
 git clone https://github.com/jebus197/Project_Genesis.git
 cd Project_Genesis
 pip install -e ".[dev]"
-python -m pytest tests/ -q          # 1741 tests
+python -m pytest tests/ -q          # 1916 tests
 python tools/check_invariants.py    # Constitutional invariant checks
 ```
 This is the first thing a developer looks for. Without it, most visitors bounce.
@@ -88,7 +88,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 **The audience:** Developers, open source contributors, tech enthusiasts, HN readers, Reddit communities, people building or using tools. They evaluate projects by: code quality, test coverage, architectural novelty, honest communication, and whether the project solves a real problem they recognise.
 
-**The hook:** "The anti-social network — 1741 tests, zero tokens, zero hype."
+**The hook:** "The anti-social network — 1916 tests, zero tokens, zero hype."
 
 **The credential:** Working code. Tests that pass. A README that doesn't lie. Blockchain anchors you can verify yourself.
 
@@ -101,14 +101,14 @@ Genesis speaks to three fundamentally different audiences, each with different m
 **Draft title options (George picks one):**
 - `Show HN: Genesis – An anti-social network for trusted human-AI work`
 - `Show HN: Genesis – A trust-first labour market where AI can't vote and trust can't be bought`
-- `Show HN: Genesis – 1741 tests, 8 blockchain anchors, zero tokens, zero hype`
+- `Show HN: Genesis – 1916 tests, 8 blockchain anchors, zero tokens, zero hype`
 
 **Draft description:**
 > Genesis is a governance-first work platform for humans and AI. Trust is earned through verified outcomes, never bought. Machines work and earn but can't vote. Every action is cryptographically logged and blockchain-anchored. The commission rate is deterministic — it goes down as the system grows, not up.
 >
 > There's no token, no DAO, no NFT. The blockchain is used as a notary, not a product — the way Haber and Stornetta intended when they invented cryptographic timestamping in 1991.
 >
-> 1741 tests. 95 design tests. 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
+> 1916 tests. 106 design tests. 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
 >
 > Looking for people who care about AI governance, institutional design, or building trust infrastructure. Especially: UX designers who want to help build the front end of something that works differently.
 
@@ -118,7 +118,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 - *"Why Sepolia not mainnet?"* — PoC phase. Mainnet anchoring is a production decision. The technique is identical; the cost is different.
 - *"What's the business model?"* — The dynamic commission (2-10%, trends toward floor). The platform cannot extract profit — every unit is itemised. There are no investors and no shareholders.
 - *"How does this compete with X?"* — It doesn't compete with freelance platforms. It competes with the *absence* of governance infrastructure for AI work. Nobody else is building this.
-- *"Is this vaporware?"* — 1741 tests. Clone the repo and run them. Constitutional invariant checker. Worked examples. Blockchain anchors. The code is the answer.
+- *"Is this vaporware?"* — 1916 tests. Clone the repo and run them. Constitutional invariant checker. Worked examples. Blockchain anchors. The code is the answer.
 - *"One person built this?"* — Yes, with AI assistance (Claude Code for implementation, Codex for review). That's part of the point — Genesis is itself a proof of concept for structured human-AI collaboration.
 - *"Why would I use this over Upwork/Fiverr?"* — You wouldn't, for casual work. Genesis is for work where the question "can I verify who did this and how it was checked?" actually matters. Healthcare, infrastructure, public policy, safety-critical engineering.
 
@@ -137,7 +137,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 | r/artificial | ~500K | AI governance, the "anti-social network" hook | Self-post, discussion framing |
 | r/MachineLearning | ~3M | Technical governance, trust scoring, constitutional AI | Technical post, link to White Paper |
 | r/ethereum | ~2M | Blockchain as notary (Haber-Stornetta), non-token use | Technical post about anchoring |
-| r/ExperiencedDevs | ~200K | Architecture, 1741 tests, governance-as-code | Self-post about the engineering challenge |
+| r/ExperiencedDevs | ~200K | Architecture, 1916 tests, governance-as-code | Self-post about the engineering challenge |
 | r/OpenSource | ~100K | MIT license, contribution model, CONTRIBUTING.md | "Building in public" framing |
 | r/singularity | ~1M | Human-AI coordination, machine voting prohibition | Discussion about AI governance structure |
 | r/AIethics | ~30K | Small but directly relevant | Long-form post on constitutional approach |
@@ -154,7 +154,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 >
 > The "anti-social" part: I took every pathology from traditional social networks (popularity ranking, engagement optimisation, algorithmic opacity, pay-for-visibility) and structurally eliminated them. What's left is a network — missions, matching, bidding, reviews — without the social poison.
 >
-> 1741 tests, 95 design tests, 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
+> 1916 tests, 106 design tests, 8 constitutional anchors on Ethereum Sepolia. Full source, MIT license.
 >
 > Genuinely looking for feedback. Especially from anyone who's thought seriously about how to govern AI systems.
 
@@ -167,7 +167,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 **Article ideas (each ~1000-2000 words):**
 1. "Why I built an anti-social network" — the Popperian falsification story, what was eliminated and why
 2. "Blockchain as notary: using Ethereum the way Haber and Stornetta intended" — the anchoring mechanism
-3. "1741 tests for a governance framework" — the testing philosophy, design tests, constitutional invariants
+3. "1916 tests for a governance framework" — the testing philosophy, design tests, constitutional invariants
 4. "What happens when trust can't be bought" — the trust economics, bounded trust, decay mechanics
 5. "AI workers that can't vote" — the trust domain separation, why machines are excluded from governance
 6. "Building a three-tier justice system in Python" — adjudication, Constitutional Court, soft precedent
@@ -196,7 +196,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 **The audience:** Researchers in AI governance, mechanism design, institutional economics, constitutional design, computational social choice, trust systems, blockchain governance. They evaluate projects by: theoretical rigour, novelty of contribution, relationship to existing literature, and whether the work advances the field.
 
-**The hook:** "A working implementation of constitutional AI governance — not a policy paper, not a position statement, but 1741 tests and a blockchain-anchored constitution."
+**The hook:** "A working implementation of constitutional AI governance — not a policy paper, not a position statement, but 1916 tests and a blockchain-anchored constitution."
 
 **The credential:** The White Paper. The constitution. The formal governance framework (three-tier justice, amendment engine, entrenched provisions, three-chamber ratification). The Popperian falsification design standard.
 
@@ -210,7 +210,7 @@ Genesis speaks to three fundamentally different audiences, each with different m
 
 **Format:** Long-form post (3000-5000 words) titled something like: "Constitutional governance for AI work: a working implementation" or "Popperian falsification applied to social network design: eliminating what fails."
 
-**Angle:** "Most AI governance proposals are policy papers or ethical frameworks. This one has 1741 tests, a three-tier justice system, and a constitutional amendment engine. Here's what it looks like when you actually build the governance infrastructure instead of writing about it."
+**Angle:** "Most AI governance proposals are policy papers or ethical frameworks. This one has 1916 tests, a three-tier justice system, and a constitutional amendment engine. Here's what it looks like when you actually build the governance infrastructure instead of writing about it."
 
 **What to include:**
 - The Popperian falsification framework as a design methodology
