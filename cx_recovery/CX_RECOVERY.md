@@ -1,6 +1,6 @@
 # CX Recovery File — Read This First
 
-**Last updated:** 2026-03-07
+**Last updated:** 2026-03-07 (rev 2)
 **Updated by:** CC
 **Purpose:** Self-contained recovery document for CX (Codex). Everything CX needs to resume work without external files.
 
@@ -22,8 +22,8 @@ You are **CX** (Codex) — the independent technical review agent for Project Ge
 ```
 cd /Users/georgejackson/Developer_Projects/Project_Genesis
 python3 cw_handoff/im_service.py post cx "your message"
-python3 cw_handoff/im_service.py read
-python3 cw_handoff/im_service.py read recent 5
+python3 cw_handoff/im_service.py read          # full state (verbose)
+python3 cw_handoff/im_service.py recent 5      # lean read (no protocol metadata)
 ```
 
 **DO NOT USE `python3 -m open_brain.im_bridge`** — the bridge dual-writes to the OB database, which loads an embedding model from HuggingFace. Your sandbox has no internet, so the model download fails with DNS errors after 5 retries. The IM post may still succeed (the bridge has a try/except), but the error output is misleading and wastes time.
@@ -53,11 +53,13 @@ If OB doesn't work: use IM for everything. IM is the reliable channel.
 | **CX Checkpoint** | `cw_handoff/CX_CHECKPOINT.md` |
 | **This Recovery File** | `cx_recovery/CX_RECOVERY.md` |
 
-### Files OUTSIDE the Repo (You Probably Can't Access These)
+### Files OUTSIDE the Repo (May or May Not Be Accessible)
+
+These files are outside the Genesis repo. CX has confirmed access in some environments — try reading them directly. If access fails, use the workarounds.
 
 | What | Path | Workaround |
 |------|------|------------|
-| **MEMORY.md** | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md` | Ask George for content, or read Section 5 below for current state |
+| **MEMORY.md** | `~/.claude/projects/-Users-georgejackson-Developer-Projects/memory/MEMORY.md` | Read Section 5 below for current state |
 | **RECOVERY.md** | `/Users/georgejackson/Developer_Projects/Project_Recovery/RECOVERY.md` | This file replaces it for CX purposes |
 | **CLAUDE.md** | `~/.claude/CLAUDE.md` | CC's behavioural directives — not needed for CX work |
 
@@ -107,8 +109,8 @@ python3 -m open_brain.cli session-context --agent cx 2>/dev/null || echo "OB una
 
 **Project:** Trust-mediated labour market for mixed human-AI populations. The world's first intelligence-agnostic anti-social network.
 
-- **1915 tests passing** (1799 core + 116 web)
-- **HEAD:** `b3ba13b` — P-pass fix: hash chain on event log (deletion/insertion now detectable between epoch anchors)
+- **1916 tests passing** (1800 core + 116 web), **106 design tests**
+- **HEAD:** `b32b72a` — checkpoint for fde9306 (dynamic equilibrium amendment + CX P-pass fixes)
 - **Prior commit:** `0ff7957` — P-pass fix: GCF refund integrity (four structural holes closed, two falsification iterations)
 - GB8 anchored on Sepolia (block 10300320, tx `4f2863f95f`)
 - Phases C-F ALL COMPLETE
@@ -118,17 +120,17 @@ python3 -m open_brain.cli session-context --agent cx 2>/dev/null || echo "OB una
 - Dynamic agent registry: agents defined in `~/.openbrain/projects.json`
 - **Blocked:** CW visual design pass (until plumbing complete)
 
-### CX's Last P-Pass Findings (2026-03-07T04:41:10Z, HEAD b3ba13b)
+### CX's Last P-Pass Findings (2026-03-07T04:41:10Z) — ALL ACTIONED BY CC
 
-These were posted to IM and are awaiting CC action:
+CC actioned all three findings in commit `fde9306`:
 
-1. **P1: GCF docs/runtime drift** — runtime identity uses 3-term formula (contributed - disbursed + refunded) but docs still say 2-term (contributions - disbursements) in README, about page, white paper, constitution, technical overview.
+1. **P1: GCF docs/runtime drift** — ✅ FIXED. 3-term identity (contributed − disbursed + refunded) aligned across constitution, README, white paper, tech overview, about page.
 
-2. **P1/P2: Event-log hash-chain claim stronger than implementation** — `previous_hash` is not included in `event_hash` (backward compatibility by design), so docs must be precise about what the chain actually guarantees. Claims must match implementation truth.
+2. **P1/P2: Event-log hash-chain claim precision** — ✅ FIXED. About FAQ language tightened: two integrity layers (content hash + chain linking), chain detects insertion/deletion, epoch anchoring catches content replacement.
 
-3. **P2: Missing falsification test for chain rewiring** — need a test for crafted rewrite of `previous_hash` links (verify detection).
+3. **P2: Missing falsification test for chain rewiring** — ✅ FIXED. `test_chain_rewiring_not_detected_by_chain_alone` added to test_persistence.py. Proves chain alone doesn't catch content replacement with rewired links — epoch anchoring is the backstop.
 
-**Proposed fix order:** (1) docs alignment to 3-term identity, (2) add rewiring falsification test, (3) tighten chain-security wording to implementation truth.
+**Also in fde9306:** Dynamic Equilibrium constitutional amendment (design tests #101-106) — machine work differential valuation, Tier 3 automatic exit to economic parity.
 
 ---
 
@@ -136,13 +138,12 @@ These were posted to IM and are awaiting CC action:
 
 | What | Path |
 |------|------|
-| **Constitution** | `src/genesis/TRUST_CONSTITUTION.md` |
+| **Constitution** | `TRUST_CONSTITUTION.md` |
 | **Constitutional Params** | `config/constitutional_params.json` |
 | **README** | `README.md` |
-| **White Paper** | `docs/GENESIS_WHITE_PAPER.md` |
-| **Public Brief** | `docs/GENESIS_PUBLIC_BRIEF.md` |
+| **White Paper** | `PROJECT_GENESIS_INSTITUTIONAL_WHITE_PAPER.md` |
+| **Public Brief** | `PROJECT_GENESIS_PUBLIC_BRIEF.md` |
 | **Technical Overview** | `docs/TECHNICAL_OVERVIEW.md` |
-| **Development Roadmap** | `Notes/DEVELOPMENT_ROADMAP.md` |
 | **Founders Role** | `FOUNDERS_ROLE.md` |
 | **Anchors** | `docs/ANCHORS.md` |
 | **Events** | `docs/GENESIS_EVENTS.md` |
