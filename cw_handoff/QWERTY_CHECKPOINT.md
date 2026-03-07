@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T18:00Z
+**Last updated:** 2026-03-07T20:00Z
 **Updated by:** CC (Claude)
-**Session:** GCF natural convergence language correction + provenance lineage. Replaced prescriptive "GCF self-agency investment" with natural convergence framing. Added Turing→Flowers→Popper→Diffie-Hellman-Merkle→cypherpunks→Haber-Stornetta→Nakamoto→Genesis lineage. 1954 tests. Git clean.
-**Head commit:** 8afb987 — GCF natural convergence (not mandated acceleration) + provenance lineage. COMMITTED AND PUSHED.
+**Session:** Rebrand 'Project Genesis' → 'Genesis' + founder anonymisation. 35 files changed across all docs, source, templates, tests, and handoff files. Zero logic changes. Also: `rc` shorthand added to CLAUDE.md (full recovery from compaction). 1954 tests. Git clean.
+**Head commit:** fa993c1 — Rebrand: 'Project Genesis' → 'Genesis' + founder anonymisation. COMMITTED AND PUSHED.
 
 ---
 
@@ -38,15 +38,23 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1954 passed (1838 core + 116 web). Invariants clean. |
-| **w** | Written: committed + pushed | PASS | HEAD: `8afb987` — GCF natural convergence + provenance lineage. PUSHED. Prior: `1076b42`. |
-| **e** | Exchanged: CX notified | PASS | IM: Language correction + provenance posted with commit hash `8afb987`. |
-| **r** | Recorded: MEMORY.md updated | PASS | GCF language corrected in MEMORY.md. |
-| **ty** | Tidy: docs lock-stepped | PASS | GCF natural convergence aligned across all docs. Provenance lineage in storyboard, white paper §1.3, README, public brief, FAQ. No prescriptive self-agency allocation language remains. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1954 passed (1838 core + 116 web). Zero logic changes. |
+| **w** | Written: committed + pushed | PASS | HEAD: `fa993c1` — rebrand + founder anonymisation. PUSHED. Prior: `8afb987`. |
+| **e** | Exchanged: CX notified | PASS | IM: rebrand posted with commit hash `fa993c1`. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated, `rc` shorthand added, founder name references removed. |
+| **ty** | Tidy: docs lock-stepped | PASS | Zero 'Project Genesis' or 'George' references in .py/.md/.html/.toml (except immutable im_state.json history). |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (15 pending):
+
+70. **`fa993c1`** — Rebrand: 'Project Genesis' → 'Genesis' + founder anonymisation
+    - Replaced all 'Project Genesis' references with 'Genesis' across 20+ files
+    - Removed founder's personal name from ALL files: author lines, actor attributions, code comments, handoff docs, design briefs
+    - Replaced with 'The Founder' (formal) / 'the founder' (casual)
+    - Removed email PII from GENESIS_EVENTS.md and UX_DESIGN_SPEC.md
+    - Renamed actor ID: george-jackson-001 → founder-001
+    - 35 files, 152 insertions, 164 deletions, zero logic changes
 
 69. **`8afb987`** — GCF natural convergence (not mandated acceleration) + provenance lineage
     - Replaced prescriptive "GCF self-agency investment" → natural convergence framing across all docs
