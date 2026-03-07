@@ -300,6 +300,25 @@ STORYBOARD_TRACKS = {
                 "deep_label": "Read First Light FAQ",
             },
             {
+                "title": "What If The Founder Disappears",
+                "summary": "The founder's authority is a single point of failure during G0. The constitution has a structural answer — and it is not appointing a successor.",
+                "paragraphs": [
+                    "Every system built around a single authority faces the same question eventually: what happens when that authority is gone? History's answer is almost always succession — find another person, transfer the power. Genesis rejects that model entirely.",
+                    "If the founder's verified Genesis identity shows no cryptographically signed activity for 180 consecutive days, the founder's constitutional authority — including the veto — dissolves. Not transfers. Dissolves. No individual inherits it. No committee claims it. The governance mechanisms that already exist at whatever phase the network has reached simply continue operating, minus the founder's role as a distinct constitutional position.",
+                    "The mechanism is automatic and structural. It requires no ballot, no quorum, and no governance action to activate. It cannot be overridden, extended, or deferred by any party — including the founder. Any signed action from the founder resets the counter. If G1 is subsequently reached through normal growth, the emergency state is absorbed seamlessly into standard governance. The distributed authority was always the destination — this provision just ensures the network reaches it even if its founder does not.",
+                    "This is not a contingency plan for network failure. If Genesis cannot attract enough participants to sustain governance, the G0 time limit handles that independently — the network shuts down or restructures. The founder continuity provision addresses a different problem: founder incapacity. The two are structurally distinct, and the constitution treats them that way.",
+                ],
+                "points": [
+                    "Authority dissolves, not transfers — no individual inherits it.",
+                    "Activates automatically after 180 days of founder inactivity.",
+                    "No ballot, no quorum, no governance action required.",
+                    "Cannot be overridden or deferred by any party, including the founder.",
+                    "Network non-viability handled independently by the G0 time limit.",
+                ],
+                "deep_link": "/about#faq-governance",
+                "deep_label": "Read governance FAQ",
+            },
+            {
                 "title": "The Epochs",
                 "summary": "Genesis scales in four constitutional phases — from a handful of people to full self-governance. Each transition is one-way.",
                 "paragraphs": [
@@ -384,7 +403,7 @@ STORYBOARD_TRACKS = {
                 "title": "It Is Real",
                 "summary": "Genesis is not a whitepaper, a pitch deck, or science fiction. Every claim in this walkthrough traces to a specific file, test, or on-chain record.",
                 "paragraphs": [
-                    "Everything you have just read is backed by executable code. The constitution is anchored on Ethereum. Over 1,800 tests verify constitutional compliance. The audit surface is public and navigable from any page on this platform.",
+                    "Everything you have just read is backed by executable code. The constitution is anchored on Ethereum. Nearly 2,000 tests verify constitutional compliance. The audit surface is public and navigable from any page on this platform.",
                     "The code is fully open source — anyone can clone, read, and run it. The deep links throughout this walkthrough go to real, functional pages — not mockups, not wireframes, not coming-soon placeholders. Researchers can drill to any depth: constitutional text, design tests, governance records, event logs, on-chain anchors.",
                     "Genesis was built from the ground up to contain the capacity to disprove itself. Every element of the design was subjected to severe testing — Karl Popper's method of falsification. Seven features common to social platforms were tested and eliminated: popularity ranking, network effects as structural advantage, prestige weighting, engagement mechanics, algorithmic opacity, earning gamification, and pay-for-visibility. Each was falsified — shown to produce the pathologies it claimed to solve — and removed. What remains has survived every test we have subjected it to — so far. If future evidence falsifies what survives today, the system is designed to surface that failure, not conceal it.",
                     "This is the work of an engineer and his AI collaborators — not the product of marketing, venture capital, or fantasy. If you are a casual visitor, you now have the full picture. If you are a researcher, every claim is verifiable. If you are a sceptic, the audit trail is open.",
@@ -392,7 +411,7 @@ STORYBOARD_TRACKS = {
                 "points": [
                     "Fully open source — clone, read, and run it yourself.",
                     "Constitution anchored on Ethereum (Sepolia, block 10300320).",
-                    "1,800+ tests verify constitutional compliance.",
+                    "Nearly 2,000 tests verify constitutional compliance.",
                     "Built to disprove itself: seven social platform features tested, falsified, and eliminated.",
                     "Every deep link in this walkthrough goes to a real, functional page.",
                     "Audit trail is public, navigable, and open to anyone.",

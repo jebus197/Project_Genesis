@@ -44,7 +44,7 @@ class TestAbout:
         r = await client.get("/about/story")
         assert r.status_code == 200
         assert "The Problem We Could Not Ignore" in r.text
-        assert "Step 1 of 18" in r.text
+        assert "Step 1 of 19" in r.text
         assert "Next →" in r.text
 
     async def test_about_story_step12_first_light(self, client):
@@ -55,27 +55,27 @@ class TestAbout:
         assert "The Road Ahead" in r.text
         assert "Next →" in r.text
 
-    async def test_about_story_step16_distributed_immunity(self, client):
-        """Step 16 is Distributed Immunity — auto-immune system."""
-        r = await client.get("/about/story?step=16")
+    async def test_about_story_step17_distributed_immunity(self, client):
+        """Step 17 is Distributed Immunity — auto-immune system."""
+        r = await client.get("/about/story?step=17")
         assert r.status_code == 200
         assert "Distributed Immunity" in r.text
         assert "threat signal" in r.text.lower()
         assert "Next →" in r.text
 
-    async def test_about_story_step17_self_falsification(self, client):
-        """Step 17 (It Is Real) includes the self-falsification observation."""
-        r = await client.get("/about/story?step=17")
+    async def test_about_story_step18_self_falsification(self, client):
+        """Step 18 (It Is Real) includes the self-falsification observation."""
+        r = await client.get("/about/story?step=18")
         assert r.status_code == 200
         assert "disprove itself" in r.text
         assert "falsif" in r.text.lower()
 
-    async def test_about_story_step18_founders_horizon(self, client):
-        """Step 18 is the final step — founder's horizon, no Next arrow."""
-        r = await client.get("/about/story?step=18")
+    async def test_about_story_step19_founders_horizon(self, client):
+        """Step 19 is the final step — founder's horizon, no Next arrow."""
+        r = await client.get("/about/story?step=19")
         assert r.status_code == 200
         assert "The Founder" in r.text
-        assert "Step 18 of 18" in r.text
+        assert "Step 19 of 19" in r.text
         assert "Next →" not in r.text
         assert "Explore missions" in r.text
 
@@ -89,10 +89,10 @@ class TestAbout:
         """Out-of-range steps clamp to valid bounds."""
         r0 = await client.get("/about/story?step=0")
         assert r0.status_code == 200
-        assert "Step 1 of 18" in r0.text
+        assert "Step 1 of 19" in r0.text
         r999 = await client.get("/about/story?step=999")
         assert r999.status_code == 200
-        assert "Step 18 of 18" in r999.text
+        assert "Step 19 of 19" in r999.text
 
     async def test_about_story_legacy_redirect(self, client):
         """Old /about/story/why?scene=2 redirects to /about/story?step=2."""
@@ -162,12 +162,12 @@ class TestAbout:
         r1 = await client.get("/about/story?step=1")
         assert r1.status_code == 200
         assert "/about#faq-" in r1.text
-        # Step 14 (Beyond The Data Centre) links to /about#faq-compute
-        r14 = await client.get("/about/story?step=14")
-        assert "/about#faq-compute" in r14.text
-        # Step 15 (Coexistence) links to /about#faq-machines
+        # Step 15 (Beyond The Data Centre) links to /about#faq-compute
         r15 = await client.get("/about/story?step=15")
-        assert "/about#faq-machines" in r15.text
+        assert "/about#faq-compute" in r15.text
+        # Step 16 (Coexistence) links to /about#faq-machines
+        r16 = await client.get("/about/story?step=16")
+        assert "/about#faq-machines" in r16.text
 
 
     async def test_about_readme_html(self, client):
