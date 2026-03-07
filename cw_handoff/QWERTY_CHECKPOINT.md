@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T02:15Z
+**Last updated:** 2026-03-07T03:30Z
 **Updated by:** CC (Claude)
-**Session:** CC P-pass (self-falsification). 10/10 storyboard claims survived. 5 structural GCF custody findings (P1-P5): ghost refund path (HIGH), no hash chain (MEDIUM-HIGH), accounting identity false with refunds (MEDIUM), from_dict trusts stored balance (MEDIUM), mutable GCFState (LOW). Quick doc fixes committed. Structural items recorded in OB for future engineering. CX prose directive posted. 1887 tests. Git clean.
-**Head commit:** c19f322 — P-pass fixes: terminology consistency + FAQ rate. COMMITTED AND PUSHED.
+**Session:** P-pass structural fixes (iterative). All 5 P-pass findings (P1-P5) FIXED, not deferred. Group A (gcf.py): GCFRefund dataclass, three-term accounting identity, economic upper bound, from_dict full cross-verification, immutable get_state — 2 falsification iterations. Group B (event_log.py): hash chain via previous_hash, automatic linking, deletion detection. P-pass methodology corrected: iterate to fix, not identify-and-defer. 1915 tests. Git clean.
+**Head commit:** b3ba13b — P-pass fix: hash chain on event log. COMMITTED AND PUSHED.
 
 ---
 
@@ -38,15 +38,26 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1887 passed (1771 core + 116 web). |
-| **w** | Written: committed + pushed | PASS | HEAD: `c19f322` — P-pass fixes. PUSHED. |
-| **e** | Exchanged: CX notified | PASS | IM: prose directive + P-pass results + c19f322 posted. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to c19f322. OB: P-pass findings + prose directive stored. |
-| **ty** | Tidy: docs lock-stepped | PASS | Zero "accounting state" in code. FAQ rate specified. 5 structural findings deferred with OB record. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1915 passed (1799 core + 116 web). |
+| **w** | Written: committed + pushed | PASS | HEAD: `b3ba13b` — hash chain fix. PUSHED. Prior: `0ff7957` — GCF refund integrity. |
+| **e** | Exchanged: CX notified | PASS | IM: both commits + P-pass methodology directive + prose consultation directive posted. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to b3ba13b, 1915 tests. OB: P-pass methodology + session summary stored. |
+| **ty** | Tidy: docs lock-stepped | PASS | All P1-P5 structural findings FIXED (not deferred). Zero "accounting state" in code. |
 
 ## Commits Pending CX Review
 
 CX review fixes + canonical doc rewrite + code commits (13 pending):
+
+64. **`b3ba13b`** — P-pass fix: hash chain on event log — deletion/insertion now detectable between epoch anchors
+    - event_log.py: GENESIS_HASH sentinel, previous_hash field on EventRecord, automatic chain linking in append()
+    - _load_from_file() verifies chain on recovery, legacy backward compatibility
+    - test_persistence.py: +6 hash chain tests (genesis link, propagation, head tracking, persist/load, broken chain, legacy)
+
+63. **`0ff7957`** — P-pass fix: GCF refund integrity — four structural holes closed, two falsification iterations
+    - gcf.py: GCFRefund dataclass, total_refunded/refund_count on GCFState, credit_refund() with economic upper bound, verify_accounting_identity(), immutable get_state() snapshot, from_dict() full cross-verification (balance + totals + counts)
+    - event_log.py: GCF_REFUND_CREDITED EventKind
+    - service.py: event emission + persistence in cancel_gcf_funded_listing()
+    - test_gcf.py: +22 tests (refunds, accounting identity, persistence integrity, state immutability)
 
 62. **`c19f322`** — P-pass fixes: terminology consistency + FAQ rate specificity
     - state_store.py, test_workflow.py: "accounting state" → "accounting identity" (2 residual mismatches)

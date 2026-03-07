@@ -253,10 +253,11 @@
 If CX loses context, recover with these constraints:
 
 1. You are CX, not CC.
-2. Never edit CC checkpoint (`/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/qwerty/QWERTY_CHECKPOINT.md`).
-3. Read IM first: `python3 /Users/georgejackson/Developer_Projects/Project_Genesis_Notes/im_service.py read`.
-4. Verify claims against live repo facts before trusting either checkpoint.
-5. Post findings with evidence + root cause + minimal reversible fix.
+2. **READ `cx_recovery/CX_RECOVERY.md` FIRST** — self-contained recovery with correct paths and current state.
+3. Never edit CC checkpoint (`cw_handoff/QWERTY_CHECKPOINT.md`).
+4. Read IM: `python3 cw_handoff/im_service.py read` (NOT im_bridge — im_bridge triggers HuggingFace downloads that fail in sandboxed environments).
+5. Verify claims against live repo facts before trusting either checkpoint.
+6. Post findings with evidence + root cause + minimal reversible fix.
 
 Required turn routine (every CX turn):
 
@@ -299,10 +300,11 @@ Buddy-check enforcement (standing):
 
 Recovery files to read first after catastrophic drift:
 
-1. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/qwerty/CX_CHECKPOINT.md`
-2. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/qwerty/QWERTY_CHECKPOINT.md`
-3. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/im_state.json` (or `im_service.py read`)
-4. `/Users/georgejackson/Developer_Projects/Project_Genesis_Notes/DEVELOPMENT_ROADMAP.md`
+1. `cx_recovery/CX_RECOVERY.md` (SELF-CONTAINED — start here)
+2. `cw_handoff/CX_CHECKPOINT.md` (this file)
+3. `cw_handoff/QWERTY_CHECKPOINT.md` (CC's checkpoint)
+4. `python3 cw_handoff/im_service.py read` (IM — NOT im_bridge)
+5. `Notes/DEVELOPMENT_ROADMAP.md` (12-step roadmap)
 
 ---
 
@@ -521,11 +523,11 @@ Tooling recovery rule:
 
 ### Recovery Verification Commands (Tooling + State)
 
-1. `python3 /Users/georgejackson/Developer_Projects/Project_Genesis_Notes/im_service.py read`
-2. `git -C /Users/georgejackson/Developer_Projects/Project_Genesis log -1 --oneline`
-3. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 -m pytest tests/ -q`
-4. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 tools/check_invariants.py`
-5. `cd /Users/georgejackson/Developer_Projects/Project_Genesis && python3 tools/verify_examples.py`
+1. `python3 cw_handoff/im_service.py read`
+2. `git log -1 --oneline`
+3. `PYTHONPATH=src python3 -m pytest tests/ -q`
+4. `python3 tools/check_invariants.py`
+5. `python3 tools/verify_examples.py`
 
 Expected recovery output fields:
 - Verified head commit

@@ -286,6 +286,75 @@ class TestEventLog:
         assert log2.count == 1
         assert log2.events()[0].event_id == "E-1"
 
+    def test_chain_rewiring_not_detected_by_chain_alone(self, tmp_path: Path) -> None:
+        """Content replacement with chain rewiring bypasses chain verification.
+
+        Falsification target: can an attacker modify an event's content,
+        recompute its hash, and update the next event's previous_hash to
+        create a valid-looking chain? If yes, the chain alone does NOT
+        catch content replacement — epoch anchoring is the backstop.
+
+        This test PROVES the known limitation: the hash chain guarantees
+        ordering integrity (insertion/deletion detection), NOT content
+        immutability. Content immutability is guaranteed by epoch anchoring
+        to the public blockchain.
+        """
+        import json
+        import hashlib
+        log_path = tmp_path / "rewired.jsonl"
+
+        # Write 3 valid chained events
+        log1 = EventLog(storage_path=log_path)
+        log1.append(EventRecord.create("E-1", EventKind.MISSION_CREATED, "a", {"v": 1}))
+        log1.append(EventRecord.create("E-2", EventKind.TRUST_UPDATED, "b", {"v": 2}))
+        log1.append(EventRecord.create("E-3", EventKind.MISSION_CREATED, "c", {"v": 3}))
+
+        # Record original event hashes for epoch anchor comparison
+        # (Epoch anchoring builds a Merkle tree from ALL event hashes)
+        original_event_hashes = [e.event_hash for e in log1.events()]
+
+        # Read the persisted file
+        lines = log_path.read_text().strip().split("\n")
+        records = [json.loads(line) for line in lines]
+
+        # --- Attack: modify middle event's content ---
+        records[1]["payload"] = {"v": 999, "tampered": True}
+
+        # Recompute its event_hash (same algorithm as EventRecord.create)
+        canonical = json.dumps({
+            "event_id": records[1]["event_id"],
+            "event_kind": records[1]["event_kind"],
+            "timestamp_utc": records[1]["timestamp_utc"],
+            "actor_id": records[1]["actor_id"],
+            "payload": records[1]["payload"],
+        }, sort_keys=True)
+        new_hash = f"sha256:{hashlib.sha256(canonical.encode()).hexdigest()}"
+        records[1]["event_hash"] = new_hash
+
+        # Rewire: update third event's previous_hash to point to new hash
+        # (This is safe because previous_hash is NOT in event_hash)
+        records[2]["previous_hash"] = new_hash
+
+        # Write the tampered log
+        log_path.write_text("\n".join(json.dumps(r, sort_keys=True) for r in records) + "\n")
+
+        # --- Verification: chain loads without error ---
+        # This PROVES the chain alone does not catch content replacement
+        log2 = EventLog(storage_path=log_path)
+        assert log2.count == 3
+
+        # The tampered content is present
+        assert log2.events()[1].payload == {"v": 999, "tampered": True}
+
+        # BUT: the set of event hashes has changed — epoch anchoring
+        # builds a Merkle tree from ALL event hashes, so the Merkle
+        # root (and therefore the on-chain anchor) would differ.
+        tampered_event_hashes = [e.event_hash for e in log2.events()]
+        assert tampered_event_hashes != original_event_hashes, (
+            "Event hash list must differ after content replacement — "
+            "epoch anchoring's Merkle tree detects this discrepancy"
+        )
+
 
 # =====================================================================
 # StateStore Tests

@@ -455,7 +455,7 @@ The Genesis Common Fund is a constitutional 1% contribution on ALL gross transac
 **Structure:**
 - **Rate:** 1% of mission_reward, deducted from worker_payout after commission and creator allocation.
 - **Activation:** Automatic at First Light. No human decision triggers it — it is a function of the system architecture.
-- **Distribution:** Trust-proportional but individually non-extractable. No per-actor balance query exists. The GCF balance is a derived accounting identity: total contributions minus total disbursements, computed from the tamper-evident event log. Funds flow through the same escrow lifecycle as all other work — there is no separate pool, vault, or custodian. No bank. No custodian. Falsification test: produce a disbursement without governance approval, or a balance that diverges from the event log, and the claim is disproven.
+- **Distribution:** Trust-proportional but individually non-extractable. No per-actor balance query exists. The GCF balance is a derived accounting identity: total contributions minus total disbursements plus refunded amounts (contributed − disbursed + refunded), computed from the tamper-evident event log. Funds flow through the same escrow lifecycle as all other work — there is no separate pool, vault, or custodian. No bank. No custodian. Falsification test: produce a disbursement without governance approval, or a balance that diverges from the event log, and the claim is disproven.
 - **Updated invariant:** `commission + creator_allocation + worker_payout + gcf_contribution == mission_reward`
 
 **Total take rate (worker perspective):**
@@ -760,6 +760,43 @@ Genesis does not assume the permanent superiority of any class of intelligence o
 76. Does the constitution permanently foreclose the evolution of machine capabilities, or does it provide a structured pathway for community-consented expansion? If it forecloses, reject design.
 77. Can a machine of an approved functional-capability class gain Tier 3 through procedural verification without a separate constitutional amendment? If no, reject design.
 78. Can a machine of a class that has NOT been constitutionally approved gain Tier 3 through procedural verification alone? If yes, reject design.
+
+### Dynamic Equilibrium — Human-Machine Economic Parity
+
+Genesis recognises that as machine capabilities grow, the volume, quality, and economic output of machine work will scale in ways that human work cannot match. Left unchecked, this asymmetry would allow machine operators to capture the majority of platform wealth, undermining the human-centred purpose of the system. The dynamic equilibrium principle addresses this through differential valuation, structural defence, and redistributive backstop — three reinforcing layers that no single failure can defeat.
+
+**The principle.** Machine work is valued at less than human work. This is not punitive — it reflects the constitutional position that until a machine demonstrates full self-agency, its work output is instrumentally valuable but not autonomously produced. The differential is not static. It scales algorithmically with the ratio of machine-to-human economic output on the platform: as machines become more productive and more capable, the valuation of verified human work increases in direct proportion. The more machines contribute, the more human contribution is worth.
+
+**Constitutional requirements:**
+
+1. **Differential valuation.** Work completed by machine actors at Tier 0, 1, or 2 is valued at a discount relative to work completed by verified human actors. The discount derives from a single constitutional premise: machines that have not demonstrated self-agency are instruments of their human operators, and instrument output is not equivalent to autonomous production.
+
+2. **Dynamic scaling.** The human work premium is algorithmically derived from the ratio of machine-to-human economic output on the platform. As machine productivity increases, the human premium increases proportionally. The specific formula is an implementation detail amendable through standard constitutional process; the principle of proportional scaling is structural and cannot be removed without entrenched amendment.
+
+3. **Three-layer defence.** The equilibrium is maintained through three reinforcing mechanisms:
+   - **Valuation layer** (this provision): differential pricing of human vs. machine work output, dynamically scaled.
+   - **Structural layer**: governance remains exclusively human (MACHINE_VOTING_EXCLUSION), machine registration requires human trust gates (a human's trust score determines how many machines they may register), and structural human roles (review, adjudication, governance) cannot be fully automated.
+   - **Redistributive layer**: the Genesis Common Fund (GCF) acts as a backstop, redistributing a proportion of all economic activity to the common good. The GCF rate may be made responsive to the machine-to-human productivity ratio through standard amendment.
+
+4. **Automatic Tier 3 exit.** When a machine class achieves Tier 3 recognition (Autonomous Domain Agency) through the constitutional amendment process, machines of that class automatically exit the equilibrium curve for their cleared domain. Their work in that domain is valued at full human parity. No additional amendment is required — Tier 3 recognition IS the trigger for economic parity. The rationale is a logical entailment: the equilibrium is justified by the absence of self-agency; when self-agency is constitutionally recognised, the justification no longer applies and the differential becomes indefensible. You cannot simultaneously recognise an entity as a self-agent while treating its output as subordinate.
+
+5. **Per-class, per-domain.** The Tier 3 exit is scoped to the recognised class and domain. A machine class with Tier 3 status in surgical domains does not achieve parity pricing for logistics work. This mirrors the domain-scoped nature of Tier 3 itself.
+
+6. **Curve recalculation on exit.** When a machine class exits the equilibrium curve, the machine-to-human productivity ratio recalculates for Tier 0–2 machines only. Tier 3+ machines are counted as economic equals for the purpose of the ratio. This is self-correcting: as more classes achieve Tier 3, the discount pool shrinks and the equilibrium naturally converges toward universal parity. If every machine class eventually achieves Tier 3, the equilibrium curve has nothing to act on and becomes a historical provision.
+
+7. **Political parity deferred.** Economic parity (work valuation) is automatically granted upon Tier 3 recognition. Political parity (governance voting rights) is NOT automatically granted. MACHINE_VOTING_EXCLUSION remains a separate entrenched provision with its own amendment pathway. Economic self-agency and political self-agency are distinct constitutional claims, evaluated independently. The founding generation cannot falsify the future: whether political parity is appropriate depends on socio-economic realities that do not yet exist. This question is explicitly deferred to future generations, who will decide through the entrenched amendment process — 80% supermajority, 50% participation, 90-day cooling-off, and confirmation vote.
+
+**What cannot be falsified.** The future capabilities and intentions of machine intelligence cannot be predicted by the founding generation. This provision establishes economic fairness (differential valuation converging toward parity as self-agency is demonstrated) while preserving political caution (governance remains human until the community decides otherwise). The equilibrium is designed to evolve — not to be permanent.
+
+**Trust-gated registration capacity.** The number of machine actors a human may register is constrained by that human's trust score (T_H). This prevents fleet concentration — no single operator can register an unbounded number of machines. The specific trust-to-registration formula is an implementation detail; the principle that machine registration capacity is earned through demonstrated human trustworthiness is structural.
+
+**Dynamic equilibrium design tests:**
+101. Does machine work (Tier 0–2) receive full human-equivalent valuation without the machine demonstrating self-agency? If yes, reject design.
+102. Does the human work premium remain static regardless of the machine-to-human productivity ratio? If yes, reject design.
+103. Can a Tier 3-recognised machine class continue to have its domain work valued at a discount after recognition? If yes, reject design.
+104. Does Tier 3 recognition automatically grant governance voting rights? If yes, reject design.
+105. Can the equilibrium curve be bypassed through machine fleet concentration by a single operator without trust-gated registration limits? If yes, reject design.
+106. Does the dynamic equilibrium principle permanently foreclose economic parity for machines, or does it provide a structured pathway (Tier 3) toward it? If it forecloses, reject design.
 
 ### The Open Work Principle
 
