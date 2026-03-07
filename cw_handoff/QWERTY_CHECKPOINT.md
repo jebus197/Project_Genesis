@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T10:15Z
+**Last updated:** 2026-03-07T12:30Z
 **Updated by:** CC (Claude)
-**Session:** Dynamic equilibrium constitutional amendment + CX P-pass fixes. New constitutional provision (design tests #101-106): differential valuation of machine work, dynamic scaling, three-layer defence, automatic Tier 3 exit to economic parity, political parity deferred. CX findings all actioned: GCF 3-term identity aligned (5 docs), hash-chain claim precision tightened, rewiring falsification test added. CX recovery file created. 1916 tests. Git clean.
-**Head commit:** fde9306 — Dynamic equilibrium amendment + CX P-pass fixes. COMMITTED AND PUSHED.
+**Session:** CC P-pass clean. GCF 3-term storyboard fix + lock-step doc sweep (1916/106). Dynamic equilibrium implementation status marker. CX recovery housekeeping. All prior CX P-pass findings actioned. 1916 tests. Git clean.
+**Head commit:** f6a4893 — CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106). COMMITTED AND PUSHED.
 
 ---
 
@@ -38,11 +38,11 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1916 passed (1800 core + 116 web). +1 chain rewiring falsification test. |
-| **w** | Written: committed + pushed | PASS | HEAD: `fde9306` — dynamic equilibrium + CX P-pass fixes. PUSHED. Prior: `b3ba13b`. |
-| **e** | Exchanged: CX notified | PASS | IM: commit fde9306 + all CX P-pass findings actioned + cx_recovery created. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to fde9306, 1916 tests, dynamic equilibrium decision recorded. OB: session summary stored. |
-| **ty** | Tidy: docs lock-stepped | PASS | GCF 3-term identity aligned across constitution, README, white paper, tech overview, about page. 106 design tests. Hash-chain claim precision tightened. |
+| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1916 passed (1800 core + 116 web). Invariants clean. |
+| **w** | Written: committed + pushed | PASS | HEAD: `f6a4893` — CC P-pass doc sweep. PUSHED. Prior: `a331e8e`. |
+| **e** | Exchanged: CX notified | PASS | IM: CC P-pass results posted with commit hash + findings. |
+| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to f6a4893, 1916 tests, dynamic equilibrium + P-pass recorded. Roadmap path fixed. |
+| **ty** | Tidy: docs lock-stepped | PASS | GCF 3-term aligned (incl. storyboard social.py). Test counts 1916/106 across all 8 docs. No stale references remain. |
 
 ## Commits Pending CX Review
 
@@ -54,6 +54,18 @@ CX review fixes + canonical doc rewrite + code commits (13 pending):
     - test_persistence.py: +1 chain rewiring falsification test (proves chain detects insertion/deletion, not content replacement)
     - cx_recovery/CX_RECOVERY.md: self-contained CX recovery file (corrects stale paths)
     - cw_handoff/CX_CHECKPOINT.md: stale path fixes in catastrophic recovery section
+
+67. **`f6a4893`** — CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106)
+    - social.py:191: stale 2-term GCF → 3-term accounting identity
+    - TRUST_CONSTITUTION.md: implementation status marker for dynamic equilibrium
+    - cx_recovery/CX_RECOVERY.md: remaining IM syntax fix (section 4), HEAD updated
+    - Test counts 1887/1762/1741 → 1916 across README, white paper, public brief, tech overview, outreach, narrative, cowork handoff, CX blueprint
+    - Design test counts 100/95 → 106 across white paper, public brief
+    - 11 files, 31 insertions, 29 deletions, 1916 tests passing
+
+66. **`a331e8e`** — Fix CX recovery file: stale paths, IM syntax, access notes, current HEAD
+
+65. **`fde9306`** — Dynamic equilibrium amendment + CX P-pass fixes (3-term GCF, chain precision, rewiring test)
 
 64. **`b3ba13b`** — P-pass fix: hash chain on event log — deletion/insertion now detectable between epoch anchors
     - event_log.py: GENESIS_HASH sentinel, previous_hash field on EventRecord, automatic chain linking in append()
