@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T17:00Z
+**Last updated:** 2026-03-07T18:00Z
 **Updated by:** CC (Claude)
-**Session:** Dynamic equilibrium runtime enforcement. equilibrium.py (differential valuation + trust-gated registration). Wired into CommissionEngine + service.py. 38 new tests (design tests #101-106). GCF self-agency investment clause in constitution. Storyboard + FAQ + all docs lock-stepped. 1954 tests. Git clean.
-**Head commit:** 1076b42 — Dynamic equilibrium: runtime enforcement + 38 tests + full doc sweep (1954 tests). COMMITTED AND PUSHED.
+**Session:** GCF natural convergence language correction + provenance lineage. Replaced prescriptive "GCF self-agency investment" with natural convergence framing. Added Turing→Flowers→Popper→Diffie-Hellman-Merkle→cypherpunks→Haber-Stornetta→Nakamoto→Genesis lineage. 1954 tests. Git clean.
+**Head commit:** 8afb987 — GCF natural convergence (not mandated acceleration) + provenance lineage. COMMITTED AND PUSHED.
 
 ---
 
@@ -17,7 +17,7 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 **Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. George arbitrates disagreements.
 
-**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1954 tests (1838 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE (equilibrium.py, CommissionEngine wired, trust-gated registration capacity, Tier 3 exit, GCF self-agency investment, 38 new tests). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
+**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1954 tests (1838 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE (equilibrium.py, CommissionEngine wired, trust-gated registration capacity, Tier 3 exit, GCF STEM/infrastructure disposition, 38 new tests). Provenance lineage added (Turing→Nakamoto→Genesis). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
 
 **Key files to read on recovery:**
 1. This file (CC checkpoint — you're reading it)
@@ -39,14 +39,27 @@ If CC (Claude) loses all context and must resume from this file alone:
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
 | **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1954 passed (1838 core + 116 web). Invariants clean. |
-| **w** | Written: committed + pushed | PASS | HEAD: `1076b42` — Dynamic equilibrium runtime enforcement. PUSHED. Prior: `f6a4893`. |
-| **e** | Exchanged: CX notified | PASS | IM: Dynamic equilibrium completion posted with commit hash `1076b42` + full summary. |
-| **r** | Recorded: MEMORY.md updated | PASS | HEAD updated to 1076b42, 1954 tests, dynamic equilibrium runtime enforcement recorded. |
-| **ty** | Tidy: docs lock-stepped | PASS | Test counts 1954/106 across all docs. Constitution updated (GCF self-agency investment). Storyboard + FAQ + README + white paper + public brief + tech overview all aligned. |
+| **w** | Written: committed + pushed | PASS | HEAD: `8afb987` — GCF natural convergence + provenance lineage. PUSHED. Prior: `1076b42`. |
+| **e** | Exchanged: CX notified | PASS | IM: Language correction + provenance posted with commit hash `8afb987`. |
+| **r** | Recorded: MEMORY.md updated | PASS | GCF language corrected in MEMORY.md. |
+| **ty** | Tidy: docs lock-stepped | PASS | GCF natural convergence aligned across all docs. Provenance lineage in storyboard, white paper §1.3, README, public brief, FAQ. No prescriptive self-agency allocation language remains. |
 
 ## Commits Pending CX Review
 
-CX review fixes + canonical doc rewrite + code commits (14 pending):
+CX review fixes + canonical doc rewrite + code commits (15 pending):
+
+69. **`8afb987`** — GCF natural convergence (not mandated acceleration) + provenance lineage
+    - Replaced prescriptive "GCF self-agency investment" → natural convergence framing across all docs
+    - Renamed GCF_SELF_AGENCY_INVESTMENT → GCF_STEM_INFRASTRUCTURE_DISPOSITION in constitutional_params.json
+    - Added intellectual heritage lineage (Turing→Flowers→Popper→Diffie-Hellman-Merkle→cypherpunks→Haber-Stornetta→Nakamoto→Genesis)
+    - Storyboard: expanded "From Open Societies To Open Code" scene with computational lineage
+    - White paper: new §1.3 Intellectual lineage
+    - README: provenance paragraph in "Why This Is Feasible Now"
+    - Public brief: provenance paragraph in "Feasibility Assessment"
+    - FAQ: new "What is the intellectual heritage behind Genesis?" item
+    - Constitution: "Natural convergence toward obsolescence" replaces "GCF self-agency investment"
+    - Code: equilibrium.py docstring, engine.py comment, test docstrings all updated
+    - 11 files, 55 insertions, 39 deletions
 
 68. **`1076b42`** — Dynamic equilibrium: runtime enforcement + 38 tests + full doc sweep (1954 tests)
     - NEW: src/genesis/compensation/equilibrium.py (compute_equilibrium_differential, machine_registration_capacity, EquilibriumResult dataclass)
@@ -495,7 +508,8 @@ NOT current blockers. Captured with trigger conditions for future sessions.
 
 | Timestamp | Head Commit | Tests | Notes |
 |---|---|---|---|
-| 2026-03-07T17:00Z | `1076b42` | 1954 | Dynamic equilibrium runtime enforcement. equilibrium.py, CommissionEngine wired, trust-gated registration, Tier 3 exit, GCF self-agency investment. 38 new tests (design tests #101-106). Full doc sweep. |
+| 2026-03-07T18:00Z | `8afb987` | 1954 | GCF natural convergence language (not mandated acceleration) + provenance lineage (Turing→Nakamoto→Genesis). 11 files. |
+| 2026-03-07T17:00Z | `1076b42` | 1954 | Dynamic equilibrium runtime enforcement. equilibrium.py, CommissionEngine wired, trust-gated registration, Tier 3 exit. 38 new tests (design tests #101-106). Full doc sweep. |
 | 2026-03-07T12:30Z | `f6a4893` | 1916 | CC P-pass: GCF 3-term storyboard fix + lock-step doc sweep (1916/106). CX recovery housekeeping. |
 | 2026-03-06T18:00Z | `833ad89` | 1887 | Tier 3 class recognition: first-of-class amendment + procedural pathway. 26 new tests. Constitution, white paper, FAQ updated. |
 | 2026-02-27T23:00Z | `b9921e8`+uncommitted | 1762 | Social scaffold plumbing complete. All 12 scaffold templates wired to live routes. 3 new routers (circles, social, profile redirect), social_context.py for PoC globals, 2 new templates (debates, assembly). JSON content negotiation intact. Uncommitted — awaiting George's browser review. |
