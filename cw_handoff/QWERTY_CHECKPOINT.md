@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-07T22:00Z
+**Last updated:** 2026-03-08T10:00Z
 **Updated by:** CC (Claude)
-**Session:** Founder continuity provision complete + storyboard scene added. Constitution, config, white paper, public brief, tech overview, FAQ, outreach, storyboard all updated. 1965 tests. 19 storyboard scenes (was 18).
-**Head commit:** ae24859 — Storyboard: add founder continuity scene + update test count. COMMITTED AND PUSHED.
+**Session:** Pre-anchoring sweep: sigmoid equilibrium curve (12 new tests), doc fixes (branding + test counts), stub hardening (4 config switches in constitutional_params.json), constitution design rationale, DEVELOPMENT_ROADMAP.md updated. 1977 tests (1861 core + 116 web).
+**Head commit:** ec655f7 — Pre-anchoring sweep: sigmoid equilibrium, doc fixes, stub hardening. COMMITTED AND PUSHED.
 
 ---
 
