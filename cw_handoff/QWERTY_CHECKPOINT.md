@@ -1,9 +1,9 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-08T10:00Z
+**Last updated:** 2026-03-08T14:00Z
 **Updated by:** CC (Claude)
-**Session:** Pre-anchoring sweep: sigmoid equilibrium curve (12 new tests), doc fixes (branding + test counts), stub hardening (4 config switches in constitutional_params.json), constitution design rationale, DEVELOPMENT_ROADMAP.md updated. 1977 tests (1861 core + 116 web).
-**Head commit:** ec655f7 — Pre-anchoring sweep: sigmoid equilibrium, doc fixes, stub hardening. COMMITTED AND PUSHED.
+**Session:** Mathematical rigour pass on TRUST_CONSTITUTION.md: sigmoid equilibrium section rewritten with formal specification (block maths, boundary analysis, worked examples, provenance), 7 equilibrium parameters added to parameter matrix, trust mechanics tightened (penalty floor beta>=2*alpha, freshness decay cross-ref, dormancy decay constraints), tau_vote/tau_prop corrected to 0.60/0.75, T0 baseline bounded, memorialisation quorum quantified. 1977 tests (1861 core + 116 web), zero code changes.
+**Head commit:** f3ba5f3 — Constitution: mathematical rigour pass. COMMITTED AND PUSHED.
 
 ---
 
