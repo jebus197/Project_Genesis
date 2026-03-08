@@ -386,8 +386,8 @@ Genesis defines constitutional governance as a mathematically constrained human-
 The following baseline is recommended for initial institutional deployment:
 
 1. Thresholds:
-- `tau_vote = 0.70`
-- `tau_prop = 0.85`
+- `tau_vote = 0.60`
+- `tau_prop = 0.75`
 
 2. Chamber sizes and pass thresholds:
 - Proposal chamber: `nP = 41`, `kP = 28` (2/3).

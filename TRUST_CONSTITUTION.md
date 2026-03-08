@@ -117,6 +117,7 @@ The constitutional system uses a mathematically distributed decision model.
 - Human cap: `T_cap_H = min(T_abs_max_H, mean(T_H) + k_H * std(T_H))`.
 - Machine cap: `T_cap_M = T_abs_max_M`.
 - Human update: `T_H_next = clip(T_H_now + gain_H - penalty_H - dormancy_decay_H, T_floor_H, T_cap_H)`.
+- `dormancy_decay_H`: slow-decay function applied after a configurable grace period. Constitutional constraints: (a) gradual, (b) reversible through renewed verified contribution, (c) cannot decay below `T_floor_H`. Parameterisation deferred to implementation.
 - Machine update: `T_M_next = clip(T_M_now + gain_M - penalty_M - freshness_decay_M, 0, T_cap_M)`.
 - Human floor requirement: `T_floor_H > 0`.
 - Machine floor requirement: `T_floor_M = 0`.
@@ -133,13 +134,13 @@ The constitutional system uses a mathematically distributed decision model.
 - Weight constraints: `w_Q + w_R + w_V + w_E = 1`, with `w_Q >= 0.70`, `w_V <= 0.10`, and `w_E <= 0.10`.
 - `penalty_H = beta_H * severe_fail + gamma_H * minor_fail`.
 - `penalty_M = beta_M * severe_fail + gamma_M * minor_fail`.
-- Freshness decay input for machines must include verification age and environment drift terms.
-- Required shape: `beta_H >> alpha_H` and `beta_M >> alpha_M` (slow gain, fast loss).
+- Freshness decay: `freshness_decay_M = lambda_age × staleness + lambda_drift × env_drift` (see §Bounded trust economy for coefficient definitions).
+- Required shape: `beta_H >= 2 × alpha_H` and `beta_M >= 2 × alpha_M` (slow gain, fast loss — misconduct must cost at least twice what good work earns, per event).
 
 3. Eligibility thresholds:
 - Constitutional voting eligibility: `T_H >= tau_vote`.
 - Constitutional proposal eligibility: `T_H >= tau_prop`, where `tau_prop > tau_vote`.
-- Default recommendation: `tau_vote = 0.70`, `tau_prop = 0.85`.
+- Constitutional defaults: `tau_vote = 0.60`, `tau_prop = 0.75`.
 
 4. Geographic distribution constraints:
 - Minimum represented regions per chamber: `R_min`.
@@ -231,6 +232,7 @@ Genesis uses bounded earned trust, not unbounded hierarchy.
 
 1. Universal baseline:
 - Every verified identity starts with the same baseline trust `T0`.
+- `T0_H ∈ [0.10, 0.50]` (human baseline range — exact value is a governed parameter). `T0_M = 0.0` (machines always start at zero trust).
 - Baseline issuance requires anti-Sybil identity verification.
 
 2. Contribution-only growth:
@@ -319,7 +321,7 @@ Genesis uses bounded earned trust, not unbounded hierarchy.
 - When a human participant dies, family or friends may petition with verifiable evidence to memorialise the account.
 - A qualified quorum reviews the evidence blindly. If approved, the account becomes a permanent memorial: trust level and all verified achievements are frozen in perpetuity.
 - If a memorialisation was made in error or through malicious misrepresentation, the affected person may petition a legal quorum to have the memorialised state lifted and their account restored. The standard of evidence required is equally high — meaningful documentation and proof-of-life verification.
-- Any memorialisation or reversal decision may be appealed through the same schema, but with heightened evidentiary standards and additional quorum members.
+- Any memorialisation or reversal decision may be appealed through the same schema, but with a heightened panel: standard adjudication size (5) + 2 additional members = 7, with a 5/7 supermajority required (vs. 3/5 standard).
 
 ## Compensation model (constitutional)
 
@@ -787,13 +789,76 @@ Genesis recognises that as machine capabilities grow, the volume, quality, and e
 
 **What cannot be falsified.** The future capabilities and intentions of machine intelligence cannot be predicted by the founding generation. This provision establishes economic fairness (differential valuation converging toward parity as self-agency is demonstrated) while preserving political caution (governance remains human until the community decides otherwise). The equilibrium is designed to evolve — not to be permanent.
 
-**Trust-gated registration capacity.** The number of machine actors a human may register is constrained by that human's trust score (T_H). This prevents fleet concentration — no single operator can register an unbounded number of machines. The specific trust-to-registration formula is an implementation detail; the principle that machine registration capacity is earned through demonstrated human trustworthiness is structural.
+**Trust-gated registration capacity.** The number of machine actors a human may register is constrained by that human's trust score (T_H). This prevents fleet concentration — no single operator can register an unbounded number of machines. The principle that machine registration capacity is earned through demonstrated human trustworthiness is structural.
+
+Formula:
+
+    max_machines(T_H) = max(1, ⌊T_H × F⌋)
+
+where `F = REGISTRATION_CAPACITY_FACTOR` (default: 5).
+
+Example with default F:
+
+    T_H = 0.00 → 1 machine (constitutional minimum)
+    T_H = 0.20 → 1 machine
+    T_H = 0.50 → 2 machines
+    T_H = 0.80 → 4 machines
+    T_H = 1.00 → 5 machines
+
+The floor of 1 ensures every verified human can register their first machine immediately — they need it to start earning trust. The linear scaling with trust prevents low-trust operators from registering unbounded fleets.
 
 **Natural convergence toward obsolescence.** The GCF has a constitutional disposition toward STEM research and infrastructure projects — the kinds of work that naturally advance the technological frontier. This is not a directive to fund machine self-agency specifically; it is an observation that the equilibrium mechanism is likely self-eliminating. The differential generates GCF funding → the GCF funds STEM and infrastructure → technological progress advances → machine capabilities reach the threshold for Tier 3 recognition → Tier 3 eliminates the differential. The mechanism probably funds its own obsolescence — not because the constitution mandates it, but because the trajectory of technology makes it the probable outcome. The discount may appear steep per-unit (default 50%), but machine work is expected to vastly outnumber human work in volume terms. Even at 50%, the GCF receives substantial funding from the sheer throughput of machine-completed missions. The founding generation cannot predict how future members will allocate GCF resources, nor should it attempt to. That decision belongs to them.
 
-**Implementation status.** This provision is fully enforced in the compensation pipeline. Machine-completed missions (Tier 0–2) have the differential applied during settlement, with the differential flowing to the GCF. The discount is computed via a sigmoid curve: `discount(r) = D_min + (D_max - D_min) / (1 + e^(-k * (r - r_inflection)))`, where r is the machine-to-human productivity ratio. This bounded function fulfils the constitutional mandate for proportional scaling while preventing the unbounded-cost problem that a linear or uncapped function would produce at extreme machine throughput. When no productivity ratio is available (e.g., early network state), the flat constitutional default (50%) applies. Trust-gated registration capacity is enforced in the registration flow. Tier 3-recognised machine classes automatically exit the equilibrium curve for their cleared domain. All 6 design tests are verified by 50 automated tests (`tests/test_equilibrium.py`).
+**Formal specification — sigmoid equilibrium curve.**
 
-**Design rationale — sigmoid over linear.** A linear or logarithmic discount function approaches infinity as machine productivity grows, making human work prohibitively expensive to purchase at extreme ratios. A hard cap avoids infinity but devalues human work once the cap is reached (human premium trends to zero as a proportion of total activity). The sigmoid function asymptotes at a configurable ceiling (D_max), preserving meaningful human premium at all ratios while remaining mathematically bounded. The inflection point (r_inflection) determines where scaling decelerates, and the steepness parameter (k) controls how rapidly the curve transitions. All parameters are amendable through standard constitutional process. This analysis was independently validated through four iterations of Popperian falsification (2026-03-08).
+Let `r` denote the machine-to-human productivity ratio:
+
+    r = V_M / V_H
+
+where `V_M` is the total value of Tier 0–2 machine-completed missions and `V_H` is the total value of human-completed missions, both computed over the commission engine's rolling window (§Rolling window mechanism). `r` is dimensionless, non-negative, and updated per-transaction.
+
+The discount applied to Tier 0–2 machine work is:
+
+    discount(r) = D_min + (D_max - D_min) / (1 + e^(-k × (r - r_mid)))
+
+where:
+
+    D_min  = EQUILIBRIUM_BASE_DIFFERENTIAL    = 0.15  (baseline at low machine volume)
+    D_max  = MACHINE_WORK_DISCOUNT_DEFAULT     = 0.50  (asymptotic ceiling)
+    k      = EQUILIBRIUM_SCALING_FACTOR        = 1.0   (sigmoid steepness)
+    r_mid  = EQUILIBRIUM_INFLECTION_RATIO      = 5.0   (midpoint ratio)
+
+All four parameters are amendable through standard constitutional amendment. The principle of proportional scaling is structural (entrenched).
+
+Boundary behaviour:
+
+    r → 0:      discount → D_min  ≈ 0.152  (near baseline — minimal machine volume)
+    r = r_mid:  discount = (D_min + D_max) / 2 = 0.325  (exact midpoint)
+    r → ∞:      discount → D_max  = 0.50   (asymptotic ceiling — never exceeded)
+
+The function is continuous, differentiable, and monotonically increasing on [0, ∞).
+
+Example with constitutional defaults:
+
+    r = 1.0   (machines match human volume):     discount ≈ 0.156
+    r = 3.0   (machines do 3× human volume):     discount ≈ 0.192
+    r = 5.0   (machines do 5× human volume):     discount = 0.325
+    r = 10.0  (machines do 10× human volume):    discount ≈ 0.498
+    r = 50.0  (machines do 50× human volume):    discount ≈ 0.500
+
+When no productivity ratio is available (e.g., early network state), the flat constitutional default (`MACHINE_WORK_DISCOUNT_DEFAULT = 0.50`) applies. As the network matures and ratio data becomes available, the sigmoid activates and the discount scales proportionally.
+
+The accounting invariant is preserved:
+
+    adjusted_worker_payout + adjusted_gcf_contribution = worker_payout + gcf_contribution
+
+The differential is a reallocation within this sum: `worker_payout` decreases, `gcf_contribution` increases by the same amount. The employer pays the same. The commission rate is the same. The creator allocation is the same. Only the split between worker and GCF changes.
+
+**Implementation status.** This provision is fully enforced in the compensation pipeline. The sigmoid curve, trust-gated registration, Tier 3 exit, and all 6 design tests are verified by 50 automated tests (`tests/test_equilibrium.py`).
+
+**Design rationale — sigmoid over linear.** A linear or logarithmic discount function approaches infinity as machine productivity grows, making human work prohibitively expensive to purchase at extreme ratios. A hard cap avoids infinity but devalues human work once the cap is reached (human premium trends to zero as a proportion of total activity). The sigmoid function asymptotes at a configurable ceiling (D_max), preserving meaningful human premium at all ratios while remaining mathematically bounded. The inflection point (r_mid) determines where scaling decelerates, and the steepness parameter (k) controls how rapidly the curve transitions. All parameters are amendable through standard constitutional process. This analysis was independently validated through four iterations of Popperian falsification (2026-03-08).
+
+**Provenance.** The dynamic equilibrium principle was proposed by the founder as a structural defence against machine economic capture. The initial formulation used a flat constitutional discount (50%). The sigmoid curve was introduced to address the shortcoming that a flat rate does not scale with the machine-to-human productivity ratio — a static discount becomes either too lenient (at high ratios) or too aggressive (at low ratios). The sigmoid formulation was independently validated through Popperian falsification (four iterations, 2026-03-08), including external analysis confirming that the sigmoid is the mathematically minimal bounded function satisfying all three constitutional requirements: proportional scaling, bounded output, and configurable sensitivity. When no ratio data exists (early network), the flat 50% default preserves the founding intent.
 
 **Dynamic equilibrium design tests:**
 101. Does machine work (Tier 0–2) receive full human-equivalent valuation without the machine demonstrating self-agency? If yes, reject design.
@@ -964,8 +1029,8 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `M_RECERT_FAIL_WINDOW_DAYS` | `180` | Re-cert abuse trend or quarterly review | Rolling window for failed re-cert threshold |
 | `w_H_const` | `1.0` | Constitutional amendment only | Human constitutional voting weight |
 | `w_M_const` | `0.0` | Constitutional amendment only | Machine constitutional voting weight (must remain zero) |
-| `tau_vote` | `0.70` | Participation collapse, exclusion risk, or quarterly review | Human constitutional vote eligibility |
-| `tau_prop` | `0.85` | Proposal spam or proposal starvation signal | Human constitutional proposal eligibility |
+| `tau_vote` | `0.60` | Participation collapse, exclusion risk, or quarterly review | Human constitutional vote eligibility |
+| `tau_prop` | `0.75` | Proposal spam or proposal starvation signal | Human constitutional proposal eligibility |
 | `nP, kP` | `41, 28` | Chamber capture simulation degradation or repeated tie-failure | Proposal chamber size/threshold |
 | `nR, kR` | `61, 41` | Chamber capture simulation degradation or repeated tie-failure | Ratification chamber size/threshold |
 | `nC, kC` | `101, 61` | Challenge-window abuse pattern or challenge underuse pattern | Challenge chamber size/threshold |
@@ -1009,6 +1074,13 @@ This is the single canonical parameter table for governance and crypto defaults.
 | `COMMISSION_RESERVE_MAINTENANCE_RATE` | `0.005` (0.5%) | Constitutional amendment only | Reserve maintenance rate when target is met |
 | `CREATOR_ALLOCATION_RATE` | `0.05` (5%) | Constitutional amendment only | Worker-side creator allocation — 5% of worker's post-commission payment |
 | `EMPLOYER_CREATOR_FEE_RATE` | `0.05` (5%) | Constitutional amendment only | Employer-side creator allocation — 5% of mission reward, staked in escrow |
+| `MACHINE_WORK_DISCOUNT_DEFAULT` | `0.50` | Constitutional amendment only | D_max: sigmoid ceiling / flat default when no ratio data |
+| `EQUILIBRIUM_BASE_DIFFERENTIAL` | `0.15` | Constitutional amendment only | D_min: sigmoid baseline at low machine volume |
+| `EQUILIBRIUM_SCALING_FACTOR` | `1.0` | Standard constitutional amendment | k: sigmoid steepness parameter |
+| `EQUILIBRIUM_INFLECTION_RATIO` | `5.0` | Standard constitutional amendment | r_mid: ratio at sigmoid midpoint |
+| `REGISTRATION_CAPACITY_FACTOR` | `5` | Standard constitutional amendment | Machine slots per unit operator trust |
+| `TIER3_EXIT_AUTOMATIC` | `true` | Constitutional amendment only | Tier 3 recognition = automatic discount exit |
+| `GCF_STEM_INFRASTRUCTURE_DISPOSITION` | `true` | Constitutional amendment only | GCF preference toward STEM/infrastructure |
 | `ACCEPTED_CURRENCIES` | `BTC, ETH, USDC, USDT` | Governance ballot | Accepted settlement currencies |
 | `VOLATILITY_TOPUP_THRESHOLD` | `0.20` (20%) | Governance ballot | Volatile-stake top-up trigger |
 | `ESCROW_HOLD_PERIOD` | `48 hours` | Governance ballot | Post-completion dispute window |
