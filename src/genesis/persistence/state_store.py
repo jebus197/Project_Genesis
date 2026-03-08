@@ -1,5 +1,17 @@
 """State store — JSON-based persistence for Genesis runtime state.
 
+STUB STATUS: json_flat (see PERSISTENCE_BACKEND in constitutional_params.json)
+CURRENT BEHAVIOUR: Flat JSON file storage — single-node only, no concurrent
+    access, no transactions, no crash recovery. Suitable for development and
+    single-user proof-of-concept.
+LIVE BEHAVIOUR: Event-sourced persistence with real database backend
+    (SQLite minimum, PostgreSQL for production). Atomic writes, crash recovery,
+    concurrent access. JSON path kept as import/export only.
+TRIGGER: Before any multi-user deployment or when state files exceed ~10MB.
+ACTIVATION: Set PERSISTENCE_BACKEND to "sqlite" or "postgresql" in
+    constitutional_params.json and implement the corresponding backend
+    behind the same StateStore interface.
+
 Stores and recovers:
 - Actor roster (all registered actors with trust scores)
 - Mission state (all missions with their current lifecycle state)
@@ -7,10 +19,6 @@ Stores and recovers:
 - Actor skill profiles (proficiency per skill)
 - Protected leave records (leave requests, adjudications, trust freeze snapshots)
 - Epoch chain state (previous hash, committed record count)
-
-This is a simple file-based store suitable for single-node deployment.
-Production deployments would replace this with a database backend
-while keeping the same interface.
 """
 
 from __future__ import annotations

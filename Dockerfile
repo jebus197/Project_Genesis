@@ -1,6 +1,6 @@
 FROM python:3.13-slim
 
-LABEL org.opencontainers.image.title="Project Genesis"
+LABEL org.opencontainers.image.title="Genesis"
 LABEL org.opencontainers.image.description="Governance-first trust infrastructure"
 
 WORKDIR /app

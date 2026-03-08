@@ -57,11 +57,13 @@ from pathlib import Path
 import pytest
 
 from genesis.compensation.equilibrium import (
+    DEFAULT_BASE_DIFFERENTIAL,
     DEFAULT_MACHINE_DISCOUNT,
     DEFAULT_REGISTRATION_CAPACITY_FACTOR,
     EquilibriumResult,
     compute_equilibrium_differential,
     machine_registration_capacity,
+    sigmoid_discount,
 )
 from genesis.models.compensation import CommissionBreakdown
 
@@ -554,6 +556,145 @@ class TestSelfEliminatingMechanism:
             tier3_recognized=True,
         )
         assert after.differential_amount == Decimal("0")
+
+
+# ──────────────────────────────────────────────────────────────────────
+# Sigmoid equilibrium curve
+# ──────────────────────────────────────────────────────────────────────
+
+
+class TestSigmoidEquilibrium:
+    """Prove sigmoid equilibrium curve works correctly.
+
+    The sigmoid replaces the flat discount with a bounded, dynamic curve
+    that scales with the machine-to-human productivity ratio. This fulfils
+    the constitutional mandate that the human work premium increases
+    proportionally with machine productivity — but with an upper bound
+    to prevent the unbounded-cost problem.
+
+    Formula:
+        discount(r) = D_min + (D_max - D_min) / (1 + e^(-k * (r - r_inflection)))
+    """
+
+    def test_low_ratio_near_base(self) -> None:
+        """At very low machine-to-human ratio, discount ≈ D_min."""
+        rate = sigmoid_discount(0.1)
+        assert rate < Decimal("0.20")
+        assert rate >= DEFAULT_BASE_DIFFERENTIAL - Decimal("0.01")
+
+    def test_high_ratio_near_max(self) -> None:
+        """At very high machine-to-human ratio, discount → D_max."""
+        rate = sigmoid_discount(20.0)
+        assert rate > Decimal("0.45")
+        assert rate <= DEFAULT_MACHINE_DISCOUNT
+
+    def test_monotonic_increase(self) -> None:
+        """Discount increases monotonically with productivity ratio."""
+        ratios = [0.1, 0.5, 1.0, 2.0, 5.0, 10.0, 20.0]
+        rates = [sigmoid_discount(r) for r in ratios]
+        for i in range(len(rates) - 1):
+            assert rates[i] <= rates[i + 1], (
+                f"Sigmoid not monotonic: ratio {ratios[i]}→{rates[i]} "
+                f"> ratio {ratios[i+1]}→{rates[i+1]}"
+            )
+
+    def test_midpoint_at_inflection(self) -> None:
+        """At the inflection ratio (default 5.0), discount is midpoint
+        between D_min and D_max: (0.15 + 0.50) / 2 = 0.325."""
+        rate = sigmoid_discount(5.0)
+        expected_midpoint = (DEFAULT_BASE_DIFFERENTIAL + DEFAULT_MACHINE_DISCOUNT) / 2
+        assert abs(rate - expected_midpoint) < Decimal("0.01")
+
+    def test_zero_ratio(self) -> None:
+        """At ratio 0 (no machine work), discount is near base."""
+        rate = sigmoid_discount(0.0)
+        assert rate >= DEFAULT_BASE_DIFFERENTIAL - Decimal("0.01")
+        assert rate < Decimal("0.20")
+
+    def test_backward_compat_no_ratio(self) -> None:
+        """When no productivity_ratio is provided, flat discount applies."""
+        result = compute_equilibrium_differential(
+            worker_payout=Decimal("400.00"),
+            gcf_contribution=Decimal("5.00"),
+            worker_is_machine=True,
+            machine_tier=0,
+        )
+        assert result.discount_rate == DEFAULT_MACHINE_DISCOUNT
+
+    def test_sigmoid_wired_into_differential(self) -> None:
+        """When productivity_ratio is provided, sigmoid discount is used."""
+        result = compute_equilibrium_differential(
+            worker_payout=Decimal("400.00"),
+            gcf_contribution=Decimal("5.00"),
+            worker_is_machine=True,
+            machine_tier=0,
+            productivity_ratio=5.0,
+        )
+        expected_rate = sigmoid_discount(5.0)
+        assert result.discount_rate == expected_rate
+        assert result.differential_amount > Decimal("0")
+
+    def test_explicit_rate_overrides_ratio(self) -> None:
+        """Explicit discount_rate takes precedence over productivity_ratio."""
+        result = compute_equilibrium_differential(
+            worker_payout=Decimal("400.00"),
+            gcf_contribution=Decimal("5.00"),
+            worker_is_machine=True,
+            machine_tier=0,
+            discount_rate=Decimal("0.30"),
+            productivity_ratio=5.0,
+        )
+        assert result.discount_rate == Decimal("0.30")
+
+    def test_tier3_bypass_with_sigmoid(self) -> None:
+        """Tier 3 machines still bypass even when sigmoid ratio is provided."""
+        result = compute_equilibrium_differential(
+            worker_payout=Decimal("400.00"),
+            gcf_contribution=Decimal("5.00"),
+            worker_is_machine=True,
+            machine_tier=3,
+            productivity_ratio=10.0,
+        )
+        assert result.differential_amount == Decimal("0")
+        assert result.tier3_recognized is True
+
+    def test_human_unaffected_by_ratio(self) -> None:
+        """Human workers are unaffected even when productivity_ratio given."""
+        result = compute_equilibrium_differential(
+            worker_payout=Decimal("400.00"),
+            gcf_contribution=Decimal("5.00"),
+            worker_is_machine=False,
+            productivity_ratio=10.0,
+        )
+        assert result.differential_amount == Decimal("0")
+        assert result.adjusted_worker_payout == Decimal("400.00")
+
+    def test_sigmoid_params_in_constitution(self) -> None:
+        """Sigmoid parameters are present in constitutional_params.json."""
+        params = _load_constitutional_params()
+        eq = params["dynamic_equilibrium"]
+        assert "EQUILIBRIUM_BASE_DIFFERENTIAL" in eq
+        assert "EQUILIBRIUM_SCALING_FACTOR" in eq
+        assert "EQUILIBRIUM_INFLECTION_RATIO" in eq
+        assert Decimal(eq["EQUILIBRIUM_BASE_DIFFERENTIAL"]) == Decimal("0.15")
+        assert Decimal(eq["EQUILIBRIUM_SCALING_FACTOR"]) == Decimal("1.0")
+        assert Decimal(eq["EQUILIBRIUM_INFLECTION_RATIO"]) == Decimal("5.0")
+
+    def test_sigmoid_bounded(self) -> None:
+        """Sigmoid output is always bounded between D_min and D_max."""
+        import random
+        random.seed(42)
+        for _ in range(100):
+            ratio = random.uniform(0, 100)
+            rate = sigmoid_discount(ratio)
+            assert rate >= DEFAULT_BASE_DIFFERENTIAL - Decimal("0.001"), (
+                f"Rate {rate} below base {DEFAULT_BASE_DIFFERENTIAL} "
+                f"at ratio {ratio}"
+            )
+            assert rate <= DEFAULT_MACHINE_DISCOUNT + Decimal("0.001"), (
+                f"Rate {rate} above max {DEFAULT_MACHINE_DISCOUNT} "
+                f"at ratio {ratio}"
+            )
 
 
 # ──────────────────────────────────────────────────────────────────────

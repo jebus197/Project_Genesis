@@ -37,6 +37,7 @@ Trust-gated registration capacity:
 
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Optional
@@ -45,6 +46,11 @@ from typing import Optional
 # Default constitutional parameters — overridden by constitutional_params.json
 DEFAULT_MACHINE_DISCOUNT = Decimal("0.50")
 DEFAULT_REGISTRATION_CAPACITY_FACTOR = 5
+
+# Sigmoid equilibrium curve parameters (constitutional)
+DEFAULT_BASE_DIFFERENTIAL = Decimal("0.15")    # D_min: baseline at low machine volume
+DEFAULT_SCALING_FACTOR = Decimal("1.0")         # k: steepness of sigmoid transition
+DEFAULT_INFLECTION_RATIO = Decimal("5.0")       # r_inflection: midpoint ratio
 
 
 @dataclass(frozen=True)
@@ -72,6 +78,44 @@ class EquilibriumResult:
     domain: str
 
 
+def sigmoid_discount(
+    productivity_ratio: float,
+    base_differential: Decimal = DEFAULT_BASE_DIFFERENTIAL,
+    max_differential: Decimal = DEFAULT_MACHINE_DISCOUNT,
+    scaling_factor: float = 1.0,
+    inflection_ratio: float = 5.0,
+) -> Decimal:
+    """Compute the equilibrium discount using a sigmoid curve.
+
+    The discount scales dynamically with the machine-to-human productivity
+    ratio, asymptoting at max_differential. At low ratios the discount is
+    near base_differential; at high ratios it approaches max_differential.
+
+    Formula:
+        discount(r) = D_min + (D_max - D_min) / (1 + e^(-k * (r - r_inflection)))
+
+    This fulfils the constitutional mandate that "the human work premium
+    increases proportionally with machine productivity" — bounded above to
+    prevent the unbounded-cost problem identified in falsification.
+
+    Args:
+        productivity_ratio: Machine-to-human productivity ratio
+            (machine_volume / human_volume). Must be >= 0.
+        base_differential: D_min — baseline discount at low machine volume.
+        max_differential: D_max — maximum discount ceiling (asymptote).
+        scaling_factor: k — steepness of the sigmoid transition.
+        inflection_ratio: r — ratio at which the curve reaches its midpoint.
+
+    Returns:
+        Discount rate as a Decimal, bounded in [base_differential, max_differential).
+    """
+    exponent = -scaling_factor * (productivity_ratio - inflection_ratio)
+    sigmoid = 1.0 / (1.0 + math.exp(exponent))
+    d_range = float(max_differential - base_differential)
+    result = float(base_differential) + d_range * sigmoid
+    return Decimal(str(round(result, 4)))
+
+
 def compute_equilibrium_differential(
     worker_payout: Decimal,
     gcf_contribution: Decimal,
@@ -80,6 +124,7 @@ def compute_equilibrium_differential(
     domain: str = "general",
     tier3_recognized: bool = False,
     discount_rate: Optional[Decimal] = None,
+    productivity_ratio: Optional[float] = None,
 ) -> EquilibriumResult:
     """Compute the equilibrium differential for a mission settlement.
 
@@ -87,6 +132,12 @@ def compute_equilibrium_differential(
     For Tier 3+ machines: passthrough (economic parity achieved).
     For Tier 0–2 machines: worker_payout reduced by discount_rate,
         differential redirected to GCF.
+
+    When productivity_ratio is provided (and discount_rate is not explicitly
+    set), the discount is computed via a sigmoid curve that scales
+    dynamically with the machine-to-human productivity ratio. This fulfils
+    the constitutional mandate for proportional scaling. When neither is
+    provided, the flat DEFAULT_MACHINE_DISCOUNT (0.50) applies.
 
     Args:
         worker_payout: Base worker payout (after commission, creator, GCF).
@@ -96,14 +147,21 @@ def compute_equilibrium_differential(
         domain: Mission domain for per-class, per-domain scoping.
         tier3_recognized: Whether this machine's class has Tier 3 status
             in the given domain.
-        discount_rate: Override discount rate. Defaults to
-            DEFAULT_MACHINE_DISCOUNT (0.50).
+        discount_rate: Override discount rate. Takes precedence over
+            productivity_ratio if both are provided. Defaults to
+            DEFAULT_MACHINE_DISCOUNT (0.50) when neither is given.
+        productivity_ratio: Machine-to-human productivity ratio for
+            sigmoid curve calculation. Used only when discount_rate
+            is not explicitly provided.
 
     Returns:
         EquilibriumResult with adjusted payouts.
     """
     if discount_rate is None:
-        discount_rate = DEFAULT_MACHINE_DISCOUNT
+        if productivity_ratio is not None:
+            discount_rate = sigmoid_discount(productivity_ratio)
+        else:
+            discount_rate = DEFAULT_MACHINE_DISCOUNT
 
     # Human workers: no differential
     if not worker_is_machine:

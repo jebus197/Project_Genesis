@@ -1,9 +1,19 @@
 """Evidence validator — enforces evidence schema and integrity rules.
 
+STUB STATUS: format_validation (see SIGNATURE_MODE in constitutional_params.json)
+CURRENT BEHAVIOUR: Validates format only — checks that artifact_hash matches
+    sha256:<64-hex> and signature matches ed25519:<64-128-hex>. Does NOT
+    perform actual cryptographic verification of signatures.
+LIVE BEHAVIOUR: Cryptographic ed25519 signature verification against the
+    signer's registered public key. Requires real key management infrastructure.
+TRIGGER: When real identity/key management infrastructure exists.
+ACTIVATION: Set SIGNATURE_MODE to "cryptographic" in constitutional_params.json
+    and implement verify_signature() with actual ed25519 library (e.g., PyNaCl).
+
 Every mission must include at least one evidence record before completion.
 Each evidence record requires:
 - artifact_hash: SHA-256 prefixed hash.
-- signature: Ed25519 prefixed signature.
+- signature: Ed25519 prefixed signature (format-validated, not cryptographically verified).
 
 Incomplete evidence submissions are blocked (acceptance rate target = 0).
 """

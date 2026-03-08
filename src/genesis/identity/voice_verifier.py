@@ -1,8 +1,13 @@
 """Voice verification scoring engine (Phase D-2).
 
-Compares spoken words against expected challenge words and produces
-a VerificationResult. The naturalness_score is a stub (always 1.0)
-pending future audio-analysis integration.
+STUB STATUS: stub (see VOICE_VERIFICATION_MODE in constitutional_params.json)
+CURRENT BEHAVIOUR: Positional word matching only. naturalness_score is
+    always 1.0 — no audio processing, no STT, no spectral analysis.
+LIVE BEHAVIOUR: Requires STT backend for transcript extraction and
+    spectral analysis to distinguish live speech from recordings/synthesis.
+TRIGGER: When web layer is functional for real human registration.
+ACTIVATION: Set VOICE_VERIFICATION_MODE to "live" in constitutional_params.json
+    and implement STT + spectral backend in this module.
 """
 
 from __future__ import annotations

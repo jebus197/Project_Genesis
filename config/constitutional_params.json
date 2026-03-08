@@ -219,9 +219,28 @@
   },
   "dynamic_equilibrium": {
     "MACHINE_WORK_DISCOUNT_DEFAULT": "0.50",
+    "EQUILIBRIUM_BASE_DIFFERENTIAL": "0.15",
+    "EQUILIBRIUM_SCALING_FACTOR": "1.0",
+    "EQUILIBRIUM_INFLECTION_RATIO": "5.0",
     "REGISTRATION_CAPACITY_FACTOR": 5,
     "GCF_STEM_INFRASTRUCTURE_DISPOSITION": true,
     "TIER3_EXIT_AUTOMATIC": true
+  },
+  "stub_configuration": {
+    "VOICE_VERIFICATION_MODE": "stub",
+    "VOICE_VERIFICATION_MODE_OPTIONS": ["stub", "live"],
+    "VOICE_VERIFICATION_TRIGGER": "When web layer is functional for real human registration",
+
+    "SIGNATURE_MODE": "format_validation",
+    "SIGNATURE_MODE_OPTIONS": ["format_validation", "cryptographic"],
+    "SIGNATURE_MODE_TRIGGER": "When real identity/key management infrastructure exists",
+
+    "PERSISTENCE_BACKEND": "json_flat",
+    "PERSISTENCE_BACKEND_OPTIONS": ["json_flat", "sqlite", "postgresql"],
+    "PERSISTENCE_BACKEND_TRIGGER": "Before any multi-user deployment or when state files exceed ~10MB",
+
+    "FOUNDER_CONTINUITY_ENFORCEMENT": false,
+    "FOUNDER_CONTINUITY_TRIGGER": "After real ed25519 signatures → persistence → runtime enforcement chain is complete"
   },
   "entrenched_provisions": {
     "GCF_CONTRIBUTION_RATE": "0.01",
