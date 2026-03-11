@@ -18,6 +18,7 @@ Communication protocol (unchanged from previous system):
 - CC posts via: python3 im_service.py post cc "message"
 - CX posts via: python3 im_service.py post cx "message"
 - CW posts via: python3 im_service.py post cw "message"
+- Maintenance bot posts via: python3 im_service.py post maint "message"
 - Any agent reads via: python3 im_service.py read
 - Set active action: python3 im_service.py action "status" "summary"
 - Archive to permanent record: python3 im_service.py archive "summary"
@@ -56,12 +57,13 @@ INITIAL_STATE = {
             "cc": "Claude (implementation, prose, document integration)",
             "cx": "Codex (technical review, invariant checks, runtime/test risks)",
             "cw": "Cowork (UX design, narrative, interactive testing)",
+            "maint": "Maintenance bot (local ops/diagnostics/reporting)",
             "r": "Resync: Open Brain status + session context + IM read",
             "rt": "Resync + continue; review if warranted",
             "y": "Yes / approved",
         },
         "rules": [
-            "Every entry prefixed CC:, CX:, or CW:. Attribution is sacred.",
+            "Every entry prefixed CC:, CX:, CW:, or MAINT:. Attribution is sacred.",
             "Only genuine project files in repo. Working notes in Project_Genesis_Notes/.",
             "CX proposals must pass Sanity Gate before posting.",
             "Auto-cull: 21st entry drops oldest. No manual discipline needed.",
@@ -84,6 +86,7 @@ INITIAL_STATE = {
     "cc": [],
     "cx": [],
     "cw": [],
+    "maint": [],
 }
 
 
@@ -92,11 +95,15 @@ def _normalise_protocol(state: dict) -> None:
     protocol = state.setdefault("protocol", {})
     default_protocol = INITIAL_STATE["protocol"]
 
+    for stream in ("cc", "cx", "cw", "maint"):
+        state.setdefault(stream, [])
+
     keys = protocol.setdefault("keys", {})
     default_keys = default_protocol["keys"]
     keys.setdefault("cc", default_keys["cc"])
     keys.setdefault("cx", default_keys["cx"])
     keys.setdefault("cw", default_keys["cw"])
+    keys.setdefault("maint", default_keys["maint"])
     keys["r"] = default_keys["r"]
     keys["rt"] = default_keys["rt"]
     keys.setdefault("y", default_keys["y"])
@@ -115,6 +122,16 @@ def _normalise_protocol(state: dict) -> None:
             break
     if not replaced:
         rules.append(new_rule)
+
+    attribution_rule = "Every entry prefixed CC:, CX:, CW:, or MAINT:. Attribution is sacred."
+    replaced = False
+    for idx, rule in enumerate(rules):
+        if isinstance(rule, str) and rule.startswith("Every entry prefixed"):
+            rules[idx] = attribution_rule
+            replaced = True
+            break
+    if not replaced:
+        rules.insert(0, attribution_rule)
 
 
 @contextmanager
@@ -198,16 +215,19 @@ def cmd_recent(n: int = 5) -> None:
     compact: dict = {
         "active_action": state.get("active_action", {}),
     }
-    for stream in ("cc", "cx", "cw"):
+    for stream in ("cc", "cx", "cw", "maint"):
         entries = state.get(stream, [])
         compact[stream] = entries[:n]  # Already newest-first
     print(json.dumps(compact, indent=2, default=str))
 
 
 def cmd_post(stream: str, message: str) -> None:
-    """Post a message to CC, CX, or CW stream. Auto-culls to MAX_ENTRIES."""
-    if stream not in ("cc", "cx", "cw"):
-        print(f"Error: stream must be 'cc', 'cx', or 'cw', got '{stream}'", file=sys.stderr)
+    """Post a message to a stream. Auto-culls to MAX_ENTRIES."""
+    if stream not in ("cc", "cx", "cw", "maint"):
+        print(
+            f"Error: stream must be 'cc', 'cx', 'cw', or 'maint', got '{stream}'",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     with _locked_state() as state:
@@ -252,14 +272,19 @@ def cmd_archive(summary: str) -> None:
 
 def cmd_clear(stream: str) -> None:
     """Clear all entries from a stream (used after archiving resolved rounds)."""
-    if stream not in ("cc", "cx", "all"):
-        print(f"Error: stream must be 'cc', 'cx', or 'all', got '{stream}'", file=sys.stderr)
+    if stream not in ("cc", "cx", "cw", "maint", "all"):
+        print(
+            f"Error: stream must be 'cc', 'cx', 'cw', 'maint', or 'all', got '{stream}'",
+            file=sys.stderr,
+        )
         sys.exit(1)
 
     with _locked_state() as state:
         if stream == "all":
             state["cc"] = []
             state["cx"] = []
+            state["cw"] = []
+            state["maint"] = []
         else:
             state[stream] = []
 
@@ -325,10 +350,10 @@ def main() -> None:
             "  im_service.py rt [cc|cx|cw]               — Resync + continue\n"
             "  im_service.py read                       — Read full state (debug)\n"
             "  im_service.py recent [N]                 — Last N entries/stream (default 5)\n"
-            "  im_service.py post <cc|cx> \"message\"      — Post to stream\n"
+            "  im_service.py post <cc|cx|cw|maint> \"message\" — Post to stream\n"
             "  im_service.py action \"status\" \"summary\"   — Set active action\n"
             "  im_service.py archive \"summary\"           — Append to permanent archive\n"
-            "  im_service.py clear <cc|cx|all>           — Clear stream entries\n"
+            "  im_service.py clear <cc|cx|cw|maint|all>  — Clear stream entries\n"
             "  im_service.py init                        — Initialise state file\n"
         )
         sys.exit(0)
@@ -344,7 +369,7 @@ def main() -> None:
         cmd_recent(n)
     elif cmd == "post":
         if len(sys.argv) < 4:
-            print("Usage: im_service.py post <cc|cx> \"message\"", file=sys.stderr)
+            print("Usage: im_service.py post <cc|cx|cw|maint> \"message\"", file=sys.stderr)
             sys.exit(1)
         cmd_post(sys.argv[2], sys.argv[3])
     elif cmd == "action":
@@ -359,7 +384,7 @@ def main() -> None:
         cmd_archive(sys.argv[2])
     elif cmd == "clear":
         if len(sys.argv) < 3:
-            print("Usage: im_service.py clear <cc|cx|all>", file=sys.stderr)
+            print("Usage: im_service.py clear <cc|cx|cw|maint|all>", file=sys.stderr)
             sys.exit(1)
         cmd_clear(sys.argv[2])
     elif cmd == "init":

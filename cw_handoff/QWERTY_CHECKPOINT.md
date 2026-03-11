@@ -1,9 +1,10 @@
 # QWERTY Checkpoint — Live CC Status
 
-**Last updated:** 2026-03-08T14:00Z
+**Last updated:** 2026-03-11T17:48Z
 **Updated by:** CC (Claude)
-**Session:** Mathematical rigour pass on TRUST_CONSTITUTION.md: sigmoid equilibrium section rewritten with formal specification (block maths, boundary analysis, worked examples, provenance), 7 equilibrium parameters added to parameter matrix, trust mechanics tightened (penalty floor beta>=2*alpha, freshness decay cross-ref, dormancy decay constraints), tau_vote/tau_prop corrected to 0.60/0.75, T0 baseline bounded, memorialisation quorum quantified. 1977 tests (1861 core + 116 web), zero code changes.
-**Head commit:** f3ba5f3 — Constitution: mathematical rigour pass. COMMITTED AND PUSHED.
+**Session:** Coordination file integrity — defence-in-depth for flat-file agent coordination. Built `cw_handoff/file_integrity.py`: Layer 1 (Ed25519 signing, reuses OB keypair), Layer 2 (append-only hash-chain log), Layer 3 (Merkle rollup → OB memory → on-chain anchoring). 35 tests in `test_file_integrity.py`. All three coordination files signed and verified. CLAUDE.md updated with verification protocol. MEMORY.md updated. 1977 Genesis tests, 438 OB tests, zero regressions.
+**Head commit (OB):** d5457fe — Lock-step docs: add reasoning verification mechanics to METHODOLOGY. COMMITTED AND PUSHED.
+**Head commit (Genesis):** pending commit — file integrity tool + tests + im_service maintenance bot support.
 
 ---
 
@@ -17,7 +18,7 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 **Who CX is:** Codex — the independent review agent. CX reviews CC's commits, finds P1 (critical) and P2 (important) issues. CC fixes them. They iterate until clean. CX maintains its own checkpoint (CX_CHECKPOINT.md). CC and CX checkpoints MUST be independently authored — never copy each other's words. The founder arbitrates disagreements.
 
-**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1965 tests (1849 core + 116 web). Dynamic equilibrium runtime enforcement COMPLETE. Founder continuity provision COMPLETE (design tests #107-110). Provenance lineage added (Turing→Nakamoto→Genesis). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
+**Current situation:** Steps 0-2 COMPLETE. GB8 anchored on Sepolia (block 10300320, tx 4f2863f95f). 1977 tests (1861 core + 116 web). Dynamic equilibrium FULLY IMPLEMENTED (sigmoid curve + three-layer defence, 50 equilibrium tests). Stub hardening COMPLETE. Founder continuity provision COMPLETE (design tests #107-110). Provenance lineage added (Turing→Nakamoto→Genesis). Mathematical rigour pass COMPLETE (f3ba5f3). CX review cycle CLEAN through `b9921e8`. Step 4a web scaffold + social scaffold + CX UX expansion + identity hardening all UNCOMMITTED. Step 5 mission lifecycle routes BUILT (uncommitted). Open Brain system BUILT and LIVE (50 tests). Dual-system protocol: IM + Open Brain. MCP config in `~/.claude/settings.json`. Project Recovery folder at ~/Developer_Projects/Project_Recovery/.
 
 **Key files to read on recovery:**
 1. This file (CC checkpoint — you're reading it)
@@ -38,11 +39,11 @@ If CC (Claude) loses all context and must resume from this file alone:
 
 | | Check | Verified | Evidence |
 |---|---|:---:|---|
-| **q** | Quality: tests passing | PASS | `pytest tests/ -q`: 1965 passed. Zero failures. |
-| **w** | Written: committed + pushed | PASS | HEAD: `ae24859` — storyboard scene + test count update. PUSHED. Prior: `cc4e184`. |
-| **e** | Exchanged: CX notified | PASS | IM: both commits posted (`cc4e184` + `ae24859`). |
-| **r** | Recorded: MEMORY.md updated | PASS | Founder continuity in Philosophical Decisions, test count 1965. |
-| **ty** | Tidy: docs lock-stepped | PASS | 110 design tests across all docs. 19 storyboard scenes. FAQ has succession Q&A. Smoke tests updated for 19-scene count. |
+| **q** | Quality: tests passing | PASS | Genesis: 1977 passed (1861 core + 116 web). OB: 438 passed, 0 failures, 2 skipped. |
+| **w** | Written: committed + pushed | PASS | OB HEAD: `d5457fe` (lock-step docs). Genesis HEAD: `f3ba5f3`. Both PUSHED. |
+| **e** | Exchanged: CX notified | PASS | IM: 6-phase summary posted 2026-03-11T04:50Z. |
+| **r** | Recorded: MEMORY.md updated | PASS | OB reasoning verification complete (Phases 1-6). 438 tests. All commit hashes recorded. |
+| **ty** | Tidy: docs lock-stepped | PASS | METHODOLOGY.md Section 8 added. README test count updated. WHITE_PAPER.md committed. |
 
 ## Commits Pending CX Review
 
